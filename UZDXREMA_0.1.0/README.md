@@ -28,4 +28,5 @@ the Helion breakdown), and the headset measurements listed in 00 §8.
 | [30](30_GAMEPLAN_90HZ.md) | The 90 Hz gameplan for the owner's mod list: headset budget, sim/render/GPU waterfalls, tracks, milestones M0-M14, owner decisions, risks, effort |
 | [31](31_FORK_DELTA_CHECKLIST.md) | Implementer checklist (anti-drift): rules block, one row per item with lane, fork file:line, what to do, done-when run, don't-touch, netplay gate |
 | [SIM LANE HANDOFF](SIM_LANE_HANDOFF_2026-11-13.md) | Start point of the sim lane (opened 2026-11-13, D1): scope, hard rules, traps, first week, decisions |
+| [SIM LANE KICKOFF](SIM_LANE_KICKOFF_PROMPT.md) | The first message to paste into a Claude Fable session that runs the sim lane |
 | [gameplan_sources/](gameplan_sources/) | The seven code-cited fork-delta reports (A-G) behind 30/31, the owner's decisions log, and the review logs |

@@ -8,7 +8,8 @@ Vulkan/OpenXR/Tracy are labelled **API fact**; code sketches are marked *(sketch
 
 Every section was written by one reader and cross-checked line by line by a second reader who did not write it; the playbook files
 were then reviewed adversarially by a third. Correction logs (old → new, why) are in [`verification/`](verification/).
-The same material, with clickable citations, is in the shared Claude Doc "Helion Teardown & UZDoom VR Performance Rebuild".
+The same material, with clickable citations, is in the shared Claude Doc "Helion Teardown & UZDoom VR Performance Rebuild"
+(https://claude.ai/artifact/Uo9TTtxY2M9yPhMSHihiy9); its summary, architecture and head-to-head sections are in `00`.
 
 ## Why Helion is fast, in one paragraph
 
@@ -31,6 +32,7 @@ track (Phases 0, 9, 10) and runs the render track (Phases 1-8) in parallel, beca
 
 | File | What it answers |
 |---|---|
+| [00_SUMMARY_AND_HEAD_TO_HEAD.md](00_SUMMARY_AND_HEAD_TO_HEAD.md) | Executive summary, why Helion is fast (ranked), the owner's measurements, architecture map, head-to-head tables, bugs found |
 | [01_WORLD_GEOMETRY_PIPELINE.md](01_WORLD_GEOMETRY_PIPELINE.md) | Static cache, GPU buffers, vertex formats, sector light tables, incremental mover updates, draw structure, shaders |
 | [02_VISIBILITY_CULLING_PORTALS_SKY.md](02_VISIBILITY_CULLING_PORTALS_SKY.md) | Tic-rate culling, render blockmap, BSP mode and angle clippers, adaptive mode, flood fill, sky, 3D floors |
 | [03_SPRITES_TEXTURES_TRANSLUCENCY_HUD.md](03_SPRITES_TEXTURES_TRANSLUCENCY_HUD.md) | Instanced sprites, texture arrays, palette mode, WBOIT, fuzz, HUD batching, models (none) |
@@ -44,6 +46,7 @@ track (Phases 0, 9, 10) and runs the render track (Phases 1-8) in parallel, beca
 | [21_VR_VULKAN_SPECIFICS.md](21_VR_VULKAN_SPECIFICS.md) | OpenXR integration, multiview, per-view items, budgets, frame pacing, foveation, post-process at VR resolution |
 | [22_MEASUREMENT_PLAN.md](22_MEASUREMENT_PLAN.md) | Benchmark scenarios, metrics, Tracy zones, harness changes, determinism gates, acceptance targets per phase |
 | [verification/](verification/) | Every correction made by the cross-check and review passes |
+| [method/](method/) | The briefs the research, verification and review agents worked from |
 
 ## Bugs found while reading (not reproduced in a running build)
 
