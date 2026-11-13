@@ -1,0 +1,34 @@
+U1 (UZDoom 5.0 hardware renderer scene setup) - verification log
+Repo: /home/claude/src/uzdoom @ 292cf4203ebd3ced951cb67f6819180f588c1d44 (tag 5.0.0)
+
+Focus claims (all CONFIRMED against code):
+- Per-eye scene rebuild: hw_entrypoint.cpp:126-188 loops eyes; each eye does StartDrawInfo (fresh HWDrawInfo, StartScene copies mainvp then shifts its own copy), SetupView, ProcessScene, PostProcessScene, EndDrawInfo. Arena reset after each eye (EndDrawInfo -> ResetRenderDataAllocator when outermost). Nothing shared except R_SetupFrame/shadowmap/SetLevelMesh and the per-frame vertex/light/bone buffers.
+- 46 deg pitch: hw_drawinfo.cpp:385-388 `if (tilt > 46.0f) return 0xffffffff;` (non-OOB path). Added detail on how CreateScene handles 0xffffffff (2-BAM range, effectively no culling) and OOB path.
+- All sprites to translucent list: hw_drawlistadd.cpp:142 confirmed; refined wording (translucent models/wall sprites and actor-less particles also go there).
+
+Corrections (old -> new, why):
+1. hw_clipper.h:41-97 -> 31-97 (ClipNode class starts at 31); hw_clipper.h:186-189 -> 186-190.
+2. Added: 0xffffffff makes CreateScene add a ~2-BAM range ahead (hw_drawinfo.cpp:473-474), portals skip when a1>=ANGLE_180 (hw_portal.cpp:451-452, 594-595), OOB uses OoBFrustumAngle (hw_drawinfo.cpp:357-375). Clarification, not a reversal.
+3. "Each tier calls GetLightLevel... then DoTexture [1338-1403]" -> light/texture lookups cited at Process lines 2287-2289, 2504-2506; DoTexture body does not contain them.
+4. HWWall size estimate "5 pointers" [hw_drawstructs.h:173-225] -> "about 10 pointers" [173-228] (vertexes[2], texture, lightlist, lightmap, union ptr, seg, sub, front, back).
+5. Sprites list wording: "Only models and wall sprites go to GLDL_MODELS" -> "only non-translucent models and wall sprites that have an actor"; actor==nullptr always translucent (hw_drawlistadd.cpp:142-149); cited PutSprite translucent flag hw_sprites.cpp:1459.
+6. Added: translucent list with only sprites goes straight to stable_sort (hw_drawlist.cpp:687-690).
+7. Vulkan Apply(): "re-applies matrices, render pass, scissor, viewport, stencil, depth bias..." -> those appliers are called every draw but mostly early-out on change flags; StreamData + matrix record + push constants are written every draw; material always rebound because SetMaterial always sets mChanged. Cited vk_renderstate.h:47-48 (apply=true default) and vk_renderstate.cpp:401-452.
+8. "clipper narrowed ... by ClearClipper" applied to all scene portals -> mirrors do not use ClearClipper (hw_portal.cpp:592-598).
+9. hw_portal.h:176-184 -> 178-186; class hierarchy 191-327 -> 168-416; lines/mPrimIndices 86-93,117-122 -> 87-92,120-125.
+10. First-sky-portal: added that it prefers the portal containing the camera, OOB views still use stencil, and IsSky() is also true for skybox and sector-stack portals (hw_portal.h:284, 308, 402).
+11. hw_models.cpp:111-119 -> 114-122 (DrawArrays/DrawElements); gl_light_models hw_models.cpp:35 -> 36.
+12. hw_vrmodes.cpp:189-205 -> 189-202 (+131-135 getShift) in two places.
+13. Plane facing "depends only on Z" -> wrong for sloped planes: hw_flats.cpp:519/577 use plane.ZatPoint(vp.Pos), which depends on eye-shifted XY when sloped. Corrected.
+14. Open-question ranges: ProcessParticle 1470-1660 -> 1470-1657; DoFFloorBlocks/BuildFFBlock 1750-2130 -> 1750-2114.
+15. Flat VBO "triangle-fan per subsector" -> fan-triangulated into indexed triangles (earcut for hole subsectors) (hw_vertexbuilder.cpp:30-72).
+16. Added UploadLights cite hw_walls.cpp:555.
+17. Added: persistent-backend sprite CreateVertices is inside the light-slice loop -> 4 verts per slice (hw_sprites.cpp:243-287).
+18. DoomLevelMesh Absent bullet + Open question 1: resolved. SetLevelMesh is an empty virtual (v_video.h:174), overridden only by Vulkan -> VkRaytrace (vk_renderdevice.cpp:524-527); no other consumer of levelMesh in src.
+
+Absent claims re-grepped (broader patterns, incl. VK_QUERY_TYPE_OCCLUSION, drawIndirect/drawIndexedIndirect, ViewIndex, openxr/openvr): all confirmed absent. r_thread.h only referenced from r_thread.cpp and swrenderer: confirmed. ARCH_IA32 defined only for x86_64 (src/CMakeLists.txt:43-45): non-x86 tight-spin inference holds.
+CVar defaults table: all 30+ defaults checked against declarations: all correct.
+Code excerpts: hw_entrypoint 126-188 (condensed with ...), hw_bsp 1024-1039 (condensed; omits ortho branch behind ...), hw_walls 364-373 (verbatim): match.
+
+Totals: citations checked ~248 citation tags (~380 line refs), corrected 19 (line ranges/claims), removed 0; 1 open question resolved.
+19. Transfer table hw_portal.h:176-184 -> 178-186 (same fix as #9, untagged ref).

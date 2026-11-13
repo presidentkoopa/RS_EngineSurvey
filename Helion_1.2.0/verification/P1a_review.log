@@ -1,0 +1,56 @@
+P1a review log — /home/claude/work/sections/P1a_playbook.md (intro, priorities, Phases 0-4)
+Checked against UZDoom @292cf420, Helion @5edd437f, 10_MEASUREMENTS.md. Every [U] citation in the file was opened; Helion citations spot-checked (profiling, BSP dual clipper, occlude hack, flood shader, interpolation shader, light buffer index, geometry renderer, SectorUpdates, TextureManager).
+
+CONSISTENCY / NUMBERS
+1. Priorities table, mod row "Sim/script ≈ 250 ms" -> "250 / 258 ms" (think 249.88 / script 258.24, [M] §1; same format as no-mod row).
+2. Consequence 2: added that the 13.9 ms no-mod frame is uncapped at 3056x1689 and that ~2.3 ms of a comparable frame is the F12 busy-wait ([M] §4), so the 90 Hz gap is not overstated.
+
+CITATION FIXES
+3. Phase 0 Helion: "BenchmarkSuite measures AI, LOS and hitscan only [Program.cs:5-10]" -> Program.cs only holds BenchmarkSwitcher; the suite also covers entity creation and collision. Now cites Program.cs + Entity*.cs + H5 §8.
+4. hw_clock.cpp:33-41 -> 33-42 (MTWait/WTTotal are on line 42).
+5. Frame.TryRunTics src/d_net.cpp:2190-2341 -> 2190-2347 (function ends at 2347).
+6. Sim.RecreateLights dthinker.cpp:250-265 is the lambda definition; the zone goes around the call at line 308. Fixed.
+7. F1: info.cpp:135 is in FState::CheckCallerType (called from CallAction at line 172), not in CallAction. Fixed.
+8. F8: no_renderflags resize/memset lines 241/245 -> 242/246, and added why it is memset by node count (RenderBSPNode indexes it by node index, hw_bsp.cpp:970).
+9. Phase 2 step 5: "CheckBox [U] hw_bsp.cpp:947-985" is RenderBSPNode; now cites the CheckBox call at hw_bsp.cpp:968 and Clipper::CheckBox hw_clipper.cpp:515.
+10. Phase 3 precedent main.vp:66 -> 66-67 (66 is the #ifndef; the mix is on 67).
+11. Phase 4 risk: "DoMidTexture and GetAreas [1665-1712]" -> DoMidTexture starts at 1412; 1665-1712 is its GetAreas split.
+
+TECHNICAL CORRECTNESS FIXES
+12. 0.1 step 2: "glcycle_t emits a zone for every clock" contradicted the no-per-draw-zones rule: drawcalls is clocked in every Apply() (vk_renderstate.cpp:183), SetupWall/Flat/Sprite per job (hw_bsp.cpp:149,188,197). Now: zones only for named per-scene clocks. Added API fact: Tracy zones must nest LIFO per thread; assert it.
+13. F2: new trap 4. PortalBlocksMovement depends on PLANEF_NOPASS|DISABLED|OBSTRUCTED|LINKED (g_levellocals.h:934-937), and CheckPortalPlane flips OBSTRUCTED when a plane passes the portal (p_sectors.cpp:983-992), with no actor movement. The key now includes both planes' portal flags. "linePortalEpoch" -> level-wide portalEpoch covering line portals/UpdatePortal (portal.cpp:240)/polyobj portal lines/sector-portal assignment. "Three traps" -> "Five traps".
+14. F2: the conservative rule "skip early-out when Sector has a non-blocking portal plane" left a stale list when a portal turns blocking; added "or touching_sectorportallist is non-empty".
+15. F3: "reset mLastMaterial when a new command buffer begins (FlushCommands)" -> reset in EndRenderPass (vk_renderstate.cpp:490-504), which every flush goes through (vk_commandbuffer.cpp:136). BeginRenderPass forces mChanged=true (577), so a key compare without the reset would skip the first bind in a new command buffer.
+16. F3 set-0 rule: also rebind after a new command buffer; added the API fact on pipeline-layout compatibility.
+17. F7: made the change concrete: the pointer comes from GetBuffer() via a separate load of mCurIndex before fetch_add. Fix: index = fetch_add; return {GetBuffer(index), index}.
+18. F10: the pole test "pitch ± vfov/2 crosses ±90°" is wrong with head roll -> "±Z inside all four side planes". Added why min/max corner yaw is exact.
+19. F10 / Phase 2 step 4 contradiction: "Phase 2 feeds FrustumAngle the combined stereo frustum". The angular clippers are centred on each eye (dual clipper), while the combined frustum's apex sits behind the midpoint. Its yaw range under-covers near geometry seen from an eye, so it is not conservative. Now: each eye clipper uses its own eye frustum; the combined frustum feeds only the item cull and the GPU cull.
+20. F12: "replace the spin with a sleep until 0.5 ms before the deadline" would not recover the measured 2.3 ms. The wait is a fixed pad equal to the last tic's run time (TicStabilityBegin/End, 2124-2135), so the padding itself is the cost. Rewritten: off under OpenXR, default off on desktop with a judder check, smoothed TicFrac as the fix if needed, sleep+spin only saves power.
+21. Phase 2 step 6: the sketch called SetStereoViews before SetupView, but SetupView rebuilds mViewMatrix, recomputes the normal matrix and uploads (hw_drawinfo.cpp:425-433), so it would overwrite the per-view matrices. Added the required ordering and change.
+22. Phase 3 C occlusion: "clipper from both capsule ends, shrink by 2·asin(r/d)" is not conservative between the ends. A running player moves 16-23 units/tic against r ≈ 3-4 units. Replaced with sample points at spacing s, each tested with radius ρ = sqrt(r² + (s/2)²) (ρ = r√2 at s = 2r; a first draft of this fix used r, which leaves gaps at r√2). Cull only when all samples agree. Alternative: one midpoint clipper with R = r + L/2.
+23. Phase 4 step 5: "fragment shader picks the first plane below the fragment" selects the wrong band. Now: entry i with plane[i] ≥ z > plane[i+1], matching uSplitTopPlane/uSplitBottomPlane in hw_walls.cpp:293-320 (last band's low plane = sector floor).
+
+GAPS FILLED
+24. 0.2 step 4 (new): API fact: inside a multiview render pass a timestamp consumes popcount(viewMask) queries; PushGroup/PopGroup must reserve them. Open risk: TracyVkZone inside multiview passes.
+25. F2 trap 5: OldRenderPos is not serialized; invalidate the key on savegame load.
+26. F2 verification compares as sets. Compat note: sectorportal_thinglist member order changes and is ZScript-readable (vmthunks.cpp:3038), so add a portal map to the demo-compat suite.
+27. F6: notify only when the worker is sleeping (avoid a futex per job).
+28. F9: set the dirty flag on level start, savegame load and r_particles change (output depends on it, p_effect.cpp:227).
+29. F13: vm_debug also forces JIT off (d_main.cpp:3411).
+30. 0.5 item 1: unsigned 64-bit accumulation plus a self-test (the owner's fork's simprofile printed negative totals [M] header).
+31. Phase 1 step 2: FLightBuffer/BoneBuffer/HWViewpointBuffer already take pipelineNbr; HW_MAX_PIPELINE_BUFFERS = 2 on desktop (buffers.h:30-36) caps vboheight (r_defs.h:716), so N=3 needs raising it; one set-1 descriptor set per slot; chain a block on in-frame overflow instead of draining.
+32. Phase 1 step 4: gl_DrawID needs shaderDrawParameters, the count draw needs drawIndirectCount, and a non-zero firstInstance needs drawIndirectFirstInstance.
+33. Phase 1 step 6: descriptor-indexing features (builder lines 1864-1868), UPDATE_AFTER_BIND flags/limit, nonuniformEXT for non-uniform indices (Phase 4 clusters).
+34. Phase 2 step 1: depth-stencil also needs 2 layers.
+35. Phase 2 step 4: canted-view HMDs break the max-tangent derivation. Open risk: use the hull of the 8 corner rays.
+36. Phase 2 step 7: head roll puts the eyes up to IPD/2 apart in Z; near a plane, draw both faces and emit both hack variants.
+37. Phase 2 step 8: multiview API facts (1.1 core, VkRenderPassMultiviewCreateInfo/viewMask, clears/timestamps per view).
+38. Phase 3 C: the capsule is built around the cyclops position (body + head offset), not the body.
+39. Phase 3 C: the 360° build must not set ML_MAPPED/SECMF_DRAWN/SSECMF_DRAWN (hw_bsp.cpp:310-330,379,824), or the automap reveals what is behind the player. Until Phase 5, set them from the per-frame frustum cull.
+40. Phase 3 D: removing DoInterpolations changes what frame-time readers see: RenderOverlay/UI reads of plane heights, gl_spriteclip, 3D-floor light lists. Pixel-diff with movers and 3D floors.
+41. Phase 4 compat: setters miss direct field writes (Sector.lightlevel, Side.Flags, Line.flags are writable, mapdata.zs:379,138,232); added a per-tic shadow-copy compare.
+
+BLOAT: none cut. The file was already tight, and every addition is a substantive instruction.
+
+TOTALS: 41 changes = 2 consistency, 9 citation fixes, 12 technical-correctness fixes, 18 gap fills, 0 bloat cuts. Effort totals unchanged (8.5/17/14/14/24 re-added and correct).
+Open risks added: Tracy GPU zones inside multiview passes; canted-view combined frustum.

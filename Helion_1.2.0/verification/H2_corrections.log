@@ -1,0 +1,41 @@
+H2 verify log (section: /home/claude/work/sections/H2_visibility.md)
+Repos: Helion @ 5edd437f, UZDoom @ 292cf420 (5.0.0)
+
+CORRECTIONS
+1. §1 intro "every dynamic and static vertex carries both prevPos and pos" -> only DynamicVertex has prevPos; StaticVertex has pos only (StaticVertex.cs:7-26). Moving geometry is removed from the static set and drawn dynamically.
+2. §3.6 "Requires SwitchCount (3) consecutive samples on one side before switching" -> SwitchCount is read but has no effect as coded: both override branches at BspHeuristics.cs:62-65 are unreachable, because below/above counters reset each other and shouldUseBsp already matches the side. Switching happens on the first median sample that crosses the threshold outside the hysteresis band. Settings table row updated to match.
+3. §3.2 inference "~90°-wide wedges at each side of the true FOV (at 90° FOV)" -> about 45° per side (90° in total). The near-plane half-space is about 180°, and (180-90)/2 = 45.
+4. §1 item 1 "view is inside or above a Boom transfer-heights sector" -> above or below the fake planes (TransferHeightView Top/Bottom). Added that for Middle view the result comes from UseBspBasedOnHeuristic (Bsp->true, Static->false), BspHeuristics.cs:19-34.
+5. GeometryTextureLookup.cs:33-55 (file is 29 lines) -> GeometryTextureLookup.cs:18-28; TextureGeometryLookup.cs:6-27 -> 6-26.
+6. Sky/Sphere/SkySphereComponent.cs:182-201 (file is 86 lines) -> 50-69.
+7. UZDoom CheckUpdate(screen->mVertexData, sector) cited hw_bsp.cpp:820-823 -> 794-797 (820-823 is the sector validcount block for things).
+8. GeometryRenderer.cs:432-433 (seg-vs-clipper comment) -> 433-434.
+9. WorldBase.cs:1041-1101 -> 1042-1102; added that GameTicker also increments while paused (1047).
+10. IterateBlockmap excerpt was condensed and non-verbatim ("if (m_renderStatic) RenderSides(...)" on one line, "...RenderEntity") -> replaced with verbatim LegacyWorldRenderer.cs:155-175.
+11. §2.3 cell count "up to about 24x24 = 576 cells" -> 24-25 cells per axis (~576-625), since 12000/512 = 23.4 and the box is not cell-aligned.
+12. §3.6 "A position is queued every world tick [SinglePlayerWorld.cs:231-236]" -> offered every tick (230-236); in Adaptive mode it is enqueued only if the queue is empty (AutomapMarker.cs:108-112). Added that the stopwatch covers a dequeue batch (AutomapMarker.cs:124,178).
+13. §5 "static VBO per sky component [SkyGeometryManager.cs; StaticCache...cs:565-636]" -> persistent per-component VBO (a StreamVertexBuffer, not GL static) patched with UploadSubData; cites SkyGeometryManager.cs:39-72,127-157 and StaticCacheGeometryRenderer.cs:565-611.
+14. EntityProgram.cs:168-170 -> 168-169.
+15. Absent/REJECT row WorldBase.cs:189, 263-266 -> 189, 263-268, plus LOS use at 2761.
+16. hw_drawinfo.cpp:1020-1025 -> 1017-1026.
+17. §2.1 re-add on move complete: the claim that new geometry is always appended with a whole-VBO re-upload was incomplete. The normal path rewrites the plane's or wall's own zeroed slot with UploadSubData (StaticCache...cs:1360-1402). The free list (1536-1553) is used next, and append + whole-VBO re-upload only last. TODO cite 1556-1561 -> 1555-1561.
+18. Absent/multithreading row "its result is not consumed by the renderer" -> its visibility result is not consumed, but its timing and seg count do feed the adaptive heuristic.
+
+ADDITIONS (verified)
+- Open question 1 RESOLVED: dynamic VBOs are uploaded once per tic. RenderWorldData.Draw -> Vbo.Upload() is a no-op while Uploaded=true. Only Add*/Clear reset it (BufferObject.cs:58-101,141-145), and clear/refill happen only on renderTickChange (LegacyWorldRenderer.cs:789-799). The upload is a full glBufferData (ArrayBufferObject.cs:24-29). Same for sprite RenderData, dynamic sky StreamVertexBuffer, and BSP flood fill. Added a paragraph to §1, an Absent row, and marked the open question resolved.
+- Open question 2 partly answered (see correction 17).
+- Absent/portals: GLDEFS skybox blocks are parsed (GldefsDefinition.cs:30,84-85,140-177) but GldefsDefinition.Skyboxes has no readers.
+- §2.2: dynamic sectors include Scroll-flagged (scrolling flat) sectors (StaticDataApplier.cs:107-110); unlink is skipped while a flat scrolls.
+- §3.4: minisegs (LineId == -1) skipped.
+- §3.6: comment says 10% hysteresis but default is 5%; 500 µs sample-age gate.
+- §4/table: viewRightNormal source EntityRenderer.cs:369.
+- Settings: MaxDistance clamp 0-46000.
+
+ABSENT CLAIMS RE-GREPPED (broader patterns): occlusion/conditional render (also QueryTarget.*: only TimeElapsed), indirect/compute/HiZ (+DrawIndirect, ShaderType.Compute), portals (+SetPortal, Line_Mirror, PortalStencil, skybox), SphereInFrustum callers, ViewClipper.AddLine callers, InsideAnyRange in GeometryRenderer, 3D in RenderBlock/ViewClipping, threads in Core/Render+Core/World. All confirmed absent except the GLDEFS skybox note above.
+
+NUMBERS CHECKED: 512 render-blockmap cell; DefaultMaxDistance 6000; MaxSky 16384; 64x64x6 = 24576 sphere verts; MaxSkyTextures 255; EntityRenderIndexMax 100; ViewClipper capacity 256; FloodPlaneAddCount 2 / 6 verts per wall; fade at MaxDistance/sqrt2 ≈ 4243; adaptive defaults 2200/0.05/8000/10/3; occluder 32 u / QuarterPi.
+
+TOTALS: citations checked ~169 file:line references (~207 line ranges; 155 [H]/[U] tags plus inline/table refs); corrected 19 (13 line/file/claim fixes + 5 substantive claim fixes counted above); removed 0.
+19. StaticCacheGeometryRenderer.Sector3D.cs:18-55 -> 18-53. Also fixed a sentence that verifier editing had misplaced (sprite interpolation, §1).
+
+PUBLISH: one inline call (92 KB) was refused (row_too_large, cap 32,768 bytes per write). The section was then published in 4 writes: replace pending mr9vbek0cew.58 (rev 22), then insert after .223606 (rev 27), .288302 (rev 35) and .381839 (rev 42). No other blocks were touched.

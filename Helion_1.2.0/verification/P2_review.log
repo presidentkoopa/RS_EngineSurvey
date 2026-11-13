@@ -1,0 +1,69 @@
+P2 — VR and Vulkan specifics: adversarial review log (reviewer: P2)
+Repos: UZDoom 5.0.0 @292cf420 (all [U] cites re-opened); no [H] cites in P2. [M] = 10_MEASUREMENTS.md.
+
+CITATION / FACT CORRECTIONS
+1. Intro: "FirstEye/NextEye are empty virtuals that the Vulkan device does not override [v_video.h:258-259, vk_postprocess.cpp:358-360]" -> split: v_video.h shows the empty virtuals, which VulkanRenderDevice does not override; vk_postprocess.cpp:358-360 is the empty VkPostprocess::NextEye. Why: the second cite is VkPostprocess, not the device.
+2. §1 eye model "lateral shift of vr_ipd × vr_hunits_per_meter" -> "yaw-only lateral shift of ±½·vr_ipd·vr_hunits_per_meter". Why: mShiftFactor is ±0.5 (hw_vrmodes.cpp:51, 189-202).
+3. §1 pixel stretch option (b) "scale head translation in Z by 1.2" -> apply the head pose in view space after the stretch (metric); if added in map space, divide Z by pixelstretch. Why: SetViewMatrix applies scale(…, planemult, …) before the translation (hw_drawinfo.cpp:405-415); "×1.2" had the direction wrong or ambiguous. Added the default 1.2 (g_mapinfo.cpp:312) and the r_utility.cpp:1237-1244 pitch rescale.
+4. §1 depth formats: added the defaults vk_renderbuffers.h:57-58 (D24S8 for both scene and pipeline depth); portal cite 249-418 -> 180-418 (DrawPortalStencil also does the depth restore with SetDepthRange(1,1) at 227).
+5. §3 ViewpointUBO vk_shader.cpp:191-207 -> 191-210 (block ends at 210).
+6. §3 main.vp:155-166 -> 157-166; main.vp:60-66 -> 61-70 (bones at 61, interpolation mix at 66-70).
+7. §3 uCameraPos row: it said "[2] array" for all readers, including main.fp:277 (R_WallColormap) and 348 (R_DoomLightingEquation), which contradicted the next row (cyclops light bands). Split by use: light bands and fog use the cyclops position; specular and PBR per view.
+8. §3 light-diminishing row: added that fog also uses pixelpos.w (main.fp:809, 874; fogboundary.fp:41). Qualified the "rivalry" claim: with parallel eye axes, eye-space depth is equal in both eyes; it differs with canted views and in distance mode (≤ ½ IPD ≈ 1.3 units). The cyclops formula is now given explicitly.
+9. §3 render-target range vk_renderbuffers.cpp:64-200 -> 87-253 (CreateSceneFog/Normal end at 253). "two PipelineImages plus their depth" -> "… and PipelineDepthStencil" (there is one).
+10. §3 post-process render-pass lines 415-437 -> 413-437.
+11. §4 HUD-model depth clear 917-924 -> 918-924.
+12. §5 Translucent sort: "DrawSorted hw_drawlist.cpp:629-708" -> "DoSort/Sort with SortZ = Viewpoint.Pos.Z, 629-714; DrawSorted side test at 882". Why: 629 is DoSort; DrawSorted is at 871/931.
+13. §5 Missing-texture row: "identical for both eyes since the eyes share Z" -> the eyes differ in Z under head roll; the decision comes from the cyclops Z.
+14. §5 Coronas row (MAJOR): "DrawCoronas runs a playsim Trace … every time it draws" -> FALSE in 5.0.0. The loop is under `#if 0` (hw_drawinfo.cpp:865-892), and the DrawCoronas call is commented out in EndDrawScene (912-915). Rewritten as "disabled; if re-enabled, once per frame from the cyclops". §12 item 9 was rewritten to match (now item 13).
+15. §8 chain cite vk_postprocess.cpp:76-165 -> device PostProcessScene vk_renderdevice.cpp:262-266, then VkPostprocess::PostProcessScene 76-108 and Pass1/Pass2 hw_postprocess.cpp:1196-1213. Noted that the present pass is reached from AcquireImage. Added the beforebloom/scene custom-shader hooks.
+16. §7 "3.2 ms bloom + 3.2 ms BloomBoost" -> also exposure 1.38 ms [M] §1, which runs only with gl_bloom (hw_postprocess.cpp:432-437); total 7.8 ms.
+17. §7 "The sim parts (2.5 + 3.1 ms)": the think and script clocks overlap ([M] §1 with mods: script 258 > think 250 within a 315 ms frame), so the sum is invalid. Replaced with the per-tic [M] §2 figure: no-mod tic ≈ 4.5-5.2 ms (thinkers 3.24-3.79 + interpolation reset 1.25-1.39), which is above the ≈3 ms single-thread budget.
+18. §9 DITHERTRANS (MAJOR): it was presented as a screen-space pattern that differs under VRS. pixelpos.xyz = worldcoord (main.vp:86), so the dither is world-anchored and already identical in both eyes. The real VRS issue is undersampling; force 1×1.
+19. §11 texture filtering (MAJOR): "Nearest-neighbour textures alias; default to trilinear 16×". The 5.0 default is already gl_texture_filter 6 (linear min + linear mip + NEAREST mag) at 16× anisotropy (hw_cvars.cpp:127, 132; vk_samplers.cpp:44-53). Reframed as a magnification problem (offer mode 4 or the sharp-pixel shader).
+20. §6 xrWaitFrame threading API fact: "must be externally synchronized and ordered" -> concurrent xrWaitFrame calls must be externally synchronized; a 2nd xrWaitFrame blocks until the previous frame is begun; xrBeginFrame before the previous xrEndFrame discards that frame (checked against the OpenXR 1.1 reference page). Pipelining wording fixed accordingly.
+21. §10 "Runtime reprojection (ASW, SteamVR motion smoothing) needs depth" -> Meta PC ASW uses depth for its positional part; SteamVR Motion Smoothing works without it. XR_FB_space_warp over Link turned into an Open risk.
+22. §9 Quad views: "viewMask = 0b1111, cull and submit unchanged" -> impossible as stated (multiview layers share one size and viewport; inset and outer recommended sizes differ). Now two multiview passes (outer pair, inset pair) from one scene build. Noted the OpenXR 1.1 core promotion (PRIMARY_STEREO_WITH_FOVEATED_INSET).
+23. §2 desktop mirror: "blit the left eye … after xrEndFrame" from the XR image is invalid after xrReleaseSwapchainImage. Now: blit from the app-owned image (or from the XR image before release), present after xrEndFrame. Noted that windowed MAILBOX is commented out in vulkanswapchain.cpp.
+
+DESIGN FIXES / GAPS ADDED
+24. §6 tic fraction (MAJOR): computing t from T while tics still run on "now" makes T fall into an unsimulated tic slot (T is 1-3 frames ahead), so t wraps and the world jumps backwards. Fix: in VR, I_SetFrameTime stores the converted, monotonic T (d_main.cpp:1461), so both I_GetTime (tics due) and I_GetTimeFrac (i_time.cpp:165-177) use T. Sim-thread form: clamp t against the newest snapshot and hold at 1 if the sim is late. Determinism note: tic commands unchanged. Pseudocode updated; checklist item 9 added.
+25. §1 ZVulkan feature plumbing: a feature needs the VulkanDeviceFeatures struct (vulkaninstance.h:24-32), the query chain (vulkaninstance.cpp:215-240), the enable copy (vulkanbuilders.cpp:1853-1868) and the pNext chain (vulkandevice.cpp:92-125). API fact: Vulkan11/12Features must not be mixed with the per-feature structs ZVulkan chains -> use per-feature structs plus VK_KHR_draw_indirect_count, or migrate wholesale.
+26. §1 descriptor indexing: OptionalDescriptorIndexing() exists (vulkanbuilders.cpp:1792-1796) but UZDoom never calls it (vk_renderdevice.cpp:116 calls only OptionalRayQuery).
+27. §1 OpenXR bring-up order made explicit and correct: xrGetSystem and xrGetVulkanGraphicsRequirements2KHR come before xrCreateVulkanInstanceKHR/DeviceKHR (they need the systemId; xrCreateSession fails with XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING otherwise). API version clamped to the requirements range. Session-state transitions listed. Added XR_KHR_visibility_mask and XR_FB_display_refresh_rate. The CreateFn hook must return before volkLoadDevice (vulkandevice.cpp:127-130).
+28. §1 queue external synchronization (API fact): xrBegin/EndFrame and xrAcquire/ReleaseSwapchainImage may use the bound VkQueue; submits from other threads must share the mutex.
+29. §1 eye height: avoid double-counting viewheight plus the floor-relative pose; at 41 u/m the Doom eye is 1.0 m, so a height-normalised mode is offered (Inference). Checklist item 11.
+30. §1 pixel stretch: implement it as a renderer-side value at all stretch sites (hw_drawinfo.cpp:408, hw_sprites.cpp:369/457-558/1102/1629/1705, hw_skyportal.cpp:60, models.cpp:169/237, hw_entrypoint.cpp:382, r_utility.cpp); never write Level->pixelstretch (ZScript-readable, doombase.zs:461/580). Option (a) also aligns the aim ray with the image.
+31. §1 reversed-Z change list: compares, clear value, SetDepthRange(1,1)->(0,0), and the SetDepthBias sign at every site (hw_walls.cpp:129, hw_decal.cpp:136/170, hw_sprites.cpp:163/284, hw_flats.cpp:264, hw_drawinfo.cpp:559); one switch for pixel diffs.
+32. §2 XR swapchain image layouts (API fact): COLOR_ATTACHMENT_OPTIMAL on acquire and release; UZDoom's swapchain PP pass goes UNDEFINED->PRESENT_SRC_KHR (vk_renderpass.cpp:417) -> needs an XR variant. Checklist item 10.
+33. §2 depth layer: nearZ/farZ are in METRES (spec quote checked); for reversed infinite Z, farZ = zNear/vr_hunits_per_meter. Depth-resolve constraints: SAMPLE_ZERO is the only guaranteed mode; same depth bits and type needed (D24S8 -> D32F not allowed); the subpass path needs vkCreateRenderPass2, but ZVulkan uses vkCreateRenderPass (vulkanbuilders.cpp:1430). "Depth must not hold the weapon" corrected: the weapon is a scene object in VR and belongs in depth.
+34. §2 pacing: also disable I_WaitForTic / cl_capfps doWait (d_net.cpp:2200-2209).
+35. §3 multiview: framebuffer layers = 1 with array views; clears are load-op based (vk_renderstate.cpp:135-139) and cover all views; viewport is shared, so the eye images must be the same size. The GLSL is shared with GL/GLES, so put multiview behind a define. UBO growth handled automatically (hw_viewpointbuffer.cpp:30, vk_descriptorset.cpp:86).
+36. §4 quad layer: alpha blend flags (SOURCE_ALPHA, UNPREMULTIPLIED) and layer order.
+37. §5 tic-rate caveat: after P1 Phase 3, cyclops decisions made at tic time lag head motion; they must run per frame (VS / per-frame cull) or be conservative over the envelope.
+38. §6 shouldRender=false still requires xrBeginFrame/xrEndFrame (zero layers); pause on FOCUSED->VISIBLE as well.
+39. §7 added the [M] GPU scaling: with-mods opaque 6.15 ms at 5.2 MP is ≈10 ms at 8.8 MP (Inference), 3× the opaque budget.
+40. §8 B10G11R11 has no alpha -> Open risk line.
+41. §9 added the visibility mask (hidden-area mesh). VRS: needs the attachmentFragmentShadingRate feature; per-view layers need layeredShadingRateAttachments; with MSAA 4× usually ≤2×2 (maxFragmentShadingRateCoverageSamples); GPU generations named. Doom-texture tolerance wording corrected.
+42. Intro: added the owner's-fork note (survey 07: existing VKOpenXRDeviceMode, multiview off and not covering PP, no depth layer, no visibility mask, no VRS, serialized frame, no late latch); "add" means "audit and replace" on the fork.
+
+BLOAT
+43. §8 bloom line "from the cyclops-agnostic per-layer image" -> "per layer (multiview)". §12 merged and renumbered (13 items).
+
+OPEN RISKS (not resolved, need hardware or runtime checks)
+- XR_FB_space_warp availability on PC/Link (runtime-version dependent).
+- B10G11R11 SceneColor: alpha dependencies not audited.
+- VRS gains (25-40%) and visibility-mask savings (10-20%) are Inference; measure in the headset.
+- The fork's OpenXR code (07 survey) was not read; its deltas are taken from the owner's survey as-is.
+- The P1 text (not editable here) still cites ViewpointUBO as vk_shader.cpp:191-207 (should be 191-210).
+
+TOTALS
+Citations checked: 74 [U] locations (every [U] in the file, plus the [M] §1/§2/§4/§5 numbers).
+Citations corrected (line ranges or attribution): 14.
+Factual claims corrected: 13 (coronas dead code, DITHERTRANS world-space, texture filter default, stretch option (b), uCameraPos contradiction, eye share Z, quad-view multiview, mirror after release, xrWaitFrame sync, ASW/motion-smoothing depth, think+script sum, eye shift magnitude, weapon in depth).
+Citations removed: 0.
+Gaps added: 19 (items 24-42).
+Total logged changes: 43.
+
+PUBLISH
+Pending block mr9vbek0cew.66 replaced with chunk 1 (intro, §1-§2; rev 55, last block .547171), then chunk 2 inserted after it (§3-§6; rev 56, last block .562843), then chunk 3 inserted after that (§7-§12; rev 58). Every chunk was under 24 KB. Every [U] is a link pinned at 292cf420 with label "U: path:lines"; every [M] §n is a link to 10_MEASUREMENTS.md with label "M: §n"; the 07 survey is linked. No other block was touched.
