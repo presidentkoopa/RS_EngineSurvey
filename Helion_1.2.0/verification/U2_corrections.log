@@ -1,0 +1,30 @@
+U2 verification log (UZDoom 5.0.0 @ 292cf4203ebd3ced951cb67f6819180f588c1d44)
+
+Priority claims checked and CONFIRMED:
+- "0 frames in flight / waits on all fences at end of frame": VulkanRenderDevice::Update calls mCommands->WaitForCommands(true) (vk_renderdevice.cpp:218); WaitForCommands acquires, submits, FPS-limits, presents, then vkWaitForFences on all min(mNextSubmit,8) fences (vk_commandbuffer.cpp:163-199, wait at 182-188). Excerpt 173-188 matches verbatim (blank lines omitted). Persistent buffers created with pipelineNbr=1 (vk_renderdevice.cpp:186-190). Confirmed.
+- "Vulkan stereo shows only one eye / NextEye empty": DFrameBuffer::FirstEye/NextEye empty virtuals (v_video.h:258-259); grep shows no Vulkan override (only GL/GLES); VkPostprocess::NextEye empty (vk_postprocess.cpp:358-360); AdjustViewport only called from GL/GLES SetViewportRects; Set3DViewport clears per eye (hw_drawinfo.cpp:970-971); BlitSceneToPostprocess resets mCurrentPipelineImage=0 (vk_postprocess.cpp:117). Confirmed (code reading; not run).
+- "per-draw 384-byte copy": StreamData = 24 x 16 B = 384 B (hw_renderstate.h:190-221; FVector4PalEntry is 4 floats, :145-147); VkStreamBufferWriter::Write memcpy(sizeof(StreamData)) unconditionally on every Apply (vk_streambuffer.cpp:34-47, vk_renderstate.cpp:337-353). MAX_STREAM_DATA = 65536/384 = 170. PushConstants = 68 B C++ / 64 B GLSL. Confirmed.
+
+Corrections (old -> new, why):
+1. §8.1 "maps to five VRMode tables" -> "eight VRMode tables" (hw_vrmodes.cpp:49-56 defines 8: mono, stereo, sbsfull, sbssquished, lefteye, righteye, topbottom, checker).
+2. §2.1 "Only the portal stencil code passes apply=false ... hw_portal.cpp:222,231,235,1136" -> 222/877/970 pass `i == 0`, 1136 passes false; 231/235 pass `screen->IsVulkan()` i.e. apply=TRUE under Vulkan. Citation split into 222,877,970,1136 and 231,235.
+3. §2.1 inference "about 15 Vulkan commands' worth ... 0-2 descriptor-set binds" -> "roughly 2-8 vkCmd* calls ... 0-4 descriptor-set binds" (ApplyMaterial binds set0+set2 and ApplyHWBufferSet binds set0+set1: vk_renderstate.cpp:442-443,458-459; the old total contradicted its own list).
+4. §3.1 StreamBuffer "about 50,800 draws per frame" -> "about 50,660 (298 usable blocks x 170)" (NextStreamDataBlock never returns offset 0 and rejects the last block: vk_buffer.cpp:125-133).
+5. §3.1 inference "the stream block's first slot is never used" -> "the stream buffer's first block (offset 0) is never used" (64 KB = a whole block; same for matrix writer). Cite widened to vk_streambuffer.cpp:34-54,81-123.
+6. §8.3 "present_row3d/column3d/checker3d PP shaders declared in hw_postprocess.h:793 but only GL code calls the interleave presenters" -> PPPresent's Checker3D/Column3D/Row3D (hw_postprocess.h:791-793) are referenced nowhere; GL loads the .fp files via its own shader objects (gl_shaderprogram.cpp:325-343).
+7. §8.3 "That is also why d_main only suppresses screen wipes in VR when the hardware renderer is active" -> neutral statement; the wipe suppression (d_main.cpp:1181-1184: `vr_mode == 0 || vid_rendermode != 4`) is backend-independent and not caused by the Vulkan behaviour (false causal link).
+8. §2.1 table ApplyMatrices "3 x 64-byte memcmp" -> "2-3 x" (only 2 compares when model matrix enabled; vk_streambuffer.cpp:85-104).
+9. §2.4 "sorts by texture pointer only" -> walls also sort by clamp flags (hw_drawlist.cpp:725-726).
+10. §5.3 tonemap "only if gl_tonemap != 0" -> also when level MAPINFO tonemap set (hw_postprocess.cpp:603).
+11. §5.1 vk_renderbuffers.h:61 -> 61-63 (PipelineImage/PipelineDepthStencil are 62-63); added vk_renderbuffers.cpp:185-196 for the D32S8 fallback (header only shows default).
+12. §8.3 added hw_entrypoint.cpp:186-187 cite and explicit "VulkanRenderDevice does not override them".
+13. §8.4 added: GLES FirstEye/NextEye bodies are commented out (gles_framebuffer.cpp:327-335) -> "only working stereo path is desktop GL".
+14. §2.4 added: ZVulkan enables descriptor-indexing feature bits if present (vulkanbuilders.cpp:1864-1868) though the extension is never requested and nothing uses it (no-bindless claim still holds).
+
+Absent claims re-grepped more broadly (all hold): drawIndirect/drawIndexedIndirect (no src callers); OptionalDescriptorIndexing/runtimeDescriptorArray/nonuniformEXT in src+wadsrc (none); multiview in src/wadsrc (only WGL constant; glslang has it in libraries only); gl_ViewIndex (none); openxr/openvr/xrCreate/xrInstance/IVRSystem/vr:: whole repo (none); present_wait/presentId/LowLatency (only netcode "latency"); dynamicRendering/extended dynamic state (only volk loader stubs); shading rate/foveation (none); separate transfer queue / threads in vulkan dir (none; single GraphicsQueue submit).
+
+Numbers checked: StreamData 384 B; MAX_STREAM_DATA 170; PushConstants 68 B; VkPipelineKey 16 x 4 B; matrix 50,000 blocks; stream 300 blocks; light 80,000 x 4 vec4 = 5.12 MB; bones 80,000 x 64 B; FFlatVertex 32 B x 2,000,000; viewpoint 100 initial; PP pool 100 sets; texture pools 1000/2000; samplers 10; vk_submit_size 1000; maxConcurrentSubmitCount 8; swapchain 2/3 images; all cvar defaults in the settings table match.
+
+15. Open questions, PushConstants: "not verified against compiler padding" -> resolved: no implicit padding (all members 4-byte aligned), 68 B C++, 64 B GLSL, offsets agree through uDataIndex at 52 (vk_shader.h:56-80, vk_shader.cpp:282-306).
+
+Totals: citations checked ~249 (80 [U]-prefixed groups plus bare file:line refs); corrected 11 (items 1-11; items 12-15 are additions/resolutions with new citations); removed 0.

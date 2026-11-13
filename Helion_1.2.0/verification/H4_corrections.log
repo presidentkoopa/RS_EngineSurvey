@@ -1,0 +1,115 @@
+H4 (Helion playsim) verification log
+Repos: Helion @ 5edd437f, UZDoom @ 5.0.0 (292cf420)
+
+Method: every [H]/[U] citation range opened and read against its sentence; code excerpts compared
+(TickEntities excerpt at WorldBase.cs:1173-1206 and IsPositionValid excerpt at PhysicsManager.cs:1668-1679
+match verbatim apart from the stated condensing); absent-claims re-grepped more broadly (BLOCKMAP lump readers
+across Core/, slope support, sleep/inactive flags, threading, UZDoom closet/slowtick across src/ and zscript);
+numbers re-checked (1023 pooled entities, 1.2x growth, 8-slot blocks, 1024 node pool, 128/512/16 grids, cvar
+defaults, 359 action entries).
+
+CORRECTIONS (old -> new, why)
+
+1. Action stub count: "239 of 359 are // TODO stubs" -> "237 of 359 map to empty // TODO stubs" (intro, s5, Absent).
+   Why: 239 is the count of "// TODO" comments; parsing the dictionary shows 237 entries whose target body is only // TODO.
+
+2. s1 successor-destroy hazard: "Inference (latent hazard, not reproduced)" -> "real per code trace; not run", with exact trace.
+   TickEntities caches nextEntity=entity.Next (WorldBase.cs:1175); EntityManager.Destroy -> Dispose immediately
+   (EntityManager.cs:133-151); Unlink nulls the removed node's Next/Previous (Entity.cs:1304-1323). If E destroys its
+   successor N, loop visits disposed N, reads N.Next==null, exits -> all later entities skip Move+Tick that tic.
+   Added concrete trigger: player is created after all map things and prepended (SinglePlayerWorld.cs:70-78,
+   EntityManager.cs:416-427), so player.Next = last thing created at load; item pickup in IsPositionValid
+   (PhysicsManager.cs:1688-1693 -> WorldBase.cs:2507-2529) of that item makes every map-loaded entity skip a tic.
+   Added LIFO free-list re-tick variant (DataCache.cs:100-105,125-132) and UZDoom's fix (dthinker.cpp:956-961, NextToThink advance).
+
+3. s6 closet: "If the player teleports into a closet island, the flags on its monsters are cleared [WorldBase.cs:4174-4220]"
+   -> the wake loop is inverted and a no-op. WorldBase.cs:4205 `continue`s on entities WITH MonsterCloset and calls
+   ClearMonsterCloset only on entities without it, which always have ClosetFlags==None (FrameState.cs:161-173 only adds
+   Look/Chase when flags != None) so ClearMonsterCloset returns immediately (Enemy.cs:134-137). Only the teleporting
+   entity itself is cleared (4176).
+
+4. s6 closet: "A_ClosetChase only calls SetNewChaseDirection" -> also re-targets via SetNewTarget(true) (which does a sight
+   trace) when target is dead/missing, falling back to A_ClosetLook; step size is ClosetChaseSpeed=40 (Entity.cs:47,
+   Enemy.cs:341), reset to monster speed after failed search (Enemy.cs:327-328). Added island definition (connected
+   subsectors via partner segs, IslandClassifier.cs:106-155) and that classification runs after player spawn.
+
+5. s6 slow tick: "tic count multiplied by multiplier (4/2/4); rotating offset -1..+2 staggers which tic"
+   -> tic count multiplied by (multiplier + offset), effective 3-6 chase/tracer, 1-4 look (FrameState.cs:246-259);
+   also requires CurrentTick>0 and Distance>0.
+
+6. s6/intro slow tick action set: "A_Chase/A_Look/A_Tracer" -> chase = A_Chase/A_VileChase/A_HealChase, tracer =
+   A_Tracer/A_SeekTracer (EntityFrame.cs:63-66). Added: flags are readonly, set in the constructor, and Dehacked
+   reassigns ActionFunction later (DehackedApplier.cs:460-482) without recomputing -> stale slow-tick flags.
+
+7. s7 sound: "runs once per world tic and again once per client frame via Update() [Client.cs:402]; unverified"
+   -> runs once per tic only; Client.m_soundManager is a separate base SoundManager built by the client
+   (Client.cs:62,107). Open question removed. MaxSounds default "not verified" -> 32 (ConfigAudio.cs:35).
+
+8. [U] src/playsim/p_map.cpp:381 cited as P_CheckPosition validcount -> 381 is P_FindFloorCeiling; P_CheckPosition
+   validcount++ is at 1845,1930 (s3 and transfer note 6).
+
+9. [H] StaticCacheGeometryRenderer.cs:110-118,199-204 -> 110-118,965-989,1120-1143 (199-204 is
+   World_SectorPlaneTransformed, not the move start/complete handlers).
+
+10. BlockEntities struct field "int Length" -> "int EntityIndicesLength" (BlockMap.cs:27-31).
+
+11. BlockLine "~80-byte structs" -> "~120-byte" (80-byte Seg2D + 14-bool LineBlockFlags + 2 ints + 2 bools + 2 refs; BlockLine.cs:8-17).
+
+12. FastSpeed: "mutates the shared definition, not just the one entity" -> mutates the shared definition but NOT the
+    entity being created (Set already copied MonsterMovementSpeed at Entity.cs:244; movement reads the per-entity
+    copy, Enemy.cs:341-342) -> first instance per class keeps normal speed, later spawns get FastSpeed.
+
+13. "Entity.Set: flags and properties are copied by assignment" -> Flags struct copied by value; Properties is a
+    shared reference (Entity.cs:219-220).
+
+14. A_Chase: "SetNewChaseDirection can try up to about 10 TryWalks" -> up to 12; cite 736-808 -> 736-811. Added
+    divergence: after entering the missile state A_Chase does not return, still decrements MoveCount and moves
+    (EntityActionFunctions.cs:787-810).
+
+15. "missile chance is divided by it [Enemy.cs:518-519]" -> distance term divided (raises fire chance) [518-522].
+
+16. "failed direction searches are skipped for ChaseFailureSkipCount calls (default 4)" -> next 3-4 calls skipped
+    (4 + alternating 0/1, pre-decrement), applied whenever slow tick is enabled, not only to slow-ticked actors.
+
+17. "3 random tries on 3 of 4 calls" -> up to 3 tries from random start on 3 of 4 calls, none on the 4th (global ChaseLoop).
+
+18. MoveXY: "returns at once ... unless the entity is a skullflyer" -> also returns for skullflyer, after HandleEntityHit (2113-2117).
+
+19. MinMovement: "zeroed for non-players" -> also players with no move input (2134-2145).
+
+20. CheckRenderingChanged: added third condition (RenderOffsets.Gametick != 0) (SectorPlane.cs:98-99).
+
+21. SectorMoveSpecial.Tick cite 216-294 -> 216-294,499-501 (MoveSectorZ is called via PerformAndHandleMoveZ at 501).
+
+22. FrameArgs.GetInt: added that it unboxes a boxed double with (int) which throws InvalidCastException (FrameArgs.cs:49-52).
+
+23. WorldBase.cs:1091 for world sound tick -> 1056,1091 (exit-state path also ticks sound).
+
+24. Open questions updated (successor bug + closet loop confirmed by trace only; sound question removed; MaxSounds resolved).
+    Transfer notes 1 and 2 gained port caveats derived from corrections 3 and 6.
+
+VERIFIED WITHOUT CHANGE (selection): tic order and excerpt; Dormant semantics; spawn-prepend order and save
+serialisation; UZDoom fresh-list ticking (dthinker.cpp:812-850); weak refs by ID; pool sizes/growth; blockmap 8-slot
+doubling and Array.Copy unlink; skip-relink short-circuit; sub-stepping, MaxSlides, ±30 clamp; IsPositionValid order;
+CheckCounter sites; BlockLine sort comment; BLOCKMAP lump unused (only enumerated in ArchiveMapiterator/MapEntryCollection);
+BSP 16-unit cache; slopes absent; sector-move sort and infinite-loop code-quality note (597-603); special list +
+deferred SectorMoveComplete; reject semantics match UZDoom CheckReject; sight per-block sort and early abort;
+BlockmapIntersect 16 bytes; closet classifier rules and default ON; A_Look spawn-loop validation; slow-tick cvars
+(false/2000/4/4/2/4, demo: true); renderer writes LastRenderGametick; GC latency modes; AOT props; threading grep;
+UZDoom has no closet/slow-tick (only bot THINKDISTSQ matches).
+
+TOTALS
+Citation references checked: 245 (original file)
+Citations corrected (file/line/claim): 10  (p_map.cpp:381 x2, StaticCacheGeometryRenderer 199-204, EntityActionFunctions 736-808,
+  Enemy 518-519, SectorMoveSpecial 216-294, WorldBase 4174-4220 (claim reversed, split), WorldBase 1091,
+  WorldSoundManager/Client.cs:402 claim, Entity.cs:1304-1323 claim upgraded)
+Citations removed: 0
+New citations added: 24
+Claim corrections in prose: 24 items above
+
+PUBLISH
+Pending block mr9vbek0cew.60 replaced (rev 18). The single-call replace was refused (row_too_large: 40,646 bytes
+against a 32,768-byte cap per write). The section (~93 KB with links) went in as 1 replace + 3 inserts after the
+last returned block ids (.173778 -> rev 29, .305701 -> rev 38, .418056 -> rev 39). One fix rode along: the
+"Item pickup happens inline" / step 4 paragraph had merged into one block and was split back apart (rev 29).
+269 citations converted to pinned-commit links with H:/U: labels. No other doc blocks were touched.

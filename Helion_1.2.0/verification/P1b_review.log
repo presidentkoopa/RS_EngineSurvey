@@ -1,0 +1,82 @@
+P1b review log — /home/claude/work/sections/P1b_playbook.md (Phases 5-10, dependency summary, order)
+Reviewer: P1b. Checked against UZDoom 5.0.0 @292cf420 (/home/claude/src/uzdoom), Helion @5edd437 (spot checks), owner measurements 10_MEASUREMENTS.md, P3_measure.md §5/§7.
+Format: [n] location | type | old -> new | why
+
+PHASE 5
+[1] UZDoom code list | citation | "SECMF_DRAWN (824, read by the radar clipper at 723)" -> SSECMF_DRAWN is the one read at 723; SECMF_DRAWN (824) separate | hw_bsp.cpp:723 tests sub->flags & SSECMF_DRAWN.
+[2] Step 3 portals | API fact | bare "wrap in VK_EXT_conditional_rendering" -> + what it predicates, same-subpass rule, CONDITIONAL_RENDERING stage/access barrier; + vkCmdDispatch is illegal inside a render pass, so all portal cull dispatches go before the scene pass | as written ("one dispatch plus a few draws" per portal, interleaved) would not be valid Vulkan.
+[3] Step 5 flags | gap/determinism | + ML_MAPPED/DRAWN are already render-dependent (not synced); P3 hash log must mask ML_MAPPED; CPU-fed delta list exists before Phase 5 (Phase 8 1b) | P3 §5.1 hashes line flags -> false demo-diff failures; ordering contradiction with Phase 8.
+[4] Risks | gap | + fallback without conditionalRendering: GPU-written zero counts via vkCmdDrawIndexedIndirectCount (core 1.2).
+
+PHASE 7
+[5] Step 4 | technical | "additive/subtractive commute" -> holds on the RGBA16F scene target, not UNORM (per-blend clamp).
+[6] Step 4 | citation | "DrawSorted hw_drawlist.cpp:629-708" -> DoSort/Sort 629-713, DrawSorted 871-948 | 629-708 is DoSort/Sort.
+[7] Step 8a | open risk | + AnimateBones is a `ui virtual` reading the actor (actor.zs:1651); cannot run on the render thread after Phase 8; options listed.
+
+PHASE 8
+[8] (b) | citation/consistency | "F9 moves these to the sim" -> F9 covers particles only; PO_LinkToSubsectors (po_man.cpp:1703-1712) must move too.
+[9] (i) new | gap | sound update reads actor->Pos()/PortalGroup for attached channels (s_doomsound.cpp:1063-1071) from S_UpdateSounds in TryRunTics (d_net.cpp:2298, 2345).
+[10] Step 1b new | dependency fix/gap | (d) CPU-fed delta list, (e) dither sight on sim thread, (g) TicScene built sim-side (hw_FakeFlat reads live sectors), envelope-violation rebuild requested from sim side, RF_MAYBEINVISIBLE render-side | original listed (g) with no resolution and made Phase 8 hard-depend on Phase 5 step 5 while the order runs 8 before 5.
+[11] (d) text | consistency | "Phase 5 turns these into a delta list" -> step 1b (CPU) then Phase 5 (GPU).
+[12] Step 2 | gap | + snapshot holds no DObject pointers (GC on sim thread).
+[13] Step 3 | determinism | catch-up cap limited to single-player; netgames/demos keep full catch-up; NetUpdate only called from TryRunTics (d_net.cpp:2221).
+[14] Step 4 | determinism | + GC pacing already frame-rate dependent; sweep calls Destroy()/OnDestroy on unreachable non-euthanized objects (dobjgc.cpp:224-228) -> GC sim-thread only.
+[15] Step 5 | race | "record into the existing 2D drawer" -> second sim-owned F2DDrawer, global one stays with render thread; menus/console only while sim thread is blocked at a barrier (DObject alloc/GC single-threaded; VM stack is thread_local, vmexec.cpp:147); netgame menus on sim thread; RenderEvent.FracTic/ViewPos semantics noted.
+[16] Step 7 | race | "sound update runs on the render thread" -> S_UpdateSounds stays on sim thread; render thread only updates listener orientation (or snapshot-resolved positions).
+[17] Effort | 16 -> 17 (step 1b, menu barrier).
+
+PHASE 9
+[18] Step 1b | technical | + generic C++ cannot call arbitrary native signatures; per-signature thunk (JIT emitter) or templates for common signatures.
+[19] Step 2 | technical (critical) | wake hooks "in the native setters and DEFINE_FIELD write paths" -> predicate re-checked natively every tic | DEFINE_FIELD only registers offsets; ZScript field stores (Vel, flags, Line.flags, sector fields) are raw VM stores; a hook list can never be complete.
+[20] Step 2 | determinism | + exclusions from reading AActor::Tick 4504-5122: inventory (DoEffect), freezetics, morph alternative, model data CalcBones (4550, 5121), MF_STEALTH, MF4_VFRICTION, BlockingMobj, steep-slope MF_SOLID, TOUCHY/BLASTED, INSCROLLSEC, bots; + nightmare-respawn block (5124-5156: movecount++, pr_nightmarerespawn) excludes tics==-1/CanRaise monsters on respawn skills or ALWAYSRESPAWN | tics==-1 skip was not demo-exact on respawn skills. Tail range 5076-5122 -> 5076-5156.
+[21] Step 2 | determinism | + fast path only when not frozen (frozen stock Tick does not decrement tics); also in ProfileThinkers.
+[22] Step 2 closets | determinism | sv_closetlook exact only if no player in section AND no portal links (P_CheckSight crosses portals); mapsection = two-sided-seg connectivity.
+[23] Step 3 | determinism | "forced off in netgames unless every peer agrees" -> CVAR_SERVERINFO; stagger keyed on Level->maptime.
+[24] Step 4 grid | exactness | corner test made precise: R_PointOnSide is an exact 64-bit linear threshold (r_utility.h:126-129) -> test extreme fixed-point lattice corners; cell index from FloatToFixed(x)>>20, not from the double.
+[25] Step 5 blockmap | determinism (critical) | "sorted by line id for vanilla order" -> keep blockmap-lump order (FBlockLinesIterator: polylinks first, lump order, validcount dedup, p_maputl.cpp:622-667); inline only immutable geometry, read flags/sectors from line_t (Line.flags is script-writable, mapdata.zs:232); drop the hook-based flag update.
+[26] Step 6 sight cache | citation/risk | RNG reject "lines 873-912" -> 871-882; cacheable trace from 914; function 840-950; + open risk for script Line.flags writes; + add only if counters show repeated pairs.
+[27] Step 8 | gap | slab replaces M_Free in SweepObjects (dobjgc.cpp:234-235); addresses already ASLR-variable -> no determinism impact.
+[28] Step 9 Today | fact | + default GetThinkerIterator covers statnums 32-127 only (dthinker.cpp:1298-1313): parked actors are never reset (Phase 10 depends on it).
+[29] Step 9 A | exactness | dense array must hold exactly statnum>=32 actors (maintained on ChangeStatNum); "two cache lines" -> three (~150 B).
+[30] Step 9 B | exactness (critical) | + all native Pos writes go through 5 setters (actor.h:1606-1628); + induction breakers: native Prev writes (p_things.cpp:785,793; p_user.cpp:1879; p_mobj.cpp:4241,4258; p_map.cpp:2605,2790), spawn, ChangeStatNum into thinking range, load; ZScript Prev stores (actor.zs:194) detected at compile time -> fall back to Step A | original "Prev stays writable so mods still work" was wrong under Step B (stale Prev forever).
+[31] Step 9 B | correctness | "Angles pass can run inside RunThinkers right before each tick" -> marked not exact (same snap flaw as Helion).
+[32] Step 9 recreate-lights | correctness | "list of flagged actors" -> dense walk with co-located flags8/effects/fountaincolor; pass also runs P_RunEffect (dthinker.cpp:211-224); flags are script-writable.
+[33] Compat/Risks | consistency | wake-hook wording -> predicate completeness; step 6 caveat; Step B fallback.
+[34] Success metric | consistency with P3 §7 | + interp reset 9.0->2.0 / 1.3->0.3; RunThinkers -40% scoped to no-mod scenario; TickBehaviors fix credited.
+[35] Effort | 22 -> 24 (tick LOD 1 -> 3, unrealistic for (b)-(e)).
+
+PHASE 10
+[36] Behaviors | citation/technical | "ticked from the owner's Tick only when Tick is overridden [p_mobj.cpp:564-603]" -> TickBehaviors called from AActor::Tick every tic unless frozen (4565-4566); behavior Tick VM call only if overridden; toTick.Push (580) allocates even for data-only behaviors; "thread-local scratch" -> stack small-buffer (TickBehaviors is script-callable, re-entrant).
+[37] Parking | citation/gap | ChangeStatNum restriction corrected (STAT_STATIC for actors, STAT_TRAVELLING for all); park in 6-31 (STAT_AUTODECAL trimmed by a_decals.cpp:663); side effects: no interp reset, no recreate-lights, invisible to default ThinkerIterator.
+[38] Events | gap | + WorldThingDestroyed (events.h:331); WorldTick runs before RunThinkers (p_tick.cpp:261-263).
+[39] Overlay API sketch | ZScript plausibility (critical) | `struct ActorOverlay native` (mods cannot instantiate native structs, zcc_compile.cpp:2292-2295) -> FLineTraceData pattern: plain struct with native fields, NewStruct size registration (thingdef_data.cpp:846-848), DEFINE_FIELD_X, by-pointer struct param (zcc_compile.cpp:2670-2674) read with PARAM_POINTER; version gating; FillMax (health-buffing mods), ViewerMask (netplay-safe per-player), SpawnHealth() name; storage behind a pointer, not inline; serialization in AActor::Serialize.
+[40] Overlay rendering | dependency fix | + interim path via RenderThings (hw_bsp.cpp:566-604) before Phase 7 | order step 2 ran Phase 10 overlays long before Phase 7 (step 5), so overlays would not have rendered.
+[41] Attachments | technical | "reposition at end of master's LinkToWorld" -> native pass after RunThinkers in creation order, Prev = master Prev + ofs (parked actors not reset), serialization; ATF_NOWORLD needs renderer emission (sector thing lists only).
+[42] Tickless | determinism | statnum 6-31; native-entry wake only; list reordering changes old demos of the mod.
+[43] Throttled statnums | determinism/savegame | gametic -> Level->maptime; fresh list; serialize intervals.
+[44] Per-class lists | determinism/savegame | spawn-serial order, sorted after load; "class change" removed.
+[45] CyanController | analysis | 7.16 ms / 122 = 59 us each -> script body, not per-thinker overhead; merge alone saves little; profile and replace the scan.
+[46] Iterator pooling | ZScript compat (critical) | "Create returns a cached instance per (handler,type)" -> opt-in transient variant; pooled Create would break nested same-type iterators.
+[47] Crit helpers | gap | data-only Behavior still allocates until fix; gain is mostly walk share (~21% of reset).
+[48] Mechanism 9 | precision | TickLOD opt-in/approximate; SpawnClientSide (actor.zs:876).
+[49] RSQTHP_Bar rewrite | workability (critical) | + Step 0 (mod source not available; determine if bar is its own sprite or a RenderOverlay tracker); API version uses non-static-state EventHandler, full ActorOverlay construction, FillMax; "top" variant used players[consoleplayer] in play-scope WorldTick (netgame desync) -> per-player AimTarget + ViewerMask; transitional rewrite: "park (statnum below 32)" -> 6-31; "update in WorldTick" (one tic late, before RunThinkers) -> updater Thinker at MAX_STATNUM (127; ticks after STAT_DEFAULT, dthinker.cpp:106-120); always set bar.Prev = monster.Prev + ofs (parked bars are never reset -> stale interpolation otherwise); null detection via ReadBarrier (vmexec.h:238-241); EventHandler not StaticEventHandler (savegames).
+[50] Compat | gap | + serialization of all new state gated by P3 §5.4; ported mods must pass statnums to ThinkerIterator.
+[51] Risks | update | per-class list risk reworded; interim renderer behind cvar.
+[52] Success metric | consistency with P3 §7 | "after porting his own mods ... thinkers <=20k, RunThinkers <=40, combined <=20 (P3)" -> own port vs third-party ports split; combined <=25 ms S2, >=35 tics/s, <=20 ms S3 (P3 says 25, not 20).
+[53] Effort | 12.5 -> 14 (interim renderer 1, serialization 0.5).
+
+DEPENDENCY SUMMARY / ORDER
+[54] Table | consistency (critical) | Phase 8 hard dep "5 step 5" removed (moved into 8 step 1b; Phase 5 soft) | contradicted recommended order (8 before 4/5). Efforts 8: 17, 9: 24, 10: 14; total 180 -> 185.
+[55] Order step 2 | gap | + interim overlay renderer; transitional stock-5.0 RSQ rewrite can ship day one.
+[56] Order step 5 | consistency | Phase 8 does not wait for Phase 5; Phase 7 replaces the interim overlay renderer.
+
+Verified unchanged (spot list): hw_bsp.cpp 1008-1062/947-985/257-403/310-330/379/824/1049-1055/694-697/714-780; hw_portal.cpp 73-103/249-418/655/668/703-744/779-813; hw_drawinfo.cpp 262-268/917-924; a_dynlight.cpp 343/364/496-634; hw_walls.cpp 405-555; hw_flats.cpp 142-184; hw_lightbuffer.cpp 75-123; hw_shadowmap.cpp 57/84-90; vk_renderdevice.cpp:63; hw_entrypoint.cpp 103-110; hw_sprites.cpp 75/82-83/308-318/798/1055-1056; hw_drawlistadd.cpp 138-153; sprites.h:40; fuzz_software.fp 55-58; d_main.cpp 610-612/1115/1463-1467; d_net.cpp 2192/2312-2335; r_utility.cpp:176; dthinker.cpp 93-122/250-265/812-850/956-961/1054-1076/1265-1271/1364-1410; p_tick.cpp 54-99/241-252; info.cpp 148-234/177-200; jit_call.cpp 65-128; inventory.zs 115-149; p_maputl.cpp 1946-1962; portal.cpp 1049-1099; p_secnodes.cpp 381-388; p_map.cpp 824-829; dobjtype.cpp 448-474; dobjgc.cpp 44-76/155-163/331-335/811-851; actor.zs 101-110/193/194/204/608-612; statnums.h 34-42/55-56; events.h 326-330; events.cpp 2068-2076; doombase.zs 291-296; maploader.cpp 3160-3161; renderinfo.cpp 77-102; actorinlines.h 46-54; actor.h 1142/1395-1404; Helion WorldBase.cs 1167-1206/4202-4219.
+
+Open risks left in the file (not resolvable by code reading):
+- AnimateBones (ui virtual) vs. Phase 8 threading (Phase 7 step 8a).
+- Sight cache vs. script Line.flags writes within a tic (Phase 9 step 6).
+- RSQTHP_Bar internals unknown (mod source not available) -> Step 0.
+- conditionalRendering availability on target GPUs (Phase 5).
+Cross-file notes for other reviewers: P3 §5.1 hash log must mask ML_MAPPED (render-written); P3 §7 Phase 10 target (25 ms S2) now matches P1b.
+
+TOTALS: 56 changes — 9 citation/line fixes, 21 technical/API/ZScript-plausibility corrections, 13 determinism/netplay/savegame additions, 8 gaps filled, 5 consistency fixes (dependency table/order/metrics/effort). Open risks added: 2 (AnimateBones, sight-cache Line.flags); 1 existing kept (conditionalRendering) with fallback added. No content deleted except superseded wording.

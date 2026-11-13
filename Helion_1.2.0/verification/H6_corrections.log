@@ -1,0 +1,57 @@
+H6 verification log — Helion map loading, precomputation, feature coverage
+Repos: Helion 5edd437f, UZDoom 5.0.0 (292cf420)
+
+Totals
+- Citations checked: 267 in the original (231 full [H]/[U] path:line + 36 shorthand ":NNN"). All opened at the cited lines.
+- Citations corrected (line range or target): 14
+- Citations removed/replaced (wrong claim): 3
+- Substantive claim corrections: 22 (listed below)
+- New citations added to support corrections: ~45. Shorthand ":NNN" citations expanded to full paths. Final file: 313 citations; every path exists and every range is within its file (scripted check).
+- Code excerpts: 3 checked. CompactBspTree.ToSubsector and WorldBase.ToSubsector match verbatim. The Client.Commands excerpt was condensed and elided ("{ Log.Error(...); return result; }", "..."); replaced with verbatim lines 944-963.
+
+DECORATE stub recount (own script, scratch/count_stubs.py): table at EntityActionFunctions.cs:36-397 has 359 entries, 359 distinct keys, 359 distinct target methods. 238 targets have empty/comment-only bodies; 121 have code. 238/359 is correct; "239" elsewhere is wrong.
+ZDoom specials recount: 157 distinct `case ZDoomLineSpecialType.*` labels in SpecialManager.cs (author correct). 176 across SpecialManager+LineSpecial+TeleportSpecial. 274 enum names, 56 of them Unused*. 56 named specials have no reference outside LineSpecial.cs classification switches.
+ACS recount: 69 active / 83 commented AddCodeData; 26 active / 83 commented AddFuncData (author correct).
+
+Corrections (old -> new, why)
+1. Islands "UZDoom has no map-wide grouping"; "Helion adds the map-wide level"; transfer row "Port/Rework, cull invalid in UZDoom"; feature row "island culling Helion-only" -> UZDoom has subsector_t::mapsection, computed by the same PartnerSeg flood (renderinfo.cpp:77-102), and a portal-aware viewer-section cull (hw_drawinfo.cpp:262-268, hw_bsp.cpp:696-697, hw_portal.cpp:668/808/915). Transfer grade changed to "(already present)"; intro and summary inference adjusted. Why: grep of UZDoom src for mapsection.
+2. "UZDoom builds only when ForceNodeBuild is set or the node lumps are unusable" -> also builds GL nodes when shipped nodes are not GL-friendly (CheckNodes moves them to gamenodes, then loads cached/GWA nodes or builds). Caching only when build time >= gl_cachetime (0.6 s). Cites glnodes.cpp:921-984, g_cvars.cpp:39-40.
+3. DECORATE "const" supported -> `const` throws "Variables not supported" exactly like `enum` (DecorateParser.cs:49-57). Added: a ParserException makes Parse return false and discards every actor in that lump (ParserBase.cs:68-73, DecorateDefinitions.cs:34-41).
+4. TEXTURES "Supported (incl. component translations)" -> Partial: per-patch Translation/Flip/Rotate options are parsed but ArchiveImageRetriever composes using only Name+Offset (ArchiveImageRetriever.cs:133-148).
+5. Translations row: "DECORATE Translation ranges and ICE ... cite DecoratePropertyParser.cs:130-143" -> :130-143 is Player.ColorRange. DECORATE `Translation` is parsed (:721-728, :1298) but Properties.Translation has no reader. TEXTURES component translations are not applied. ID24 TranslationEntry is applied (DefinitionEntries.cs:515-530).
+6. ANIMDEFS "animated-door supported" -> ANIMATEDDOOR throws "not supported" (AnimatedDefinitions.cs:26-29). The exception is caught in ParseEntry, so the rest of that ANIMDEFS lump is skipped (DefinitionEntries.cs:265-281).
+7. Teleport into closet "clears the flags" -> island flags are cleared, but the per-entity loop skips entities that have MonsterCloset set (inverted condition, WorldBase.cs:4202-4219), so monsters keep their flags. Transfer note updated.
+8. Line "scratch counters (BlockmapCount, PhysicsCount) shared by render and physics" -> they are only reset (Line.cs:120-121); a grep finds no reader. The render/physics BlockmapCount uses are on Entity/Side/Island.
+9. NEW finding: ZNODES non-fractional forms (XGLN/XGL2/ZGLN/ZGL2) pass Int16 splitters through MathHelper.FromFixed (/65536), ZNodesDefinition.cs:113-120. Those splitters would be mis-scaled. Added to node-format bullet, table row and open question (a).
+10. "~3.6k-line BSP builder in Core/Maps/Bsp/**" -> ~3.0k. 3,588 is the whole directory, including the used GLBSP converter and zdbsp wrapper; the unused builder (BspBuilder + States + Geometry) is 2,980 lines.
+11. ID24 UZDoom side "UMAPINFO id24 level number only" -> also enteranim/exitanim interlevel animations (umapinfo.cpp:63-64, wi_stuff.cpp:377-410) and id24.wad support loading (d_iwad.cpp:53). Still no ID24 Bits/SKYDEFS/GAMECONF/SBARDEF/TRAKINFO.
+12. DECORATE implemented-function description -> added A_Stop and the Helion-specific A_FireRailGun. A_PlaySound uses DEH Misc1/Misc2 semantics and A_Explode is fixed 128/128; both ignore DECORATE args.
+13. ZDoom specials unhandled list extended: LineAlign*, ThingDamage, ThingThrust, Hexen Stairs_Build*, Pillar_*, Ceiling_CrushRaiseAndStay*/CrushStay, ScrollWall, ScrollTextureBoth, LightStop (no handler outside LineSpecial.cs classification). Added Sector_Set3dFloor/TransferLight handling via == in InitSectors3D.
+14. StructLine "refreshed only for the automap-seen flag" -> also MarkAutomap is toggled by MarkSpecials (MarkSpecials.cs:438-442). Noted that HasSpecial/teleport/exit bits are not refreshed when specials change.
+15. Lump-reader absence claim "grep found nothing except A_CHECKTERRAIN" -> case-insensitive grep also hits the LockDefinitions class and commented-out ACS terrain functions. Added DefinitionEntries.cs:111-135 dispatch table as proof. LockDefinitions cite 11-34 -> 13-139 (whole constructor).
+16. Physics blockmap "sorted by line id" -> sorted by block index, then line id (BlockLine.CompareTo).
+17. Render blockmap row -> also holds per-cell render-entity heads (HeadRenderEntities).
+18. BSP grid "each single cell stores the deepest node that wholly contains it" -> it stores the last node whose splitter did not cut the cell (one level above the first splitting node). Added inference: only the flat index is bounds-checked, so out-of-grid x wraps rows.
+19. Sound "skips BadSubsectors listeners" -> sector-plane sound sources do not treat a listener in a BadSubsector as inside the sector.
+20. Netplay grep: author's "none" holds only for socket/UdpClient/TcpClient/netgame; "multiplayer" matches item-stay and thing-flag code. Clarified.
+21. Assets claim -> Assets/Assets/Actors is also Doom/Chex only.
+22. StructLine consumers -> added sound propagation (WorldBase.cs:1001); renderer use is the line-heights buffer.
+
+Citation line fixes (old -> new)
+- ArchiveMapiterator.cs:18-47 -> 16-48
+- udmf.cpp:1923 -> 1922-1924
+- r_defs.h:1690-1693 (subsector_t::hacked) -> 1693-1697
+- maploader.cpp:3053-3130 -> 3031-3130 (node-loading block starts at `if (!ForceNodeBuild)`)
+- maploader.cpp:2932-3130 (cvar claim) -> 2932 + 3031-3130 + glnodes.cpp:921-984
+- maploader.cpp:3160-3161 gamenodes -> added glnodes.cpp:935-937 (where gamenodes is filled)
+- ConfigRender.cs:90-92 -> 91-93
+- DecorateParser.cs:36-56 -> 32-57
+- DecorateStateApplier 123-136 -> 123-140; EntityActionFunctions 3406-3426 -> 3406-3427
+- ZNodesDefinition.cs:67-98 -> 67-99; :100-110 -> 101-112
+- SoundInfoDefinition.cs (no line) -> :108-131
+- DecoratePropertyParser.cs:130-143 -> 721-728 + 1298 (wrong target)
+- WorldExecutor.cs:449-456 -> 450-458; Client.Commands.cs:956-957 -> 955-957
+- DemoRecorder.cs:9-52 -> 9-61
+- AnimatedDefinitions.cs:289-309 -> 289-308 (+17-29)
+
+Verified unchanged (spot list): 72-byte node size (Helion 16+16+32+8; UZDoom node_t 16+32+4+4+16 = 72 on 64-bit); 16-unit grid memory math; 385 UZDoom p-codes; enum values 9/57/156/181; UDMF namespace list; all "Absent" greps re-run over the whole repo (zscript, pointlight/dynlight, modeldef/md2/md3/iqm, voxel/kvx, hardwareshader/material, SNDSEQ, TRNSLATE, REVERBS, LOADACS, lightmap/aabbtree), all still zero real hits; MarkSpecials:266 subsector-vs-sector id comparison confirmed.

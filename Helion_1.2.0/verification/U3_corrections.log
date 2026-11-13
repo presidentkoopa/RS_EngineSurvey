@@ -1,0 +1,50 @@
+U3 (UZDoom 5.0 playsim, thinkers and ZScript VM) - verification log
+Repo: /home/claude/src/uzdoom @ 292cf4203ebd3ced951cb67f6819180f588c1d44 (tag 5.0.0)
+
+Focus claims:
+- OldRenderPos only set at spawn / UpdateRenderSectorList never skips: CONFIRMED.
+  `grep -rni oldrenderpos` over the whole tree: p_secnodes.cpp:378, :382 (reads), p_mobj.cpp:5437 (spawn write = FLT_MAX), actor.h:1188 (decl).
+  No serializer entry, no DEFINE_FIELD. The guard `Pos() != OldRenderPos` is therefore always true.
+  Body re-read line by line (p_secnodes.cpp:375-427): ClearRenderLineList + optional linePortals scan + ClearRenderSectorList + up/down sector-portal walks. Portal-free map cost (2x P_DelSeclist(nullptr), 2x PortalBlocksMovement) confirmed.
+  CORRECTED the proposed fix (see #9).
+- FState::CallAction per-call heap copies: CONFIRMED.
+  info.cpp:172 CheckCallerType called every call; info.cpp:135 `auto argtypes = ActionFunc->Proto->ArgumentTypes;` (by value, TArray<PType*> types.h:704);
+  TArray copy ctor tarray.h:247-250 -> DoCopy tarray.h:848-858 M_Malloc when Count != 0 (always: includes self).
+  info.cpp:179 `auto defs = ActionFunc->DefaultArgs;` (TArray<TypedVMValue>, vm.h:440) second copy when DefaultArgs nonempty;
+  DefaultArgs filled only when the declaration has defaults (zcc_compile.cpp:2874-2877). A_Chase (actor.zs:1287, 3 optional params) and direct-function mapping (codegen.cpp:9798-9811 GetDirectFunction, vmbuilder.cpp:802-814) confirmed -> 2 mallocs per A_Chase; A_Look -> 1.
+- "GC runs twice per frame": PARTLY CORRECT, reworded.
+  GC::CheckGC() is called exactly twice per main-loop iteration: d_net.cpp:2192 (first stmt of TryRunTics) and d_main.cpp:1115 (D_Display, before the nodrawers return). `grep -rn CheckGC src` finds no other callers. Main loop d_main.cpp:1463-1467.
+  But CheckGC only calls Step() when State > GCS_Pause or AllocBytes >= Threshold (dobjgc.cpp:155-163), and Step's budget = max(GCMINSTEPSIZE, avg-bytes-per-CheckGC-call * StepMul/100) with a 512-call history (dobjgc.cpp:80-93, 331-335, 704-727). So more calls means proportionally smaller steps; total GC work follows the allocation rate, not the call count.
+
+Corrections (old -> new, why):
+1. dthinker.cpp:72-85 -> 70-84 (FThinkerCollection::Link bounds); dthinker.cpp:552-575 -> 552-574.
+2. NOINTERACTION path "then returns early" [p_mobj.cpp:4568-4602] -> WRONG. It returns only when frozen; otherwise it skips the movement block and falls through to the common tail (KILLMONSTERS, special sector, CheckNoDelay, UpdateRenderSectorList, state advance, p_mobj.cpp:5076-5117). Also updated the §6 note and the "Always" bullet.
+3. "24 files override Tick" -> 17 files / 26 overrides (13 actor files + 4 status bars). The author's grep "override void Tick" also matched 8 menu `Ticker()` overrides. Added ScriptedMarine and DynamicLight as engine examples.
+4. inventory.zs:115-140 (Inventory.Tick) -> 115-149 (the method continues through the DropTime block).
+5. VMValidateSignatureSingle vm.h:610-615 -> 609-615. Added the out-of-line empty VMCheckReturn<void> call (vmframe.cpp:634-636). Dispatch estimate 5-6 -> 5-7 calls.
+6. Added PARAM_NULLCHECK vm.h:829 to the PARAM_SELF_PROLOGUE citation. Clarified that DThinker.Tick is DEFINE_ACTION_FUNCTION_NATIVE (has NativeTick too), and that C++ VMCall always uses the boxed wrapper.
+7. Interpreter debug hook: "not inlined without LTO" was posed as an open question. Verifier found LTO is ON by default for Release/RelWithDebInfo when supported (CMakeLists.txt:15-27, FORCE_NO_LTO off). The inference, Open question and transfer note 12 are updated. Also noted that the switch-dispatch path calls the hook per op too (vmexec.h:61-64).
+8. JIT direct native calls: added that only OP_CALL_K (statically bound) uses DirectNativeCall; virtual calls (VTBL+CALL) always go through ScriptCall. Citation jit_call.cpp:71-128 -> 65-128.
+9. OldRenderPos fix "one-line fix (OldRenderPos = Pos();)" -> insufficient. UnlinkFromWorld clears both render lists unconditionally (p_maputl.cpp:317-318), so an in-place relink would leave the lists empty. The fix must also invalidate OldRenderPos in UnlinkFromWorld. Also added that LinkToWorld calls UpdateRenderSectorList (p_maputl.cpp:533), so moving actors rebuild twice. Transfer note 4 is updated.
+10. A_Look range p_enemy.cpp:1912-1990 -> 1912-2022; A_DoChase 2365-2700 -> 2365-2717; added A_Chase DEFINE_ACTION_FUNCTION_NATIVE at 2953.
+11. GC inference "0.05-0.5 ms per call, called twice per frame" -> per active step. Total GC work tracks the allocation rate; call frequency only adds per-call overhead and the GCMINSTEPSIZE floor. Transfer note 10 ("GC runs ~7 times per tic") is reworded the same way.
+12. GCDELETECOST: added the debug value 230 (release 75).
+13. FullGC: dobjgc.cpp:532-547 -> 532-562. "level transitions and similar" now cited: dthinker.cpp:428 (DestroyAllThinkers fullgc) and d_main.cpp:4269/4347/4365 (shutdown/restart cleanup).
+14. Added that ClearInterpolation reads Sector->PortalGroup (actorinlines.h:52-53), an extra dependent load in pass #1.
+15. P_PlayerThink FloatVar: dobject.cpp:670-685 -> 670-686. Added that FloatVar takes FName (dobject.h:229), so there is also a string->FName lookup per call. Negligible because it is per player.
+16. codegen.cpp:9798-9813 -> 9798-9811. The condition is now stated precisely (no args, non-virtual, no required explicit params).
+17. Added P_XYMovement call site p_mobj.cpp:4948, MF9_DECOUPLEDANIMATIONS CalcBones p_mobj.cpp:4548-4551, CheckCallerType call site info.cpp:172, zcc_compile.cpp:2874-2877, tarray.h:247-250 (in the text and in the allocation table).
+18. Light Tick loop also requires !paused (dthinker.cpp:309).
+19. Summary item 3 narrowed to "sector-linked actors that reach the end of their tick".
+
+Absent claims re-grepped (broader patterns):
+- Threads: std::thread|TaskGroup|parallel_for|omp|std::async|std::jthread|ThreadPool|concurrency over src/playsim, p_tick.cpp, src/common/scripting, src/common/objects, src/gamedata -> only the DAP DebugServer restart_thread. Confirmed.
+- Sight cache: sightcache|sight_cache|lastsighttic|cachedsight|sightcheckcache -> none. Confirmed.
+- Tick culling: tickdist|notick|lod_tick|cull.*tick|dormant.*tick|sleeping|DontTick|ticklimit -> only an unrelated comment in p_interaction.cpp. Confirmed.
+- alignas in actor.h -> none. Confirmed.
+- DEFINE_ACTION_FUNCTION_NATIVE / DEFINE_ACTION_FUNCTION counts (line-start) 829 / 626: confirmed.
+Numbers/defaults checked: MAX_STATNUM 127, STAT_FIRST_THINKING 32, MAPBLOCKUNITS 128, Buckets[32] (128 B), FixedHash[10], Grow(50), FPortalGroupArray MAX_STATIC 4, particle_t 136 B (static_assert), uint16 links, r_maxparticles 4000 clamp 100-65535, GC Pause 150 / StepMul 600 (800 debug) / sweep 40, vm_jit/vm_jit_aot true (DragonFly false), CanJit 200 regs, cl_rockettrails 0, cl_pufftype/cl_bloodtype 0, cl_bloodsplats true, cl_maxdecals 1024, sv_corpsequeuesize 64, r_dynlights true, nomonsterinterpolation false, cl_capfps false, vid_maxfps 500, renderradius default 0 (so render-sector list rebuilt on every relink). All correct.
+Code excerpt DThinker::CallTick (dthinker.cpp:1265-1271): verbatim.
+Not re-derived: the ~1,600 B AActor size estimate (labelled Inference; not compiled).
+
+Totals: citations checked: 256 [U] tags in the original, about 300 file:line ranges (all opened). Corrected: 20 items (12 line-range fixes incl. transfer-note Inventory range 115-140 -> 115-149, 8 substantive claim corrections or additions). Removed: 0. The final file has 274 [U] tags.

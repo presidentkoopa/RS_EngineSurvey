@@ -1,0 +1,52 @@
+H1 verification log (section: /home/claude/work/sections/H1_geometry.md)
+Helion @ 5edd437f39ddcbcd647a305d7bdd306847d6686b, UZDoom @ 292cf4203ebd3ced951cb67f6819180f588c1d44
+
+Corrections (old -> new, why):
+1. Intro: "only GL 4.x features are persistent-mapped TBOs and glClipControl, both optional"
+   -> adds the optional glMemoryBarrier (ARB_shader_image_load_store / 4.2) in the fuzz pass, cites Client.cs:282-288.
+   Why: Client.cs:287 + LegacyWorldRenderer.cs:609-610 use it; the section itself lists it in 4.3.
+2. 1.2: RenderWorldData.cs:183-206 -> RenderWorldData.cs:45-68.
+   Why: the file has 85 lines; Draw()/Vbo.Upload() is at 45-68.
+3. 1.2 code excerpt (LegacyWorldRenderer.cs:331-341): added the omitted profiler Start/Stop lines so it matches the file.
+4. 2.1: "upper/lower skipped only if they are both Movement-dynamic and the side is dynamic"
+   -> "only when an adjacent plane is flagged Movement and the side itself is dynamic (Side.IsDynamic = any flag)".
+   Why: StaticCacheGeometryRenderer.cs:405-408 tests the plane Movement flags of either sector AND side.IsDynamic (Side.cs:48).
+5. 2.3 SurfaceOptions: "texture-array layer (20 b)" -> "masked to 20 b but shifted to bit 13, so only the low 19 bits survive".
+   Why: VertexOptions.cs:13 ((textureIndex & 0xFFFFF) << 13) = bits 13..32 in a 32-bit int.
+6. 2.4: added the MaxArrayLayers split (GLTextureArrayBuilder.cs:218-240) to "one array per distinct dimension".
+   Why: buckets larger than GLInfo.MaxArrayLayers are split into several arrays.
+7. 2.6 code excerpt: rewrote it from the file (the old one merged statements and replaced code with comments); cite narrowed
+   859-896 -> 864-892, plus VertexPipeline.cs:33-38 / VertexBufferObject.cs:14-21 for what Bind/DrawArrays do.
+8. 3.2 code excerpt (GeometryRenderer.cs:904-925): added "..." where lines were left out (addAlpha, geometryType/arrayTexture).
+9. 3.2: "Sector.CheckRenderingChanged does the same" -> "applies the gametick and Z tests (but not the RenderOffsets test)".
+   Why: Sector.cs:245-257 has no RenderOffsets check, unlike SectorPlane.cs:98.
+10. 5: "dist3D = (mvp·pos) means a second full mat4×vec4 on top of gl_Position"
+   -> dist3D repeats gl_Position's mvp·pos (can be shared); the real extra multiply is mvpNoPitch for dist2D.
+   Why: VertexFunction.cs:7 / InterpolationShader.cs:76 use the same mvp*mixPos; LightLevel.cs:30 uses mvpNoPitch.
+   The dependent wording in the 5 Inference and in 10 row 9 was changed to match (Inference contradicted the code).
+11. 5: "11 flat varyings plus 3-4 smooth" -> "15 flat plus 4 smooth (uvFrag, depthFrag, dist2D, dist3D)".
+   Why: 10 flat in InterpolationShader.cs:34-43 + 2 uvClamp (VertexFunction.cs:9) + 2 sector colour/fog
+   (SectorColorMap.cs:5-7) + lightLevelFrag (LightLevel.cs:20). Citations extended.
+12. 6.1: "Four GLBufferTextureStorage TBOs are bound every frame" -> "Six ... (light, colormap, fog, colormap, map line data, line heights)".
+   Why: Renderer.World.cs:37-42 declares six; Renderer.cs:551-556 binds six.
+13. 6.2: noted that the non-persistent fallback also maps with MAP_UNSYNCHRONIZED_BIT (GLBufferTexture.cs:53);
+   added map line data to the list of float TBOs that hit the element-vs-byte map-length bug (Renderer.World.cs:321-323).
+14. 6.3: "Global and sector Boom colormaps ... (index,-1,-1)" -> "Per-sector Boom colormaps ...; SectorRgb stays an RGB multiplier".
+   Why: Renderer.World.cs:264-306 writes sector.Colormap only (global/view colormap is a uniform); SectorRgb returns ColorMix at 302-303.
+15. 7 VR hazard: "Both use a 32-unit pull-back" -> only the block/entity half-plane test uses it (LegacyWorldRenderer.cs:276-283, 784-786);
+   the BSP BoxInFront test uses the MvpNoPitch near plane at the camera (LegacyWorldRenderer.Bsp.cs:19). Both are off when |pitch| > 45°.
+16. 9: render.texturetransparency "Alpha middles via OIT" -> "Translucent (line alpha < 1) walls via OIT".
+   Why: GeometryRenderer.cs:794-795 gates RenderAlphaSide on side.Line.Alpha < 1.
+
+Checked and confirmed (no change): all config defaults (ConfigRender/ConfigWindow/ConfigDeveloper), struct sizes
+(52/32/16/44/32 B), 9 GeometryType buckets, 1024-entry pool, LightBuffer layout (34 + 3/sector), TBO sizes, colormap
+TBO 1,949,696 B, DefaultMaxDistance 6000, 512-unit render blockmap, 15+5 programs, VertexGapPush 0.01, rotated-flat prevUV
+bug (WorldTriangulator.cs:340-341), every "Absent" grep (re-run over Core+Client with real grep: MultiDraw/Indirect/
+DrawElements/UniformBuffer/ShaderStorage/NamedBuffer/CreateBuffers/Bindless/FenceSync/ClientWaitSync/ComputeShader/
+multiview/ViewportArray/gl_Layer/SamplesPassed/ConditionalRender = 0; invariant only in comments; BufferStorage only in
+GLBufferTexture; GL.BufferData/BufferSubData 4 call sites; MemoryBarrier only FramebufferBarrierBit; DrawArraysInstanced
+only RenderData), line counts in 11, and all UZDoom citations (flatvertices.h:35-41, hw_entrypoint.cpp:127-188,
+hw_bsp.cpp:43, hw_walls_vertex.cpp:280-288, flatvertices.cpp:138-148, hw_walls.cpp:95/290, hw_vertexbuilder.cpp:406-453).
+
+Totals: citations checked: 235 file:line references (139 citation groups) + 6 code excerpts + 19 Absent greps;
+corrected: 16 (2 wrong line ranges/files, 2 inaccurate excerpts, 12 claims fixed or tightened); removed: 0.

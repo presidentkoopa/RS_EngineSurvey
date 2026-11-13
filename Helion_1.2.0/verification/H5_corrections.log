@@ -1,0 +1,45 @@
+H5 verification log (Helion @ 5edd437f, UZDoom @ 5.0.0 / 292cf420)
+
+KEY CLAIMS CHECKED (asked to focus):
+- Ticker one-tic-per-frame cap: CONFIRMED. Core/Util/Timing/Ticker.cs:81-104 (ticks>=2 -> accum=0, ticks=1, fraction=0). GetTickerInfo has only one caller in the main loop (Client.cs:329); EndGameLayer has its own Ticker. WorldLayer.TickWorld loops ticksToRun but that is >1 only with demo fast-forward. Worked 25 fps example (71 % speed) re-derived and correct.
+  Added: the cap needs one frame > 1 tic (carried fraction < 1), never fires above 35 fps steady state; leftover fraction is discarded too.
+- AutomapMarker data race: CONFIRMED and WIDENED. Unlocked `line.Flags |= SeenForAutomap; line.Line.DataChanges |= Automap` at AutomapMarker.cs:262-266 on a background Thread (:70-74). Main thread RMWs Line.DataChanges (Side.cs:171, Line.cs:255-262, WorldBase.cs:4278/4298-4299/4341, SpecialManager.cs:2406) AND StructLine.Flags (MarkSpecials.cs:436-442, MarkAutomap) during gameplay -> both fields can lose bits.
+
+CORRECTIONS (old -> new, why)
+1. Client/Client.cs:742-775 -> 742-777 (Run() ends at 777).
+2. Ticker excerpt: re-added the 4-line source comment so excerpt is verbatim.
+3. Ticker facts: added "fraction set to 0, leftover fraction discarded", single caller (Client.cs:329), and the cap-firing condition (needs a frame > 28.6 ms). Clarification, not reversal.
+4. WorldBase.cs:1166-1181 -> 1167-1181 (TickEntities starts at 1167).
+5. Player.GetCamera direct-mouse case: added missing conditions from Player.cs:727 (no strafe command, chase cam off via ShouldInterpolateMouse() = Mouse.Interpolate || Game.Chase [Config.cs:43], MaxFPS not <=35). ShouldInterpolate wording: "MaxFPS <= 35" -> "MaxFPS non-zero and <= 35"; added chase-cam.
+6. InputManager.cs:216-264 -> 217-266 (Poll + CreateCurrentInputKeys span); added ProcessedKeys cite 179-195 / GameLayerManager 429-430.
+7. NEW FACT: controller is polled every frame, not only on tic frames. AnalogAdapter == Window.JoystickAdapter (ControllerAdapter.cs:125), polled at Client.cs:390 each frame and again on tic frames via InputManager.Poll. Previous text implied analog/controller polling only on tic frames.
+8. SetSyncMode excerpt: noted elided vsync switch (465-478); made verbatim.
+9. FrameLimiter excerpt was abridged/reformatted and omitted `if (targetFps > 0)` and `if (sleepTime <= 0) break;` -> replaced with verbatim lines 14-39.
+10. 1.5 inference: "UZDoom's Vulkan path calls limiter only when vsync off" kept; added that UZDoom's GL backend calls FPSLimit unconditionally before SwapBuffers (gl_framebuffer.cpp:248-268).
+11. GC table: added two missing LatencyMode switch sites: menu open -> Interactive (GameLayerManager.cs:185-188), menu close with world -> SustainedLowLatency (GameLayerManager.cs:316-317).
+12. ZDBSP memory comment Client.Commands.cs:950-953 -> 954-956 (950-953 is the zdbsp failure branch).
+13. GCNotifier: Client.Config.cs:56-84 -> 56-85; added fact that the callback runs on the finalizer thread and calls world.DisplayMessage (another off-thread writer when Developer.LogGC is on).
+14. DataCache "Each one is type-checked" -> only light/sector-move/switch special pools check GetType() (:287, 329, 368); range :208-394 -> :211-416.
+15. PhysicsManager delegate ctor lines 94-96 -> 95-97.
+16. WorldStatic "about 60 public static fields" -> 67 fields (+1 method).
+17. AutomapMarker ref-line example AutomapMarker.cs:258 -> 253 (258 is m_lineCount++).
+18. AutomapMarker IsBlocked height read :240-242 -> :242-244 (call at 243).
+19. AutomapMarker race: added StructLine.Flags main-thread RMW (MarkSpecials.cs:436-442), SpecialManager.cs:2406, Line.cs 258-262 -> 255-262 (SetActivated incl. EverActivated); reworded "Activated/Args/Texture/BlockSound" examples to match actual flags per site (WorldBase sites are BlockFlags/Special/Args/BlockSound).
+20. Lock inventory: added missing ConsoleLayer.Render.cs:115 lock.
+21. Threading table: added missing GyroCalibrationDialog System.Timers.Timer (GyroCalibrationDialog.cs:33-35).
+22. Profiler TickEntity span WorldBase.cs:1168-1211 -> 1169-1212.
+23. Directory.Build.props:3 -> 3, 7 (Nullable is line 7).
+24. IlcInstructionSet "(x86-64-v3)" -> quote actual commented value `x86-x64-v3`.
+25. BenchmarkSuite.csproj:6-8 -> 8-9 (package refs), + 12-13 (project refs).
+26. Benchmark maps: "idumea.wad (765 KB zip)" etc. -> resources are .zip files each containing <name>.wad (EntityCreate.cs:15).
+27. NEW FACT: WorldAllocator calls DisableAutomapMarker (WorldAllocator.cs:112-113) -> benchmarks never run the AutomapMarker thread.
+28. Settings: hud.showfps default "—" -> false (ConfigHud.cs:242); added hud.showminmaxfps (246).
+29. UZDoom catch-up: added run loop cite d_net.cpp:2312-2335, singletics cap 2214-2215, net catch-up +1 tic 2259-2265.
+30. hw_bsp.cpp:1024-1029 -> 1024-1030.
+31. LookupArray inventory claim lacked a cite -> added Inventory.cs:55, Weapons.cs:21.
+32. Summary sentence "Only one background thread touches world data" -> softened with trivial exceptions (savegame task reads map name; LogGC finalizer posts message).
+
+ABSENT CLAIMS SPOT-CHECKED (all hold): UpdateFrame/PollEvents subscribers; SynchronizationContext; HandleWinMouseMove callers; GCTracker/GLElapsedTimeQuery/SparseSet users; Profiler.Input.Start; InterpolatedStringHandler; GetAllocatedBytes; EventSource/Tracy/ActivitySource; FenceSync/ClientWaitSync (whole repo); NoGCRegion/ServerGarbage/ConcurrentGarbage/TieredPGO/TieredCompilation/InvariantGlobalization/GCHeap; runtimeconfig*.json; SIMD (Vector128/256/Numerics.Vector/Intrinsics); Parallel./ThreadPool; BenchmarkDotNet attributes (Diagnoser/GlobalSetup/IterationSetup/Params). Thread inventory re-grepped incl. LongRunning/Timer -> found extra Timer (#21).
+NUMBERS RE-COUNTED (all match): AggressiveInlining 39 files/482 lines (358/28/17/7/6), StructLayout 46, unsafe 35/73, fixed( 11/27, stackalloc 3, Span< 74/318, Unsafe. 5 files, MemoryMarshal 2, CollectionsMarshal 1, ArrayPool 3, ref var 40/164, Entity.cs 1418 lines, 8 PhysicsManager scratch arrays, config defaults (VSync On, MaxFPS 0 clamp, adaptive 2200/0.05/8000/10/3, slowtick 2000/4/2/4/4, anisotropy 8, maxdistance 0, virtual 800x600, window 1024x768, etc.).
+
+TOTALS: citation markers checked: ~150 (~270 individual file:line refs incl. UZDoom); corrected: 24 citation/line-number or excerpt fixes + 8 content additions/clarifications (32 log entries); removed: 0.

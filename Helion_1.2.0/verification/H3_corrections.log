@@ -1,0 +1,47 @@
+H3 verification log (Helion sprites/textures/translucency/HUD)
+Repos: Helion @ 5edd437f39dd (read-only), UZDoom @ 292cf4203ebd (5.0.0, read-only)
+
+KEY CLAIM: f543542d9 regression
+- `git show f543542d9 -- Core/Resources/Archives/Collection/ArchiveCollection.cs` confirms
+  `StoreImageIndices => ShaderVars.PaletteColorMode` -> `=> true` (PR #1865, 2026-11-07,
+  "Support render recreation for config values that previously required restart").
+  Only 2 later commits (d4ef81c7c, 5edd437f3), neither touches rendering.
+- Commit did not touch GLTextureManager.GetSpriteRotation's branch (only Dispose) nor FragFunction.cs.
+- Call chain verified: EntityRenderer.GetSpriteRotation (172-175) -> GLTextureManager.GetSpriteRotation
+  (361 branch now dead -> else 392-396 untranslated). ColorMapFetch returns "" in true colour (110-111);
+  uploads use GetGlTexturePixels(PaletteColorMode) -> plain ARGB in true colour.
+  => Claim CONFIRMED by code reading (not run). Added commit context + release-note evidence.
+
+CORRECTIONS (old -> new, why)
+1. Table Render.MaxDistance "0 (no limit)" -> "0 (-> 6000 units)"; §1 note added. Renderer.cs:347-349 maps <=0 to Constants.DefaultMaxDistance = 6000 (Constants.cs:432).
+2. §2 inference "40 B/tic is about 3% of UZDoom's 128 B/frame" -> ~31% per upload, ~9% per second at 120 Hz, ~4.5% stereo. Arithmetic did not support 3%.
+3. §3 "Uploaded flag reset only by Clear()" -> also by Add() (BufferObject.cs:90-91); RenderEntity bypasses Add by writing ArrayData directly.
+4. §6 "~10 bytes/pixel" -> "~13 bytes/pixel" (RGBA16F 8 + RG16F 4 + R8 1).
+5. §9 "CopyPixelsFrom copies only min(w,h)" -> "min(srcW,dstW) x min(srcH,dstH)" (Image.cs:446-447).
+6. §9 unused stack: grep matches GLTexture2DArrayAtlas's ctor, not "its own" (GLTextureManager's); Atlas2D also referenced by unreferenced Atlas3D; noted GLBufferTexture(Storage) in same namespace IS live; ArchiveCollection.Textures grep as written hits namespace lines -> replaced with case-sensitive grep (still no readers); full path for ArchiveCollection.cs:109.
+7. Absent "Compressed textures grep is empty" -> only false positives (m_textureIdxToPosition matches "Dxt" case-insensitively).
+8. Absent flat/wall/roll sprites: added that DECORATE FLATSPRITE/WALLSPRITE/ROLLSPRITE are parsed (DecorateFlagParser.cs:494,848,971) but unused by renderer.
+9. Absent atlas: "Atlas2D/Atlas3D live only in unused Textures stack" -> they live in Core/Util/Atlas, referenced only by unused path / each other.
+10. Table SpriteClip/SpriteClipMin/SpriteClipFactorMax lines "224, 227, 230" -> "224, 230, 227" (order matched to values).
+11. Table Render.Mode: added Adaptive option and transfer-height BSP override; citations + ConfigRender.cs:52-59, LegacyWorldRenderer.cs:300-308, BspHeuristics.cs:19-31.
+12. [U] hw_entrypoint.cpp:127-165 -> 129-166 (eye loop starts 129; ProcessScene at 166). Also the bare "(hw_entrypoint.cpp:129-165)" in transfer note 13 -> [U] ...:129-166.
+13. [U] hw_sprites.cpp:225-227, 270-283 -> 228, 287-297 (SetMaterial is 228; Draw is 287, fog-layer second draw 295).
+14. [U] hw_sprites.cpp:995-1010 -> 992-1012; added that UZDoom honours MF7_SPRITEANGLE / SpriteRotation there.
+15. [U] hw_drawlist.cpp:629-702 -> 629-712 (DoSort 629-698 + Sort 702-712).
+16. §2 EntityVertex excerpt was not verbatim (single-line attrs + invented comments, omitted the real comment) -> verbatim code; bit layouts moved to prose with VertexOptions.cs:37-73 and EntityProgram.cs:116-137.
+17. Open question 1 strengthened with verified diff/call chain and upload path (LegacyGLTextureManager.cs:125,156; Image.cs:520-523).
+18. Open question 2: added verifier note - OccludePos copied only on tic change (LWR 180-196, 331-341); frustum set only in TraverseBsp (Bsp.cs:17-19).
+
+ADDITIONS (verifier findings, labelled)
+- BuildSprites builds buckets[0..Length-2]; if the brightmap overflow bucket is split by FinalizeTextureBuckets, its earlier chunks would be built as 0x0 arrays (GLTextureArrayBuilder.cs:81-85, 263-264, 276-305). Latent.
+- With CacheSprites=false, arrays built once (m_spritesCached); sprites first loaded on later maps go standalone (one draw each).
+
+Verified OK (spot list): all EntityRenderer, LegacyWorldRenderer(.Bsp), EntityProgram, FragFunction, OitFrameBuffer, RenderData*, BufferObject, ArrayBufferObject, VertexOptions, Attributes:191, SpriteDefinition/Rotation, GLTextureArrayBuilder, LegacyGLTextureManager, GLTextureManager, Image, TextureManager, ConfigRender/ConfigWindow defaults, Renderer.cs ranges, HUD (LegacyHudRenderer, HudDrawBuffer(Data), HudVertex 15 floats, GLHudRenderContext, RenderCommands, StatusBarRenderer), Models/Save DTOs, GldefsDefinition 80-84, ColorMapBuffer (256*34*14*16 B = 1.86 MiB), WorldBase GameTicker/PrevPosition, UZDoom flatvertices.h (8 floats), sprites.h:40, hw_texcontainer.h, hw_material.cpp:184, hw_models.cpp, hw_weapon.cpp:114, v_2ddrawer.cpp/.h, hw_draw2d.cpp:85,219, models dir. Struct size 40 B, renderIndex 0..99, inference numbers (70% frames, 28.6 ms, 8.6 deg/tic, 21 MB pool, 1.33 MiB/512^2 layer) checked.
+Absent claims re-grepped: models/voxels, geometry shaders/bindless/indirect, dynamic lights, eviction - hold.
+
+TOTALS: citations checked 227 (205 [H] + 22 [U]); citations corrected 9; citations removed 0; substantive text corrections 18 (+2 verifier additions).
+
+PUBLISH: one-call replace refused (row_too_large, 89 KB > 32 KB cap). Published in 4 writes:
+replace pending mr9vbek0cew.59 (header..§5, rev 20) -> insert after .198930 (§6-§10, rev 32)
+-> insert after .345379 (§11..settings table, rev 36) -> insert after .388825 (transfer notes + open questions, rev 40).
+Multi-range citations are rendered as one link per citation (anchor = first range, label keeps all ranges).
