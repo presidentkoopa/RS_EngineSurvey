@@ -9,19 +9,11 @@ below is cited in those documents; nothing here was compiled or run.
 
 ---
 
-## Step 0 (first ten minutes of your first session)
+## Step 0: done
 
-1. Copy this file to the root of **UZDXREMA `main`** as `SIM_LANE_HANDOFF_2026-11-13.md` (commit by explicit path).
-2. Add this bullet to UZDXREMA `CLAUDE.md`, right after the "Two lanes since 2026-11-09" bullet, and change "Two
-   lanes" to "Three lanes" in that bullet's heading. Commit by explicit path, together with step 1:
-
-   > - **Sim lane since 2026-11-13 (owner approved, gameplan D1).** It cuts the cost of a game tic for 90 Hz on the
-   >   owner's mod list. It starts from `SIM_LANE_HANDOFF_2026-11-13.md`, works on `main`, and until ROADMAP step 3
-   >   freezes the netplay suite it lands only read-only tooling and behaviour changes behind off-by-default cvars,
-   >   each passing `tools/netplay/suite.sh` with the cvar on and off. Its plan and checklist live in
-   >   RS_EngineSurvey `UZDXREMA_0.1.0/30_GAMEPLAN_90HZ.md` and `31_FORK_DELTA_CHECKLIST.md`.
-
-3. Bring the owner's copy up: `scripts\pull_main.py` through the bridge (`tools/claude_bridge/README.md`).
+This file and the sim-lane bullet in `CLAUDE.md` were committed to `main` on 2026-11-13 by the session that
+wrote them. Bring the owner's copy up with `scripts\pull_main.py` through the bridge (`tools/claude_bridge/README.md`)
+if it is behind. The canonical copy of the plan and checklist stays in RS_EngineSurvey `UZDXREMA_0.1.0/`.
 
 ---
 
