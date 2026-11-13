@@ -215,3 +215,25 @@ the 976 ms tic is; the split of the ≈14.5 ms outside the class clocks.
 `champion_Particles=1`, `csh_critical_enabled=true`, `rsqthp_aimed=false`, `ue_recolour=5`, `ue_resize=5`,
 `ue_decor_recolour=5`, `ue_decor_resize=5`, `ue_friend=false`, `mp_host_skill=1`, `bd_skill=0`.
 Not in the ini (so at their defaults): `rsq_monster_set`, `rs_roster_enable`, `sim_maxcatchup`, `vm_jit`, a skill line.
+
+### 6.4 M0-11: ten more loads of Sunder MAP15 in one session (`sm017`, log `boot_20261113-044430.txt`)
+
+`map MAP15` every 100 tics, ten times, after the first start: **11 loads, 272 s, no "Too many translations" abort**, run
+GREEN. The predicted abort after ≈9-10 loads (7,686 Universal Entropy translations a load against the 65,535 limit) did
+**not** reproduce with `ue_recolour=5`. The count itself was not read (no console command prints it), so either fewer
+translations are stored per load than predicted or equal ones are already shared. F-MON-6 keeps its row; its
+"removes an abort" claim is unproven until a counter exists.
+
+### 6.5 M0-7: Abandon MAP13, renderer build only so far (`sm015`, log `boot_20261113-044301.txt`)
+
+`doomxr_rend1113a.exe`, 47-file list with BD22 VR Reloaded 2.0.4t: thinkers 61.66 ms a tic over 296 steady tics
+(75.86 over tics 1-299). Four profiled tics in a row: thinkers clock 47.7 / 88.0 / 46.1 / 46.4 ms. `Shifter` 7,040
+calls, 1.79-2.02 ms (0.25-0.29 µs a call). The fourth-tic peak is here too: `BalrogFireSpawner` 40 calls, 20.75 ms on
+the heavy tic. `RSQTHP_Bar` 1,891 calls, 6.8-8.2 ms.
+
+**The `main` half did not run.** `doomxr_sim1113a.exe` was built from `main` e429f22 (`sm014`, 764 s, 0 errors), but by
+the time its boot test ran (`sm024`) the `doomxr.pk3` beside it in the shared `build-dxr\RelWithDebInfo` folder had been
+replaced by another lane's build: `doombase.zs line 3504: The function 'VRTorso.ViewLean' has not been exported from
+the executable` (no `ViewLean` exists in `main` at e429f22). Every named exe in that folder shares one `doomxr.pk3`, so
+an exe is only bootable until the next build by any lane. The rotation also changed twice during the session
+(2.0.4s → t → v), so a before/after pair must be queued back to back on one zdl.
