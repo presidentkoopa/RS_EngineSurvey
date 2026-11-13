@@ -383,7 +383,7 @@ The entity `Scale` property exists `[H] Core/World/Entities/Definition/Propertie
 - *Grade:* **Port.** Keep brightmaps as a second bindless index in the instance so they do not break batching. Helion's array exclusion is the anti-pattern `[H] GLTextureArrayBuilder.cs:201-205`.
 
 **10. Models.**
-- *UZDoom:* MD2, MD3, OBJ, UE1, IQM (with bones) and KVX voxels `[U] src/common/models/` (models_md2.cpp, models_md3.cpp, models_obj.cpp, models_ue1.cpp, models_iqm.cpp, models_voxel.cpp). Rendered per model with its own vertex/index buffer, frame-pair interpolation via `SetVertexBuffer(buf, frame1, frame2)`, and a bone base index `[U] src/rendering/hwrenderer/hw_models.cpp:108-141`.
+- *UZDoom:* MD2, MD3, OBJ, UE1, IQM (with bones) and KVX voxels `[U] src/common/models/` (models_md2.cpp, models_md3.cpp, models_obj.cpp, models_ue1.cpp, models_iqm.cpp, models_voxel.cpp). Rendered per model with its own vertex/index buffer, frame-pair interpolation via `SetVertexBuffer(buf, frame1, frame2)`, and a bone base index `[U] src/rendering/hwrenderer/hw_models.cpp:108-140`.
 - *Helion:* nothing to borrow.
 - *Grade:* **Rework** for VR: per-eye cost is a draw per model per eye today. Use multiview, and convert the frame-pair vertex streams to a compute pre-skin or vertex pulling from SSBOs so models can join indirect draws.
 
