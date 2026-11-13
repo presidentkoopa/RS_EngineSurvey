@@ -27,4 +27,5 @@ the Helion breakdown), and the headset measurements listed in 00 §8.
 | [10](10_MEASUREMENTS.md) | Measurements on the owner's PC: frame and tic split with and without the mod set, per-class thinker cost, busy-wait A/B |
 | [30](30_GAMEPLAN_90HZ.md) | The 90 Hz gameplan for the owner's mod list: headset budget, sim/render/GPU waterfalls, tracks, milestones M0-M14, owner decisions, risks, effort |
 | [31](31_FORK_DELTA_CHECKLIST.md) | Implementer checklist (anti-drift): rules block, one row per item with lane, fork file:line, what to do, done-when run, don't-touch, netplay gate |
+| [SIM LANE HANDOFF](SIM_LANE_HANDOFF_2026-11-13.md) | Start point of the sim lane (opened 2026-11-13, D1): scope, hard rules, traps, first week, decisions |
 | [gameplan_sources/](gameplan_sources/) | The seven code-cited fork-delta reports (A-G) behind 30/31, the owner's decisions log, and the review logs |

@@ -374,6 +374,8 @@ tic's commands; thread count, timing and work stealing never change it (GATE-MT 
 
 ## Change log (one dated line per row update)
 
+2026-11-13 D1 owner answered (a): sim lane opened on `main`; start point `SIM_LANE_HANDOFF_2026-11-13.md`. `sim` rows may start.
+
 ```
 2026-11-13  (checklist created from reports A-G; no row started)
 2026-11-13  (independent review G31: every citation re-read at e84623f/abb19af, 36 line/path/command fixes, lane tags on all
