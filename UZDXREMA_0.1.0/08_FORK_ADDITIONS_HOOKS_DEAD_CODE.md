@@ -1081,3 +1081,32 @@ Merge base with main `77e5ee3d`; 116 commits only on renderer, 76 only on main (
 8. **External use of the ~429 natives without in-tree callers.** Grep the RS/BD22 mod sources (not in any tree) for each name in §8.6 to find the truly dead API.
 9. **Heatmap determinism.** If any play-scope script calls `Level.HeatmapAt`, the render-rate decay (hw_drawinfo.cpp:3233-3260) makes it frame-rate dependent; check mods, or move the decay to the tic.
 10. **Build defines.** Confirm the owner's `build-dxr` CMake cache (`ENABLE_OPENVR`, `ENABLE_OPENXR`, `HAVE_GLES2`) — this document assumed `auto-setup-windows-vr.cmd`.
+
+## Cross-check (date 2026-11-13)
+
+Checked against `main` f182cbcc (and `uzdxrema` HEAD abb19af1 = 175063a1 + 4 docs commits, `netplay` 1c1805f8, `selaco` 7e111a3d, stock 5.0.0 at 292cf42). Code only; greps over all of `src/` and `wadsrc/` (ZScript, MENUDEF, language, KEYCONF and other .txt lumps).
+
+Claims checked per category, with result (right / line-fixed / corrected / unconfirmed / added):
+
+| Cat | What | Checked | Right | Line-fixed | Corrected | Unconfirmed | Added |
+|---|---|---|---|---|---|---|---|
+| a | Summary items | 10 | 6 | 0 | 4 (items 3, 5, 6, 9) | 1 (item 6 block count) | 0 |
+| b | §7 ranked items (path + evidence) | 10 | 8 | 0 | 2 (#3 upgraded I→V, #4 "unconditional") | 0 | 0 |
+| c | DEAD/DORMANT/never-called | 623 cvar statuses (scripted, every row) + 60 dead functions (every row) + 459 natives' caller claims (every name) + 7 §8.3 rows + 2 hooks + §8.8 file list | 623-1 cvars, 58 functions, 456 natives, 7 §8.3 rows, 2 hooks | 0 | 1 cvar (`gl_storage_buffer_type`), 2 functions, 3 natives (false bolds), 2 §8.8 file entries | 0 | 0 |
+| d | cvar defaults | all 623 table rows (definition line + default) + ~30 cited in §3-§4 | all (10 table defaults are truncated with "..", values match) | 0 | 0 | 0 | 0 |
+| e | branch differences | 16 (commit counts, file A/D counts, cvar set diffs for 3 branches, sim_maxcatchup, r_renderthread, laser/handler/checkpoint/soft defaults per branch, selaco model_reach) | 15 | 1 (selaco LevelSolidQuery wording) | 0 | 0 | 0 |
+| f | table rows | §3.1 frame 11/11, per-eye 9/9, §3.2 12/12, §4 ~15/46, §5 ~30/55, §8.1 60/60, §8.2 6/9, §8.7 1/5, §8.9 623/623 | rest | 7 | 1 (nosdl count) | 0 | 3 (`P_TickRealTimeActors` :202, compat menu entry, `xlat_parser.c` `#if 0`) |
+
+Completeness: no TODO/TBD; §8.9 has exactly 623 rows (302 P / 321 R), no duplicates, no truncated rows; table status counts now match §8.4 (6 DEAD, 7 DORMANT, 1 callback-only, 7 startup-only, 8 runtime-name, 594 ALIVE). The cvar set (623 names) matches an independent macro parse exactly; that parse gives 953 / 1,575 totals instead of 958 / 1,580 (method difference in multi-line/odd macros, not checked further). Not re-checked: line counts in Summary item 2, the 2,075/2,695 native totals, the "26 stock cvars without reader", the 45 fork shader files.
+
+Corrections:
+- `PerfBench::HashGroupName` is not dead: called g_perfbench.cpp:336 (`ReadHash`), :410 (`Verdict`).
+- `TrackedPoseSourceName` is not dead: called playsim/a_dynlight.cpp:1015. Dead-function total 60 → 58 (§1.5, §8.1).
+- `gl_storage_buffer_type` ALIVE → DORMANT: only read in `useSSBO` after `IsVulkan() ||` (v_video.h:228); DORMANT count 6 → 7 (§1.3, §8.4, §8.9).
+- §8.6 false in-tree callers: `VRGunFit.Size` (hits were array `.Size()`), `AActor.ClearModelSurfaces` (player.zs:3330 is a same-named `PSprite` method definition), `DPSprite.SetModelSurfaceOffset` (the only call is the `AActor` one). In-tree-caller count 33 bolds → 30; no-caller ~425 → ~429.
+- §8.8 / §1.6: `gamedata/xlat/xlat_parser.c/.h` are compiled (quoted `#include` at parse_xlat.cpp:28, :141 picks the committed copy before the generated one) and are R (676efb32), not P; `openvr_include.h` is included by LSMatrix.h:32 and win32/i_openVR.cpp:5.
+- `posix/nosdl/` holds 10 files, not 9 (§4, §8.8); never-compiled source count 10 → 12 (§1.6).
+- §1.6 "~45" mobile blocks vs §8.8 "42": aligned to 42 and marked unconfirmed (directive count gives 57 in 28 files).
+- `P_VRLaserTraceTic` is not unconditional: one trace per hand with a valid latched pose (p_user.cpp:107), no cvar (§1.9, §3.2, §7.4).
+- §7.3 `GpuParticleWritten` never resetting mid-level is verified, not inferred: only `ResetGpuParticles` (g_levellocals.h:3097-3101) zeroes it; `ClearGpuParticles` raises it (:3092).
+- Line fixes: per-eye particle syncs 4609-4640 → 4626-4644 (§3.1, §5); hang watch beats 1983-2012 → 1993-2017, 5 beats per loop not 3-4 (§3.1, §5); `WorldTick` 872 / `WorldStep` 896 (§3.2); `EnsureLevel` :68 → :69; smoke `Active` gate 126,175 → 127,180 (§4); selaco `LevelSolidQuery` = one call at model_reach.cpp:593.
