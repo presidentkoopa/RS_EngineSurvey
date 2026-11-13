@@ -25,3 +25,4 @@ Status (paused by the owner, 2026-11-13): all nine section drafts are here. Not 
 | [07](07_VR_OPENXR_STEREO.md) | VR path: OpenXR, stereo, per-eye cost |
 | [08](08_FORK_ADDITIONS_HOOKS_DEAD_CODE.md) | Fork additions inventory, every cvar and hook, dead code |
 | [09](09_BRANCHES_AND_STATIC_LEVEL_PATH.md) | The four branches; the render lane's static level path |
+| [10](10_MEASUREMENTS.md) | Measurements on the owner's PC: frame and tic split with and without the mod set, per-class thinker cost, busy-wait A/B |
