@@ -250,6 +250,24 @@ All desk runs go through the bridge `boottest` on the owner's PC (desk only; it 
 | U9 | Free cores in the headset (E) and DDR4 speed | E 5.5 / 6.0 / 7.5 | owner headset run with Resource Monitor (vrserver, vrcompositor); Task Manager → Memory speed/channels | [G] G4, G8 |
 | U10 | Which monster classes tick (RSQ_Monsters roster vs LoB) | LoB as in [M] | `readfile` of the boottest ini copy for `rsq_monster_set`, `rs_roster_enable`; class list from U2's run | §3.8 |
 
+**Answers so far (sim lane, 2026-11-13; values and run ids in `10_MEASUREMENTS.md` §6). The waterfall in §3.3 has
+not been recomputed yet; these change its inputs:**
+
+- **U1: the JIT is on** (`vm_jit`, `vm_jit_aot` true, `vm_debug` false; one register fallback). L4 does not apply.
+- **U2: the tail is named.** Steady thinkers are ≈113-120 ms, not 130.8 (that print carried the start-up window). The
+  tic is not flat: thinkers median 78.6 ms, p95 224 ms, and every fourth tic is heavy. The heavy tic is one Legion of
+  Bones actor, `BalrogFireSpawner` (191 Balrogs × 32 `A_RadiusGive` scans every 4 tics, 82 ms, plus ≈3,900 spawns
+  through every `WorldThingSpawned` handler, ≈27 ms): ≈30 ms a tic on average. The light tic has no long tail (269
+  classes, 60.6 ms, top 60 = 59.3). ≈14.5 ms a tic sits in `RunThinkers` outside every class clock.
+- **§3.2 rule 8a is wrong:** all 1,646 champion controllers are listed and cost 14.4 ms together; the ones [M] did not
+  list cost ≈3.5 ms, not 10 / 20 / 30.
+- **U8:** ini values filed (§6.3): gore caps at the fork defaults (10 / 20), `ue_*` all on, `x5_multiplier` 100.
+- **U10:** Legion of Bones classes tick, plus 13 `TheCyberdemon`. RSQ_Monsters is not in any boot-test load order
+  (`make_owner_zdl.py` leaves it out), so no number here includes it.
+- **Inference, to be confirmed by the recompute:** closer **L1** is the one that applies, and its first target is the
+  Balrog aura (≈30 ms a tic of mean, and most of the gap between the median and the p95). Still open: U3 (s), U4, U5,
+  U6, U7, U9, the 976 ms tic seen once in 64, and the split of the ≈14.5 ms.
+
 ### 3.7 Disagreements between the reports, and how this plan resolves them
 
 - **[Fm] "stage-6 thread first was closed by measurement, so the tic runs inside a frame" vs [A]/[C]/[G] "sim thread is
