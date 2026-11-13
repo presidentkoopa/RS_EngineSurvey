@@ -649,7 +649,7 @@ Avoid: Helion's 8-rotation limit, missing scale and wall/flat/roll sprites, miss
 - *`DrawSprite`* (97ff): per-draw light, vertices per slice (243-287), fuzz (132-150).
 - *All non-model, non-wall sprites are routed translucent* [U] src/rendering/hwrenderer/scene/hw_drawlistadd.cpp:138-153 and BSP-sorted [U] src/rendering/hwrenderer/scene/hw_drawlist.cpp:629-948.
 - *Particles:* [U] src/rendering/hwrenderer/scene/hw_sprites.cpp:1470-1657; `particle_t` is 136 B [U] src/playsim/p_effect.h:78-99.
-- *Models:* a per-draw `AnimateBones` VM call [U] src/rendering/hwrenderer/scene/hw_sprites.cpp:308-314, `CalculateBones`/`UploadBones` [U] src/r_data/models.cpp:570-652, and frame pairs [U] src/rendering/hwrenderer/hw_models.cpp:108-141, [U] wadsrc/static/shaders/glsl/main.vp:66.
+- *Models:* a per-draw `AnimateBones` VM call [U] src/rendering/hwrenderer/scene/hw_sprites.cpp:308-314, `CalculateBones`/`UploadBones` [U] src/r_data/models.cpp:570-652, and frame pairs [U] src/rendering/hwrenderer/hw_models.cpp:108-140, [U] wadsrc/static/shaders/glsl/main.vp:66.
 
 **Steps.**
 1. **The instance record** *(sketch, 64 B)*: `{ pos[3], prevPos[3]; angle, prevAngle; frameSet (→ SpriteFrameGPU{tex[16], flipMask, numRot}); scale (half2); offset (short2); styleAlpha|flags; lightPart; translation; roll }`. `Process` keeps all of its game logic and emits instances. The actor writes move into instance bits, so the worker never writes to `AActor`.
