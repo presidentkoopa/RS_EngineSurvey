@@ -162,7 +162,8 @@ VulkanRenderDevice::PostProcessScene (vk_renderdevice.cpp:805)
                                  customShaders.Run("scene"), UpdateLastInputTexture
 ```
 Each pass is one `VkPPRenderState::Draw`: `EndRenderPass` of whatever was open, image transitions, descriptor set
-lookup, its own render pass and one full-viewport quad (V, `vk_pprenderstate.cpp:81-118, 146-228`). The output
+lookup, its own render pass and one 3-vertex screen draw over that pass's viewport (often a reduced-size target)
+(V, `vk_pprenderstate.cpp:81-118, 146-228`; `draw(3, …)` at :227) [xc: "full-viewport quad" overstated the size]. The output
 targets one array layer, the current eye's (`vk_pprenderstate.cpp:111, 158, 171-173`, V); there is no layered PP pass.
 
 ---
@@ -390,7 +391,7 @@ mods with many lamps), VR, no multiview (default `vr_openxr_multiview false`, hw
 
 ### Interaction with the renderer lane
 On `renderer`, the static wall/flat mesh evicts every side/flat marked `FB_DYNLIGHTS` back to the old per-draw path
-(hw_levelresidency.cpp:4359-4360 for walls; flats marked at :3853-3870), V. Previously measured
+(hw_levelresidency.cpp:4361 for walls; flats marked at :3853-3870 and evicted at :4454), V. Previously measured
 (HANDOFF_RENDER_2026-11-11.md:43, 218, 225): "Abandon 288,577 wall and 431,575 flat-plane evictions in the run",
 "15% evicted for dynamic lights", "10% for dynamic lights" of the sides reached. So with light-heavy mods the static path
 falls back to item 2 above for every lit surface.
@@ -516,7 +517,7 @@ move the binning to a compute pass. Either way:
   classes: modulated, subtractive, additive).
 - Duplicate whole-list walks that could read one per-frame compact light array: `SyncViewLights`, `FillFogDynLights`,
   `SmokeVolume::GatherLights`, `DynamicLightShadowRowsWanted`, `CollectLights` (list order), and on `renderer` the
-  `FB_DYNLIGHTS` residency marking and `EV_DYNLIGHTS` eviction (hw_levelresidency.cpp:3841-3873, 4359-4360).
+  `FB_DYNLIGHTS` residency marking and `EV_DYNLIGHTS` eviction (hw_levelresidency.cpp:3841-3873, 4361).
 
 **Kept:** `FDynamicLight::Tick` evaluation (flicker/pulse/sector, pose anchoring), the 4-vec4 light record from
 `AddLightToList` (as a global list writer), `shadowIndex` convention (±(row+1), 1025 = none), shadow-row assignment
@@ -550,3 +551,52 @@ unless shadows are on (I).
 | StreamData real size | `static_assert(sizeof(StreamData)==2000)` or print `MAX_STREAM_DATA` at start-up (the 2,000 here is from a replica) |
 | Cost of the effect-light CPU binning at the pool cap (1,024–4,096 lights, long tracers) | `r_perflog` CPU sample `fx.effectlights` (BeginFrame and PrepareFrame both add to it, hw_effectlights.cpp) with `r_effectlights_test N` |
 | Effect of `gl_light_range_limit` on models with > 17 lights | RenderDoc capture of a model in a lamp-heavy room; compare with limit 0 |
+
+---
+
+## Cross-check (date 2026-11-13)
+
+A second agent read the code at every cited line (main `f182cbcc`, renderer `175063a`+docs, netplay `1c1805f8`,
+selaco `7e111a3d`). It did not take timings. Greps for "dead" and "never-read" covered `src/` and `wadsrc/` (menudef,
+ZScript, shaders).
+
+| Category | Checked | Right | Line-fixed | Corrected | Unconfirmed | Added |
+|---|---|---|---|---|---|---|
+| a. Summary items | 10 | 7 | 0 | 2 | 0 | 1 |
+| b. "What slows it down" items (CPU 1-6, GPU 1-7, renderer note) | 14 | 9 | 2 | 3 | 0 | 1 |
+| c. DEAD / DORMANT / never-read claims | 23 | 21 | 0 | 2 | 0 | 1 |
+| d. cvar defaults (read at the CVAR definition) | 45 | 45 | 0 | 0 | 0 | 0 |
+| e. Branch-difference claims | 14 | 11 | 0 | 3 | 0 | 0 |
+| f. Table / call-graph rows (§2 graphs + 35 of 38 §3 rows) | 45 | 34 | 6 | 3 | 0 | 6 |
+
+"Corrected" counts claims whose text was wrong, partly wrong, or marked I where the code proves it. StreamData =
+2,000 B stays **I**: summing the fields at hw_renderstate.h:213-385 gives 2,000 B if `FVector4PalEntry` is 16 B, but
+the engine's own `sizeof` was not printed.
+
+Corrections:
+- Summary 1 / §5 CPU 1: the relink test is on X/Y or *link radius*. That radius is the maximum only for flicker and
+  pulse lights; point and sector lights use 2 × current intensity, so a sector light relinks whenever its sector's
+  light level changes. Also listed now: yaw-rotated offsets, pose-anchored hand motion, the double link of a new
+  light in its first tic, and inactive lights left linked.
+- Summary 3 / §5 CPU 3 / §3: the CPU sprite `RayTest` also needs `LightShadowAllowed`. At defaults (the pass runs
+  for effect lights only) no sprite ray test happens.
+- §2.2: the `HasDynamicLights` formula was wrong. With `r_dynlights 0` and light probes in the level it is still true.
+- §2.3 / §3 / §8: hw_weapon.cpp:2421-2549 is in `PreparePlayerSprites2D/3D`, not `DrawPlayerSprites`. The missing
+  third model-light caller `DrawWorldPlayerSprites` (hw_weapon.cpp:2633) is added.
+- §2.5: a PP pass is one 3-vertex draw over that pass's viewport, not a full-viewport quad.
+- §4.5: the uploaded effect-light grid is the bounding box of the occupied bins, not the full 3072×768×3072 candidate
+  grid. The default per-bin list is 16; it reaches 32 only for important lights.
+- §5 GPU 5: the smoke chain also has a depth downsample pass and a light-mask carry pass.
+- §6 `gl_tonemap`: a level's `level_tonemap` overrides it, so it is not always dormant.
+- §6 FLightBuffer UBO path: changed from I to V (`useSSBO()` returns `IsVulkan() || …`).
+- §7 renderer: `hw_drawinfo.cpp` and `hw_renderstate.h` differ from main. They were left out of the list.
+- §7 netplay: `hw_weapon.cpp` differs (no `DrawWorldPlayerSprites`, so no world-weapon model-light gather). The
+  `main.fp` look-down fade is in main, not in netplay.
+- Line fixes: hw_entrypoint.cpp :273/:285/:292 → :274/:286/:293; hw_smokevolume.cpp:1349 → :1348;
+  vk_renderstate.cpp:228 → :225; a_dynlight.h:37-48 → :36-47, :43-44 → :42-43; hw_levelresidency.cpp
+  4359-4360 → 4361 (+ flats :4454); `r_smoke_preset` is in hw_postprocess_cvars.cpp:287; `ShouldLightActor`
+  :259-265 and flag accessors :289-292.
+- Added: deactivated lights stay in the side/section maps (Ls counts them) and still cause evictions on `renderer`;
+  a light-buffer overflow fails every later upload that frame; `gl_coronas` is dead (default true, read only in
+  commented-out code); `UnlinkLight` has two more callers; `RelinkDynamicLightsForLevel` runs at level load
+  (g_level.cpp:1569).

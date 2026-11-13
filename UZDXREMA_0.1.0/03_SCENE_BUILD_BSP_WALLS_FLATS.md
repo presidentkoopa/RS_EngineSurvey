@@ -546,7 +546,7 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 |---|---|---|
 | **netplay (N)** | Scene path identical except `DrawScene` lacks the `[WORLDPSPR]` `DrawWorldPlayerSprites` call (`git diff origin/main origin/netplay -- .../hw_drawinfo.cpp`); `hw_bsp/walls/flats/clipper/fakeflat/renderhacks/portal/sky/vertexbuilder/entrypoint`, `hw_clock`, `flatvertices`, `hw_cvars` unchanged | [V] |
 | **renderer (R)** | (a) `RenderBSP` asks `LevelResidency_BeginScene` (R:bsp:1464); wall jobs/inline walls call `LevelResidency_SkipWall` and `WallCache_Process` before `Process` (R:bsp:346,349,661,760,763); flat jobs/inline call `LevelResidency_FlatPlanes` (R:bsp:368,1158); `RenderScene` draws `LevelResidency_Draw/DrawFlats` before the plain lists (R:di:3830,3835). Defaults off: `r_newrenderer` 0 (R:rendering/hwrenderer/hw_levelresidency.cpp:137), `r_wallcache` 0 (R:rendering/hwrenderer/scene/hw_wallcache.cpp:40). (b) wall workers disabled while the level mesh is on (R:bsp:650, distance-culled segs, and R:bsp:743) and also while `r_wallcache` > 0 (R:bsp:743 only, normal segs) [xc: R:bsp:650 tests only `mLevelMeshScene`]; with the level mesh on, a culled seg whose side the mesh draws skips the impostor but still adds its clip range (R:bsp:661-667) [xc: added]. (c) `Process` skips the distance-cull impostor in the static build (`HWMeshHelper::noDistanceCull`, R:walls:2616-2617). (d) `PutWall` clears `HWF_GLOW` at white light 255 without a draw info (R diff in walls:886-897). (e) new `HWWall::SetSectorLight/SetSideGlow/SetTierLight/SetTierLightLevel` (R:hw_drawstructs.h; R:walls:2431-2461) used only by the residency light patch. (f) `HWMeshHelper` records emission order (R:wd). (g) `P_FreeLevelData` resets wall cache and residency (R:p_setup.cpp:641-643). (h) Tracy zones `REMA_ZONE_N` in RenderViewpoint/eye/RenderBSP/CreateScene/RenderScene/RenderTranslucent/RenderPortal/DrawScene/ProcessScene/DrawWalls/DrawFlats/SortTranslucent (no-ops when off). (i) `opaque.walls/flats/masked/models/decals` GPU groups (R:di:3828-3866). (j) perf_track `scene` falls back to `ProcessAll+RenderAll` in flat runs and adds `cpu_bsp/clip/walls/flats/sprites` (R:clock:163-168, R:hw_perftrack.cpp:539-543). The walk itself is otherwise the same. Area 09 covers the static path. | [V] |
-| **selaco (S)** | Adds a `ParticlePoolJob` and `RenderDefinedParticles` per subsector (S:bsp, diff `+ParticlePoolJob`); lacks effect-light mode, glow seed (`SetGlowPlanes` takes two planes), glow inset in walls/flats; `HWViewpointUniforms` without stamps (smaller); `hw_drawinfo.cpp` ~1,000 lines fewer (fork uniforms), `hw_entrypoint.cpp` older `CollectLights`; same `gl_line_distance_cull` (S:bsp:460), same `vr_scene_multithread` false (S:hw_cvars.cpp:253) | [V] |
+| **selaco (S)** | Adds a `ParticlePoolJob` and `RenderDefinedParticles` per subsector (S:bsp, diff `+ParticlePoolJob`); lacks effect-light mode, glow seed (`SetGlowPlanes` takes two planes), glow inset in walls/flats; `HWViewpointUniforms` smaller: it has the stamps (`S:common/rendering/hwrenderer/data/hw_viewpointuniforms.h:493-497`) but lacks `mBeamScroll[128]` and the fog-light arrays [xc: was "without stamps"]; `hw_drawinfo.cpp` ~1,000 lines fewer (fork uniforms), `hw_entrypoint.cpp` older `CollectLights`; same `gl_line_distance_cull` (S:bsp:460), same `vr_scene_multithread` false (S:hw_cvars.cpp:253) | [V] |
 
 ---
 
@@ -563,4 +563,48 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 | Q7 | Share of portals. | `gl_portalinfo` once; `stat renderstats` portals; `PortalAll` in `stat rendertimes`; A/B `gl_portals 0` (image changes, cost difference is the portal share). |
 | Q8 | Is B5 (heat decay with absolute time) real in play? | Map with `HeatmapAdd` + decay > 0: watch heat lifetime after long uptime vs fresh start; log `drop` per call. |
 | Q9 | Does the multiview single walk (left-eye clip) drop right-eye-only geometry? | Multiview on, stand next to a doorway edge, compare right-eye image with multiview off. |
-| Q10 | Any ZScript/mod reading `ML_MAPPED`/`SECMF_DRAWN`/billboard `drawPos` in the owner's fixed mod set (netplay determinism)? | grep the mod set's ZScript for `ML_MAPPED`, `SECMF_DRAWN`, `MoreFlags`, billboard hit-test natives. |
+| Q10 | Any ZScript/mod reading `ML_MAPPED`/`SECMF_DRAWN`/billboard `drawPos`/`HeatmapAt` in the owner's fixed mod set (netplay determinism)? | grep the mod set's ZScript for `ML_MAPPED`, `SECMF_DRAWN`, `MoreFlags`, billboard hit-test natives, `HeatmapAt` [xc: HeatmapAt added]. |
+
+---
+
+## Cross-check (date 2026-11-13)
+
+Checked against the code in M (`/home/claude/uzdx_main`), R, N (file-level `diff` against M) and S. Greps for dead/dormant
+claims were re-run over all of `src/` and `wadsrc/` (MENUDEF, ZScript, engine .txt). No timings added.
+
+| Category | Checked | Right | Line-fixed | Corrected | Unconfirmed | Added |
+|---|---|---|---|---|---|---|
+| a. Summary claims | 30 | 25 | 0 | 3 | 0 | 3 |
+| b. "What slows it down" (10 items + preface) and bug table B1-B11 | 36 | 27 | 0 | 5 | 0 | 5 (B12, B13, B2/B5/B11 extensions) |
+| c. DEAD / DORMANT / never-read / render-only claims | 24 | 21 | 0 | 3 | 0 | 0 |
+| d. cvar defaults | 26 | 26 | 0 | 0 | 0 | 0 |
+| e. branch differences (N 2, R 10, S 7 sub-claims) | 19 | 17 | 0 | 2 | 0 | 1 |
+| f. table / call-graph rows (call graphs ~35 of ~60 lines; per-function 31 of 73; sec. 4 6/9; sec. 5 6/13; sec. 6.2 6/11; sec. 7 14/14; sec. 8 10/14) | 108 | 99 | 0 | 7 | 0 | 2 |
+
+"14 things only the walk produces" (section 7): all 14 are shown in code at the cited lines. Two are not walk-only (11 automap
+bits, 13 dither flags); item 2 got a note that M does hold a static side mesh, for the ray tracer only.
+
+Corrections and additions (one line each):
+1. Summary 2: the flat path patches vertex z in the static vertex buffer (`vb:406-421`), not the index buffer.
+2. Summary 2 / sec. 7 item 2: `DoomLevelMesh` (all sides, map load, `maploader.cpp:3251`) exists on M but feeds only the ray tracer [added].
+3. Summary 5 / B12 [added]: distance-cull impostors draw with uninitialised `lightlevel`/`rellight` (no `HWWall` ctor; culled branch never assigns them).
+4. Summary 5 / B13 [added]: `IsDistanceCulled` tests only endpoints; a long seg passing near the viewer is culled and its clip range hides near geometry.
+5. B2 [added]: on a linedef with near and far segs, far segs lay coplanar full-linedef impostors over the real wall.
+6. Summary 7, B5, sec. 8: `Level->HeatIntensity` is read by ZScript (`HeatmapAt`, clearscope native), not "only by the renderer" — the per-scene, uptime-scaled decay is a render→script leak.
+7. Summary 9 / sec. 7 item 11: the walk is the only view-driven producer of `ML_MAPPED`/`SSECMF_DRAWN`, not the only producer (`Line_SetAutomapFlags`, UDMF `mapped`, savegame load, ZScript).
+8. Sec. 7 item 13: dither flags are also set by `DrawScene` (`di:4461-4464`) outside the walk.
+9. B11 [added]: in ST (VR default) `RenderThings` stamps `validcount` first, so the dither scan never collects a target.
+10. Sec. 3 `DoSubsector`: 6 `VRSubsector*` clock calls per visible subsector (4 per culled), not 10.
+11. Sec. 5: `HWViewpointUniforms` has 5×128 beam arrays, not 6×128 (plus fog-light arrays).
+12. Sec. 10 S: Selaco's `HWViewpointUniforms` has the stamps; it lacks `mBeamScroll` and fog lights.
+13. Sec. 10 R(b): R:bsp:650 disables wall workers only for the level mesh, not for `r_wallcache`; culled segs still add a clip range under the mesh [added].
+14. Sec. 3 `StartScene` / sec. 6 item 7: the fog-light walk also needs `Level->FogDynLights` > 0; it measures from `r_viewpoint.Pos`.
+15. B1: camera textures render before the main view's `R_SetupFrame`, so they cull against the previous frame's main-view position.
+16. B6: ZScript reads `drawPos` only for view-locked/hand-locked billboards.
+17. B7: `HWFlat::Process` may write the fake-sector copy, not always the real sector.
+18. B10: portal/sky wall parts also allocate vertices on the scene worker (`walls:913`).
+19. Sec. 6.3 / sec. 9: `WallWorkersElapsed` is read (always 0), not only reset.
+20. Sec. 8: vertex clip-angle cache render-only claim upgraded from [I] to [V grep].
+21. Sec. 9 `gl_noskyboxes`: driven by the menu-exposed `gl_skydome` callback.
+22. Sec. 3 `SetupHeatmap` [added]: 65,536-cell loop per scene plus two 256 KB heap arrays + memcpy whenever a cell moved.
+23. Summary 10: cross-reference fixed (section 10, not 9).
