@@ -335,6 +335,48 @@ not been recomputed yet; these change its inputs:**
   helper class from the mod in `profilethinkers 8 0`.
 
 
+### 3.9 Recompute with the measured tic (sim lane, 2026-11-13; all **Inference** on [M] §6, median assumptions of §3.3)
+
+§3.3 was built on one average (130.8 ms of thinkers) and on a tail nobody had named. [M] §6.2 replaces both. The target
+is a **median** and a **p95**, so the typical tic and the heavy tic are now carried separately. 4-player figures add
+§3.1's client logic (5.5) and hash (10) to the measured single-player buckets.
+
+| | typical tic (3 in 4) | heavy tic (every 4th) | mean |
+|---|---|---|---|
+| thinkers, measured | 75.4 | ≈200 | ≈118 |
+| reset + `WorldTick` + particles + player, measured | 12.9 | 12.9 | 12.9 |
+| client logic + netgame hash (§3.1, not measured) | 15.5 | 15.5 | 15.5 |
+| **B0, 4-player** | **≈104** | **≈228** | **≈147** (§3.3 used 160.4) |
+
+What the thinkers are: class time on a typical tic 60.6 (mk-champions 27.7, `RSQTHP_*` 14.5, Legion of Bones monsters
+≈10, `Shifter` 2.3, crits 1.6, torches 1.1, ambience 0.9, the rest ≈2.5); outside every class clock 14.5; the Balrog
+aura ≈31 as a mean (≈125 on the heavy tic); rare spikes and anything else periodic ≈12 as a mean.
+
+| Step | Change against §3.3 | typical tic after | mean after |
+|---|---|---|---|
+| W1 mod-list mechanisms | listed families −43 (as §3.3; the bars measure 14.2, not 16.5); unlisted controllers **−2.5, not −20**; reset −5.2, hash −1.8, client −2.0, `WorldTick` −0.5 | **≈49** | — |
+| + F-SIM-12 (radius-give bursts) and F-MON-1 on its spawns | −25 of the Balrog's ≈31 as a mean (−100 on the heavy tic; the split is not measured) | ≈49 (heavy tic ≈75) | **≈67** (§3.3: 85.8) |
+| W2 exact engine rows | reset → 1.1, client −1.0, hash → 1.7, thinkers −5.65, + snapshot and GC 1.3 | ≈34 | ≈50 |
+| W3 job system, parallel passes | reset, hash, client, particles as §3.3 | ≈30 | ≈45 |
+| W4 VM call path | §3.3's −5.7 scaled to the thinkers left | ≈27 | ≈41 |
+| W5 AOT (s 0.5, k 1.8) | on thinkers + `WorldTick` | ≈22 | ≈33 |
+| W6 parallel thinkers (p 0.5) | on thinkers | **≈17** | **≈26** |
+
+**Reading.**
+- **The typical tic reaches ≈17 ms at the median assumptions, under the 20 ms target, without any closer.** §3.3's
+  33.5 was a mean; the mean is still ≈26 here, because of the part of the Balrog burst F-SIM-12 is not assumed to
+  remove and the ≈12 ms of spikes.
+- **The p95 is now the hard number.** It is set by the every-fourth-tic burst (224 ms today) and by spikes like the
+  976 ms tic. With F-SIM-12 at the size assumed, the heavy tic follows the typical one about 25 ms higher at W1 and
+  ≈8-10 ms higher at W6 (≈26 against a 28.6 limit: no margin). The spikes are not in this table at all: one 976 ms tic
+  in 64 would by itself break a p95 only if they come more often than 1 in 20, but each one is a one-second freeze for
+  all four players.
+- **Two assumptions carry it:** that the 14.5 ms outside the class clocks shrinks with the actor count and the call
+  path like the rest of the thinker time (part of it is the profiler itself), and s, k, p at their medians, none of
+  which is measured (U3-U5).
+- **Order of value for the sim lane:** W1's mechanisms for bars, champions and crits (−43 on every tic) first, as
+  planned; F-SIM-12 next to them, since nothing else moves the p95; then find the spikes (M3 spike trigger, P0.5-4).
+
 ---
 
 ## 4. The GPU waterfall: ≈47 ms projected VR → 9 ms, native resolution, no dynamic resolution
