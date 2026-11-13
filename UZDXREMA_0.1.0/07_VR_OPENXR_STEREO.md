@@ -6,12 +6,12 @@ Primary tree: `main` (`/home/claude/uzdx_main`, f182cbcc). Paths are relative to
 
 ## 1. Summary
 
-1. VR is `vr_mode 15` (`VR_OPENXR_MOBILE`, `hw_vrmodes.h:59`), Vulkan only (`hw_vrmodes.cpp:1293-1304`). The only implementation compiled is `s3d::VKOpenXRDeviceMode` (VK-XR). `gl/stereo3d/gl_openxrdevice.cpp` is not in any CMake source list: DEAD.
-2. **The whole scene is built and drawn once per eye.** `RenderViewpoint` (`rendering/hwrenderer/hw_entrypoint.cpp:359-516`) loops over 2 eyes. Each eye runs `StartDrawInfo` → `ProcessScene` → `DrawScene` → `CreateScene` → `RenderBSP` (the BSP walk, walls, flats, sprites), the draw lists, portals, translucent pass, player sprites, the post-process chain and the 2D pass. VERIFIED.
-3. Multiview exists but is off. `vr_openxr_multiview` defaults to false (`hw_vrmodes.cpp:643`), and `ShouldUseMultiviewThisFrame` (VK-XR:8608) requires it. With it on, the scene is built once from the left eye's position and drawn into 2 layers. Post-processing still runs per eye: every PP pass has `ViewMask = 0` (`vulkan/renderer/vk_pprenderstate.cpp:112,159`).
+1. VR is `vr_mode 15` (`VR_OPENXR_MOBILE`, `hw_vrmodes.h:59`), Vulkan only (`hw_vrmodes.cpp:1293-1304`). The only OpenXR implementation compiled is `s3d::VKOpenXRDeviceMode` (VK-XR); the GL OpenVR mode (`rendering/gl/stereo3d/gl_openvr.cpp`, src/CMakeLists.txt:1069, `USE_OPENVR` :396) is also compiled [xc: "the only implementation compiled" was too broad]. `gl/stereo3d/gl_openxrdevice.cpp` is not in any CMake source list: DEAD.
+2. **The whole scene is built and drawn once per eye.** `RenderViewpoint` (`rendering/hwrenderer/hw_entrypoint.cpp:359-516`) loops over 2 eyes. Each eye runs `StartDrawInfo` → `ProcessScene` → `DrawScene` → `CreateScene` → `RenderBSP` (the BSP walk, walls, flats, sprites), the draw lists, portals, translucent pass, player sprites, the post-process chain and `DrawEndScene2D`; the `twod` 2D replay runs per eye later, in a second eye loop in `VulkanRenderDevice::Update` (vk_renderdevice.cpp:680-710) [xc: the 2D pass is not inside the RenderViewpoint eye loop]. VERIFIED.
+3. Multiview exists but is off. `vr_openxr_multiview` defaults to false (`hw_vrmodes.cpp:643`), and `ShouldUseMultiviewThisFrame` (VK-XR:8608) requires it. With it on, the scene is built once from the left eye's position and drawn into 2 layers. Post-processing still runs per eye: every PP pass has `ViewMask = 0` (`vulkan/renderer/vk_pprenderstate.cpp:112,159`). The cvar alone does not turn it on: `ShouldUseMultiviewThisFrame` also needs `xrMultiviewSupported` (device/runtime probe, VK-XR:8600-8604), `xrViewCount > 1` and `mFrameRenderMode` GameplayEyes or MenuOverWorld, which `SetUp` rewrites (twice per SetUp, VK-XR:3583,3626). The answer is re-evaluated at ~10 sites per frame: hw_entrypoint.cpp:354, hw_viewpointbuffer.cpp:112 (every `SetViewpoint` duplicates into 2 slots while it is true), vk_renderdevice.cpp:675,815,1406,1490-1491,1643, vk_postprocess.cpp:139, VK-XR:1162,1179. BeginFrame sizes the layered buffers from SetUp #1's mode, the eye loop decides from SetUp #2's; the layered paths in vk_renderdevice/vk_postprocess re-check `GetSceneLayers()/GetPipelineLayers() > 1`, hw_entrypoint.cpp:354 does not (INFERRED: a mode change between the two SetUps would give one frame with a postprocess-only eye 1 over single-layer buffers) [xc: added].
 4. In VR the BSP walk runs **single-threaded** by default: `multithread = gl_multithread && (!IsVRScene || vr_scene_multithread)` (`rendering/hwrenderer/scene/hw_bsp.cpp:1438-1439`), and `vr_scene_multithread` defaults to false (`hwrenderer/data/hw_cvars.cpp:278`). Flat-screen uses `gl_multithread=true` (`hw_bsp.cpp:46`). So the doubled CPU build also loses its worker thread.
 5. **The frame is fully serialized.** The order is: `xrWaitFrame`/`xrBeginFrame`/`xrLocateViews` (`VulkanRenderDevice::BeginFrame`, `vulkan/system/vk_renderdevice.cpp:1458-1459`), then the CPU build of both eyes, then a CPU wait for all GPU work (`Update`, `vk_renderdevice.cpp:735`). After that comes a *second* command buffer that blits the eyes into the OpenXR swapchain, a second CPU fence wait (VK-XR:6342-6379), then `xrEndFrame`. With the default `vr_openxr_sync_mode 1`, a desktop present and a third full wait follow (`vk_renderdevice.cpp:746-750`). The CPU and GPU never overlap across frames.
-6. Every fence wait is a poll loop with `sleep_for(1 ms)` (`vulkan/system/vk_commandbuffer.cpp:181-221`). That is 2-3 polled waits per VR frame, each able to overshoot by up to one sleep quantum (the timer period is set to `wPeriodMin`, `platform/win32/i_main.cpp:280-287`).
+6. Every fence wait is a poll loop with `sleep_for(1 ms)` (`vulkan/system/vk_commandbuffer.cpp:181-221`). That is 2-3 polled waits per VR frame, each able to overshoot by up to one sleep quantum (the timer period is set to `wPeriodMin`, `common/platform/win32/i_main.cpp:280-287` [xc: path was missing `common/`]; that timer setting is Win32-only). The sleep happens only when a `vkGetFenceStatus` poll finds a fence still unsignalled (vk_commandbuffer.cpp:195-219) [xc: added].
 7. Extra fullscreen passes per frame on the default settings: 2× XR present pass into `xrPresentTextures` (recommended size), 1× mirror present pass (the eye `vr_desktop_view 2` shows), 2× blit into the swapchain layers, and 1× blit to the desktop window (`vulkan/textures/vk_framebuffer.cpp:86-111`).
 8. `VKOpenXRDeviceMode::SetUp` runs **twice per frame**: in `BeginFrame` before `xrWaitFrame`, and again in `RenderViewpoint`. Each run does `xrSyncActions`, 4× `xrLocateSpace`, key-event posting, a render-rate pawn move and haptics. The first run locates the hands at the *previous* frame's predicted display time. `xrVRFrameIndex`, which is documented as one tick per displayed frame, ticks twice.
 9. No foveated rendering, no VRS/shading-rate, no eye tracking, no visibility mask (hidden-area mesh), no depth layer submission. The only "foveation" is `r_effects_foveated`, which lowers ray-march step counts for smoke and flash and has nothing to do with XR (`hwrenderer/postprocessing/hw_postprocess_cvars.cpp:391`). The bench header prints `vr_openxr_foveation=unsupported` as a literal (`hwrenderer/data/hw_clock.cpp:350`).
@@ -154,7 +154,7 @@ Cost class: O(1) = constant; "per eye" = runs 2× per frame; "xr" = an OpenXR ru
 - **`xrMirrorPresentTextures[viewCount]`.** The same, allocated for **both** eyes whenever a dedicated mirror is wanted (VK-XR:3062-3063, 3084-3099), though only one eye is drawn for `vr_desktop_view` 1/2 (`ShouldPrepareDesktopMirrorEye`, VK-XR:1133-1147).
 - **`xrSwapchain`.** One array swapchain, `arraySize = viewCount`, size = max recommended, usage COLOR_ATTACHMENT|TRANSFER_DST, format = the desktop's UNORM unless `vr_eye_colorspace 1` (VK-XR:2933-3017). One `VulkanImage` and layer view per image per layer (:2993-3008). Nothing renders into it directly; it is only a blit target.
 - **Separate XR command infrastructure.** `xrVkCommandPool`, `xrVkCommandBuffer`, `xrVkSubmitFence` (VK-XR:2497-2503; vk_openxrdevice.h:282-284). One submission per frame on the graphics queue, waited on the CPU.
-- **Viewpoint buffer.** Per eye: one slot from ApplyViewpoint, one from AdjustHud, one from AdjustBlend; then AdjustBlend and AdjustHud again in Update; plus DrawEndScene2D and DrawCoronas (`hw_drawinfo.cpp:4396`). Multiview writes 2 per `SetViewpoints` (`hw_drawinfo.cpp:3385,3407`).
+- **Viewpoint buffer.** Per eye: one slot from ApplyViewpoint, one from AdjustHud, one from AdjustBlend; then AdjustBlend and AdjustHud again in Update; plus DrawEndScene2D (`hw_drawinfo.cpp:4396`) [xc: DrawCoronas removed: its only call is commented out (hw_drawinfo.cpp:4356-4359), so it takes no slot]. While multiview is active every single `SetViewpoint` writes 2 slots (`hw_viewpointbuffer.cpp:112-116`) [xc: added]. Multiview writes 2 per `SetViewpoints` (`hw_drawinfo.cpp:3385,3407`).
 - **Dynamic-light caches keyed on `gl_dynlight_viewid`.** `mPosRelativeCacheViewId`, `mDistanceCullViewId` (`hwrenderer/data/hw_dynlightdata.h:65-127`) and `mSpotCacheViewId` (`rendering/hwrenderer/hw_dynlightdata.cpp:91-102`). Incremented per eye (`hw_entrypoint.cpp:361`), so every cache entry is recomputed for the second eye.
 - **Hand ring.** `vrHandRing[2][48]` (`hw_vrmodes.cpp:1981-1984`), pushed 2× per SetUp (2 hands), i.e. 4 pushes/frame. `VR_HandLeverSelfCheck` runs per push until settled.
 - **Controller state.** `xrHandPoses/xrGripPoses/xrGripOffset/xr*State` (vk_openxrdevice.h:329-400): small, per-frame copies.
@@ -206,7 +206,7 @@ Previously measured (flat-screen only, not VR; `HANDOFF_RENDER_2026-11-11.md` on
 | `vr_eye_colorspace` | 0 | hw_vrmodes.cpp:693 | VK-XR:2966 | live (swapchain format) |
 | `vr_openxr_present_*_bias` (4) | 0.886/0.85/-0.15/1.15 | hw_vrmodes.cpp:661-664 | vk_postprocess.cpp:481-484 | live |
 | `vr_menu_keep_world` | true | VK-XR:217 | VK-XR:3544 | live; menu frames still render stereo world |
-| `vr_ipd` | 0.064 | hw_vrmodes.cpp:623 | VK-XR:1967, 2235 | live; **overrides the runtime IPD for eye placement** |
+| `vr_ipd` | 0.064 | hw_vrmodes.cpp:623 | VK-XR:1967, 2235 | live; **overrides the runtime IPD for eye placement**. Per-eye runtime orientation is not used either: `AdjustViewpointUniforms` only runs CalcDependencies (VK-XR:1975-1981), so both eyes look along the centered head axis. The HUD projection (VK-XR:2228-2256) adds the `vr_ipd` shift ×`vr_hud_stereo` (default 1.4, hw_vrmodes.cpp:1089) *and* the runtime eye-to-head offset (`currentEyePose − hmdPosition`, :2249-2255) [xc: added] |
 | `vr_posestats`, `vr_grip_debug`(true), `vr_haptic_debug`, `vr_body_debug`, `vr_height_diag`, `vr_handcmd_debug`, `vr_rig_pose_*`, `vr_rig_hmd_*` | — | VK-XR:135,138,155,268,989,8299,282-287 | as named | debug; `vr_grip_debug` defaults **true** (prints on change only) |
 | `r_effects_foveated` | true | hw_postprocess_cvars.cpp:391 | hw_drawinfo.cpp:1434,1568 | live; march step reduction, not XR foveation |
 | `vid_maxfps` | 500 | v_video.cpp:75 | FPSLimit via WaitForCommands(finish) when vsync off (vk_commandbuffer.cpp:446-447) | DORMANT risk: a low value would throttle VR frames (INFERRED) |
@@ -215,16 +215,16 @@ Previously measured (flat-screen only, not VR; `HANDOFF_RENDER_2026-11-11.md` on
 
 | Item | Evidence | Verdict |
 |---|---|---|
-| `vr_openxr_eye_shift_scale` | Only hw_vrmodes.cpp:639 (def) and VK-XR:110 (EXTERN); never read | DEAD cvar |
-| `vr_openxr_force_recommended_viewport` | Single hit hw_vrmodes.cpp:646 | DEAD cvar |
-| `vr_openxr_use_screen_viewport_for_submit` | Single hit hw_vrmodes.cpp:652 | DEAD cvar |
-| `xrVirtualScreenBackdropEquirectLayer` | Filled every menu frame (VK-XR:6748-6762) but never put in `layers[]` (VK-XR:6423-6461) | DEAD (built, never submitted) |
+| `vr_openxr_eye_shift_scale` | hw_vrmodes.cpp:639 (def), VK-XR:110 (EXTERN); no C++ read. Exposed as a slider in the Developer Options menu (wadsrc/static/menudef.txt:2235, inside `ifOption(OpenXR)`) and reset at :2656; no ZScript use | MENU-ONLY: the engine never reads it, so the menu slider does nothing [xc: was DEAD with "only 2 hits"; MENUDEF uses it] |
+| `vr_openxr_force_recommended_viewport` | hw_vrmodes.cpp:646 (def); no C++ read; Developer Options option menudef.txt:2236, reset :2656 | MENU-ONLY, no engine effect [xc: was "single hit"; MENUDEF uses it] |
+| `vr_openxr_use_screen_viewport_for_submit` | hw_vrmodes.cpp:652 (def, default true); no C++ read; Developer Options option menudef.txt:2237, reset :2656 | MENU-ONLY, no engine effect [xc: was "single hit"; MENUDEF uses it] |
+| `xrVirtualScreenBackdropEquirectLayer` | Filled every menu frame when `xrHasEquirectBackdrop` (VK-XR:6748-6762) [xc: condition added] but never put in `layers[]` (VK-XR:6423-6461) | DEAD (built, never submitted) |
 | `xrMultiviewProbed`, `xrMultiviewUsesCoreVulkan`, `xrMultiviewMaxInstanceIndex` | Written VK-XR:3436-3440, 8577-8599; no reads (grep) | DEAD fields |
 | `VRMode::SupportsMultiview` / override | Declared hw_vrmodes.h:197, vk_openxrdevice.h:177; no caller | DEAD hook |
 | `VKOpenXRDeviceMode::Present` | Only caller `gl_postprocess.cpp:170` (GL backend); VK-XR:6482 prints only | DEAD on Vulkan |
 | `VRBenchmarkInfo::FinalizeLayered`, `DirectXrRender` | Hard false VK-XR:1182-1183 | DEAD flags (only printed) |
 | `gl/stereo3d/gl_openxrdevice.cpp` | Not in any CMake source list; only a `source_group` regex (src/CMakeLists.txt:1818) | DEAD file (header still included by hw_vrmodes.cpp:42) |
-| `FOpenXRJoystickManager::AddAxes` | Stub `(void)axes` (platform/win32/i_openXR.cpp:259-262) | DEAD input path (device registered, contributes no axes) |
+| `FOpenXRJoystickManager::AddAxes` | Stub `(void)axes` (common/platform/win32/i_openXR.cpp:259-262 [xc: path was missing `common/`]) | DEAD input path (device registered, contributes no axes) |
 | `LogBoundSourcesForAction` | Defined VK-XR:1763; the call was removed (comment VK-XR:2860-2864); grep: no caller | DEAD function |
 | `DrawCoronas` loop | `#if 0` hw_drawinfo.cpp:4300-4327; caller commented out :4356-4359 | DEAD |
 | `stabilizeGeometryOk` | Constant false VK-XR:4554; the branch at :4698 is reachable only through `supporting` | partially dead |
@@ -249,7 +249,7 @@ XR foveation (`XR_FB_foveation*`), Vulkan fragment shading rate / VRS, eye track
 | Double SetUp | same | same | same (selaco vk_renderdevice.cpp:1289-1290 + hw_entrypoint.cpp:231) |
 | GPU waits | same polled waits; `GpuWait` Tracy zone around WaitForCommands | same | **`vkWaitForFences(UINT64_MAX)`**: blocking, no 1 ms poll (selaco vk_commandbuffer.cpp:170,253; XR blit selaco VK-XR:5388) |
 | vr_scene_multithread / multiview defaults | false / false | false / false | false (selaco hw_cvars.cpp:253) / false (selaco hw_vrmodes.cpp:668) |
-| Static level mesh | `r_newrenderer` (default 0, hw_levelresidency.cpp:137); walls/flats from the mesh are drawn inside `RenderScene`, i.e. **still per eye**. BSP walk unchanged and still per eye; `levelmesh.vp` reads `gl_ViewIndex` (wadsrc/static/shaders/glsl/levelmesh.vp:118), so it is multiview-ready | — | — |
+| Static level mesh | `r_newrenderer` (default 0, hw_levelresidency.cpp:137); walls/flats from the mesh are drawn inside `RenderScene` (renderer hw_drawinfo.cpp:3830,3835), i.e. **still per eye**. BSP walk unchanged and still per eye; `levelmesh.vp` reads `gl_ViewIndex` (wadsrc/static/shaders/glsl/levelmesh.vp:118), so it is multiview-ready. Also `r_wallcache` (default 0, renderer hw_wallcache.cpp:40): per-side replay inside the BSP walk (renderer hw_bsp.cpp:344-350, 759-764); the parts are built view-independently, so eye 2 can replay eye 1's work (INFERRED from the header comment and the call sites, not measured); with it on, the wall worker threads are bypassed (renderer hw_bsp.cpp:742-743) [xc: added] | — | — |
 | hw_clock summary | flat fallback for Scene/SyncWait when VR clocks are 0 (renderer hw_clock.cpp:163-168) | same as main | — |
 
 ---
@@ -265,6 +265,7 @@ Counters available (all `glcycle_t` = **CPU** cycle timers, `common/engine/stats
 | `VRSubsectors`, `VRSubsectorCull/Visible`, `VRLineBuild/Clip/Decide`, `VRThingBuild`, `VRFlatBuild` (hw_bsp.cpp) | BSP sub-phases | |
 | `VRSceneDraw` (hw_drawinfo.cpp:3725-4032) | RenderScene + RenderTranslucent command recording | GPU execution |
 | `VRPlayerSprites` (hw_bsp.cpp:1560) | PreparePlayerSprites | the in-scene draw of the psprites |
+| **Summary `Scene` figure** (`GetRenderTimeSummary`, hw_clock.cpp:157), read by `stat rendertimes`, `r_perflog` (hw_perflog.cpp:791) and `perf_track` (hw_perftrack.cpp:525) | `VRSceneBuild + VRSceneDraw + VRScenePostBSP + VRPlayerSprites` | **double-counts**: `VRScenePostBSP` (hw_drawinfo.cpp:3700-3705) and `VRPlayerSprites` (hw_bsp.cpp:1560-1562, inside RenderBSP) both run inside the `VRSceneBuild` span (hw_drawinfo.cpp:3683-3710). Use the individual counters [xc: added] |
 | `VRPostProcessScene` (vk_postprocess.cpp:98), `VRSceneTransfer` (:149) + `VRSceneTransferOps` | PP recording, scene→pipeline transfer recording | GPU |
 | `VREyeComposite` (vk_renderdevice.cpp:679-711) | per-eye 2D + FinalizeEyeImage recording | |
 | `VRFinalizeEye` (VK-XR:7208), `VRFinalPresent` (VK-XR:7222, 7246) + `VRFinalPresentPasses`, `VRMirrorPreparePasses` | present/mirror pass recording | GPU |
@@ -285,3 +286,40 @@ Questions:
 6. **Custom "screen" PP shaders running 3× a frame.** INFERRED from `DrawPresentTextureToImage` (vk_postprocess.cpp:508-509) and the mirror pass. Verify with `stat gpu` groups named after the shader (`PushGroup(Desc->Name)`, hw_postprocess.cpp:3187) in a mod that ships one.
 7. **IPD.** Eye placement uses `vr_ipd` (0.064 m), not the runtime's eye poses (VK-XR:1967), while the submitted layer uses the runtime poses (VK-XR:6404). This is a comfort/correctness question, not cost. Settle by logging `xrViews[1].pose.position − xrViews[0].pose.position` against `vr_ipd`.
 8. **Status-bar-to-canvas cost.** `DrawHudToSurface` (d_main.cpp:1254) is not inside any VR clock. Check `stat gpu` for the canvas pass and the ZScript cost in `perf_track` script columns.
+
+---
+
+## Cross-check (date 2026-11-13)
+
+Checked against the code in main f182cbcc (plus renderer abb19af1 = 175063a + docs, netplay 1c1805f8, selaco 7e111a3d). Greps re-run over all of `src/` and `wadsrc/` (MENUDEF, ZScript, shaders) in each tree.
+
+| Category | Checked | Right | Line/path-fixed | Corrected | Unconfirmed | Added |
+|---|---|---|---|---|---|---|
+| a. Summary claims | 24 | 21 | 1 | 2 | 0 | 2 |
+| b. "What slows it down" items (ranking + evidence) | 12 | 12 | 0 | 0 | 0 | 0 |
+| c. DEAD / DORMANT / never-read claims | 19 | 14 | 1 | 4 | 0 | 0 |
+| d. Cvar defaults | 24 | 24 | 0 | 0 | 0 | 0 |
+| e. Branch differences | 13 | 13 | 0 | 0 | 0 | 1 |
+| f. Table rows (§2.2 graph, §3, §4, §6.1, §8) | 62 | 61 | 0 | 1 | 0 | 3 |
+
+Totals: 154 checked; 145 right; 2 line/path-fixed; 7 corrected; 0 unconfirmed; 6 added.
+
+Corrections:
+- §6.2 `vr_openxr_eye_shift_scale`: not "only 2 hits"; it is a Developer Options slider (menudef.txt:2235) and in a resetcvar list (:2656). No C++ or ZScript read: menu-only, no engine effect, not DEAD-unreferenced.
+- §6.2 `vr_openxr_force_recommended_viewport`: not a single hit; menudef.txt:2236 + :2656. Menu-only, no engine effect.
+- §6.2 `vr_openxr_use_screen_viewport_for_submit`: not a single hit; menudef.txt:2237 + :2656. Menu-only, no engine effect.
+- §4 viewpoint buffer: DrawCoronas takes no slot; its only call is commented out (hw_drawinfo.cpp:4356-4359). This contradicted §6.2.
+- §1.1: "the only implementation compiled" was too broad; the GL OpenVR mode (gl_openvr.cpp) is compiled too. VK-XR is the only OpenXR one.
+- §1.2: the 2D replay is not in the RenderViewpoint eye loop; it is the second per-eye loop in `Update` (vk_renderdevice.cpp:680-710).
+- §6.2 equirect backdrop layer: filled only when `xrHasEquirectBackdrop` (qualifier added).
+- Paths: `platform/win32/i_main.cpp` and `platform/win32/i_openXR.cpp` are under `common/`.
+
+Additions:
+- §1.3: all ~10 per-frame multiview decision sites; the conditions besides the cvar; the BeginFrame (SetUp #1) vs eye-loop (SetUp #2) mode split, with hw_entrypoint.cpp:354 not re-checking layer counts (INFERRED one-frame hazard).
+- §1.6: the 1 ms sleep only runs when a fence is still unsignalled at the poll.
+- §4: under multiview every `SetViewpoint` writes 2 slots (hw_viewpointbuffer.cpp:112).
+- §6.1 `vr_ipd`: per-eye runtime orientation is unused too; the HUD projection applies both the `vr_ipd`×`vr_hud_stereo` shift and the runtime eye offset.
+- §7 renderer: `r_wallcache` (default 0), a per-side replay that eye 2 can reuse (INFERRED), which bypasses wall workers when on.
+- §8: the summary `Scene` figure (hw_clock.cpp:157) used by `stat rendertimes`/`r_perflog`/`perf_track` double-counts `VRScenePostBSP` and `VRPlayerSprites`, which run inside `VRSceneBuild`.
+
+Confirmed as written (selected): `vr_openxr_multiview` default false (hw_vrmodes.cpp:643; selaco :668), menu-exposed (DORMANT, not dead); multiview builds the scene once (eye 1 is post-process-only, hw_entrypoint.cpp:372-407) and PP still runs per eye (ViewMask 0, vk_pprenderstate.cpp:112,159); without multiview the full ProcessScene/CreateScene/RenderBSP runs once per eye; `vr_scene_multithread` default false gating hw_bsp.cpp:1438-1439; SetUp runs twice per frame with SetUp #1 before `xrWaitFrame` (vk_renderdevice.cpp:1458-1459); scene eye offset from `vr_ipd` (VK-XR:1967) while the submitted layer uses runtime poses (VK-XR:6404); 3 polled waits per frame with sync mode 1; selaco uses blocking `vkWaitForFences`; netplay's `xrLast*` edge-field overwrite (netplay VK-XR:3954-3961); no foveation/VRS/visibility-mask/depth-layer/space-warp code anywhere in src.

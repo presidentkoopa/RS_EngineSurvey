@@ -13,9 +13,11 @@ Marks: **V** = VERIFIED (I read the code that does it). **I** = INFERRED (deduce
 ## Summary
 
 1. `main` is the engine of record: every other branch lacks some of its work. `netplay` is a strict ancestor of
-   `main` (0 commits of its own, 176 behind). `renderer` is `main` as of 77e5ee3d (2026-11-11) plus 116 render-lane
-   commits, 76 behind `main`. `selaco` forked at "UZDXREMA 5.0.3" (2026-09-06): 104 commits of its own, 337 behind.
-2. `renderer` changes 49 src/wadsrc files. 13 of them are new (level mesh, wall cache, snapshot, Tracy macros). It
+   `main` (0 commits of its own, 176 behind). `renderer` is `main` as of 77e5ee3d (2026-11-11) plus 116 commits
+   (111 render-lane + 5 merges of `main`) at 175063a1, 76 behind `main` [xc: the 116 include the 5 merges; the
+   live `origin/renderer` tip abb19af1 has 4 more docs-only teardown commits, 120 ahead, no src/wadsrc change]. `selaco` forked at "UZDXREMA 5.0.3" (2026-09-06): 104 commits of its own, 337 behind.
+2. `renderer` changes 49 src/wadsrc files. 12 of them are new (level mesh, wall cache, snapshot, Tracy macros) [xc:
+   was 13; `git diff --diff-filter=A origin/main...175063a1` lists 12]. It
    also changes defaults that do not depend on `r_newrenderer`: `sim_maxcatchup 2`, `snd_evictretry 8`,
    `snd_evictbudget 64`, a per-source sound-channel index, and new perf_track CSV columns. It also carries bug fixes
    that `main` lacks (D_Display console-drop guard, demo buffer growth).
@@ -23,16 +25,22 @@ Marks: **V** = VERIFIED (I read the code that does it). **I** = INFERRED (deduce
    (`hw_levelresidency.cpp:4223`) plus one `WallCache_Process` call per processed wall (`hw_wallcache.cpp:315`). It
    also compiles one extra effect shader for every pass at startup and binds two 16-byte storage buffers. The old path
    changes in exactly one place: `HWWall::PutWall` without a draw info (`hw_walls.cpp:894`). That branch runs only
-   for the wall workers (`gl_bsp_worker_threads > 1`), the wall cache, and the mesh build.
-4. The static level path (`r_newrenderer 1..3`) builds, on the first frame, persistent GPU buffers for the opaque
-   static wall parts (sized for each side's worst case) and, at 3, index runs into the existing flat VBO. It also
-   builds one 32-byte surface record per part and one 320-byte light record per distinct light key.
+   for the wall workers (`gl_bsp_worker_threads > 1` and `gl_multithread`, and in VR also `vr_scene_multithread`,
+   default false, `hw_bsp.cpp:1466-1468`), the wall cache, and the mesh build. Its effect on the worker path is to
+   make it match the single-thread old path (the direct path already clears the flag on the shared `HWWall`), not
+   to diverge from it [xc: added the multithread conditions and the direction of the change].
+4. The static level path (`r_newrenderer 1..3`) builds, on the first frame, lasting GPU buffers for the opaque
+   static wall parts (sized for each side's worst case; `BufferUsageType::Static`, GPU-only with a kept staging
+   copy, not Vulkan "Persistent") and, at 3, index runs into the existing flat VBO. It also builds one 32-byte
+   surface record per slot surface (1 or 2 per side, unused ones included) and per static flat plane, and one
+   320-byte light record per distinct light key plus spares [xc: was "per part"; records are per slot surface].
 5. Per frame, the static path still runs the whole BSP walk, the clipper and everything else the walk feeds. It
    replaces only `HWWall::Process` and `HWFlat::ProcessSector` for static sides and planes, and their per-part draw
    calls. The mesh draws only what the walk reached (`MakeSceneRanges`, `:4522`), so it depends on the walk.
 6. New per-frame CPU work: a change pass at the first scene of each frame. Once a sim tic has passed, this pass
    compares every sector against a 264-byte shadow (`RunTicPass`, `:3681`). It also hashes each reached side's own
-   fields once a frame (`:4371`), copies indices into a per-frame buffer, and makes one draw per material group.
+   fields once a frame (`:4371`), copies indices into a per-frame buffer, and makes one draw per material group that has reached indices
+   [xc: empty groups are skipped, `:4680`].
 7. Prev. measured on Sunder MAP15 (HANDOFF_RENDER_2026-11-11.md, 1112y): old path 70.1 fps, new path 60.8 fps.
    Walls CPU fell (2.56 → 1.05 ms) but the bsp clock rose (0.56 → 2.49 ms). The current path costs more than it
    saves; the plan's stage 3 (visibility) is where the saving was expected.
@@ -59,7 +67,7 @@ Marks: **V** = VERIFIED (I read the code that does it). **I** = INFERRED (deduce
 
 | pair | merge-base | only on left | only on right | src+wadsrc files differing (2-dot) |
 |---|---|---|---|---|
-| main / renderer | 77e5ee3d ([SYNCGEAR] vr_synclog, 2026-11-11) | 76 | 116 (incl. 5 merges of main) | 78 (49 renderer-own, 32 main-own, 3 both) |
+| main / renderer | 77e5ee3d ([SYNCGEAR] vr_synclog, 2026-11-11) | 76 | 116 (incl. 5 merges of main) | 78 (46 renderer-only, 29 main-only, 3 both; i.e. 49 renderer-touched, 32 main-touched) [xc: 49+32+3 ≠ 78; the 49 and 32 include the 3] |
 | main / netplay | 1c1805f8 = netplay tip | 176 | 0 | 63 (all main-own) |
 | main / selaco | 3511a341 ("UZDXREMA 5.0.3", 2026-09-06) | 337 | 104 | 389 (selaco-own 330 touched, main-own 443 touched; many identical cherry-picks) |
 | renderer / netplay | 1c1805f8 = netplay tip | 216 | 0 | 93 (42 render-lane, 44 main netplay→77e5ee3d, 7 both) |
@@ -84,8 +92,8 @@ Marks: **V** = VERIFIED (I read the code that does it). **I** = INFERRED (deduce
 
 | subsystem | files | what the change does | touches old path at defaults? |
 |---|---|---|---|
-| Static level mesh (new) | `rendering/hwrenderer/hw_levelresidency.{h,cpp}` (+5190), `hw_levelstatic.{h,cpp}` (+161), `common/rendering/hwrenderer/data/hw_levelbuffers.{h,cpp}` (+374), `wadsrc/static/shaders/glsl/levelmesh.vp` (+258), `main.fp` `#ifdef LEVEL_MESH` block (+104) | Part B | no (gated by `r_newrenderer`, default 0) |
-| Wall cache (new, stage 2b) | `scene/hw_wallcache.{h,cpp}` (+466), `scene/hw_walldispatcher.h` (+20: `order`, `recordOrder`, `noDistanceCull`) | replays kept `HWWall` parts per side when a signature hash is unchanged | one call per processed wall (`hw_bsp.cpp:349,763`); returns at `hw_wallcache.cpp:316` |
+| Static level mesh (new) | `rendering/hwrenderer/hw_levelresidency.{h,cpp}` (+5190), `hw_levelstatic.{h,cpp}` (+161), `common/rendering/hwrenderer/data/hw_levelbuffers.{h,cpp}` (+374), `wadsrc/static/shaders/glsl/levelmesh.vp` (+258), `main.fp` `#ifdef LEVEL_MESH` block (+104), `hw_surfacedamage.h` (+11: `ForEachDamagedSide`, a walk of the damage key map used by the change pass) [xc: added; it is one of the 49 files and was not in the table] | Part B | no (gated by `r_newrenderer`, default 0) |
+| Wall cache (new, stage 2b) | `scene/hw_wallcache.{h,cpp}` (+466), `scene/hw_walldispatcher.h` (+18/−2: `order`, `recordOrder`, `noDistanceCull`) [xc: was +20] | replays kept `HWWall` parts per side when a signature hash is unchanged | one call per processed wall (`hw_bsp.cpp:349,763`); returns at `hw_wallcache.cpp:316` |
 | Hooks in the old path | `scene/hw_bsp.cpp` (+35/−7), `hw_drawinfo.cpp` (+34), `hw_drawinfo.h` (+3), `hw_drawstructs.h` (+9), `hw_walls.cpp` (+55/−1), `hw_drawlist.cpp` (+4), `hw_entrypoint.cpp` (+3), `p_setup.cpp` (+6) | residency/wall-cache hooks; `HWWall::SetSectorLight/SetSideGlow/SetTierLight/SetTierLightLevel` (new, called only by the residency); `noDistanceCull` in `Process`; PutWall white-light rule for the no-draw-info path; opaque.* GPU groups; Tracy zones; `P_FreeLevelData` resets | see A.2.3 |
 | Vulkan/backend plumbing | `vk_descriptorset.cpp` (bindings 16/17, pool 13→15 storage per set, vertex-stage count 11→13), `vk_shader.cpp` (compile EFF_LEVELMESH, set `ShaderReady/Failed`), `vk_buffer.{h,cpp}` (two SSO slots), `vk_renderdevice.cpp` (create/delete `LevelMeshBuffers`, Tracy zone on `GpuWait`), `hw_renderstate.h` (`EFF_LEVELMESH`), `hw_shaderpatcher.cpp` (effect entry), `shaderuniforms.h` (binding points 14/15), `v_video.h` (`mLevelMesh`), `gl_shader.cpp`/`gles_shader.cpp` (skip the effect) | always active: one more effect compiled per pass; two placeholder SSBOs bound every frame | yes (startup compile; descriptor layout) |
 | Sector plane buffer | `hw_sectorplanebuffer.{h,cpp}` | `mLevelGeneration++` per `BeginLevel` | trivial |
@@ -104,12 +112,14 @@ All of it is avatar/netplay lane work. None of it touches the scene renderer:
   distance grab), `p_vrgunfit.{h,cpp}` (new, muzzle sizing), `p_vrslots.h` (new), `p_vrtorso.{h,cpp}`
   ([STICKHIPS], [STARTSTEP], seated), `p_vrsynclog.cpp`, `p_user.cpp` ([SLOTLOAD], [VRGRAB], [VRGEAR],
   [GEARPLAY]), `p_map.cpp` ([CLAMPTIC]).
-- r_data: `models.cpp` (+166: [GUNFIT], [RIGIDANCHOR], [GUNFITCHECK]), `vr_body.cpp` (+709: [SEATED],
+- r_data: `models.cpp` (+156/−10: [GUNFIT], [RIGIDANCHOR], [GUNFITCHECK]), `vr_body.cpp` (+707/−2: [SEATED],
   [LAGDIAG], [FOOTLATCH]), `vr_rig.cpp` ([LAGA], [STANDEYE]), `vr_avatar*.cpp`, `vr_bodyinfer*`, `vr_grasp.cpp`.
 - net/save: `d_netinfo.cpp`/`d_netinf.h` ([VRGEAR] userinfo), `g_game.cpp`, `g_level.cpp`, `p_saveg.cpp`
   ([SLOTLOAD]).
 - VR device: `vk_openxrdevice.cpp` (+13, [STANDEYE] helper call in `WriteHandCommand`).
-- script: `vmthunks.cpp` (+236), `wadsrc/static/zscript/doombase.zs` (+154).
+- script: `vmthunks.cpp` (+196/−40), `wadsrc/static/zscript/doombase.zs` (+128/−26). [xc: the four sizes in this list
+  were added+deleted sums written as "+N" (models +166, vr_body +709, vmthunks +236, doombase +154); numstat values
+  given now]
 
 #### A.2.3 Does renderer change the OLD render path (`r_newrenderer 0`, `r_wallcache 0`)?
 
@@ -119,7 +129,7 @@ All of it is avatar/netplay lane work. None of it touches the scene renderer:
 | `WallCache_Process(...)` before `wall.Process` | `hw_bsp.cpp:763` (single-thread), `:349` (scene worker) | one non-inline call + cvar read per processed wall, returns false | V |
 | `experimentalMultiWallWorkers && r_wallcache <= 0 && !mLevelMeshScene` | `hw_bsp.cpp:743` | same decision as before at defaults | V |
 | `Process`: `!(di->mh && di->mh->noDistanceCull) && IsDistanceCulled(seg)` | `hw_walls.cpp:2617` | one extra pointer test per `Process` | V |
-| `PutWall`: `else if (white light && lightlevel == 255) flags &= ~HWF_GLOW` | `hw_walls.cpp:894` | **changes the parts made without a draw info**: only when `gl_bsp_worker_threads > 1` (non-default; wall workers fill `HWMeshHelper`), the wall cache, or the mesh build. The worker parts later pass through `PutWall(&mergeDispatcher)` (`hw_bsp.cpp:1531`), which applies the same rule per part, so the visible difference is limited to the "DoMidTexture leaves the flag cleared on later parts" case. | V (code); image effect I |
+| `PutWall`: `else if (white light && lightlevel == 255) flags &= ~HWF_GLOW` | `hw_walls.cpp:894` | **changes the parts made without a draw info**: only when `gl_bsp_worker_threads > 1` (non-default; wall workers fill `HWMeshHelper`), the wall cache, or the mesh build. The worker parts later pass through `PutWall(&mergeDispatcher)` (`hw_bsp.cpp:1531`), which applies the same rule per part, so the visible difference is limited to the "DoMidTexture leaves the flag cleared on later parts" case. Workers also need `gl_multithread` (default true) and, in a VR scene, `vr_scene_multithread` (default false, `hw_cvars.cpp:278`), so in VR at defaults the branch never runs on the old path even with `gl_bsp_worker_threads > 1`. Direction: the direct path (`di` set) already clears the flag on the shared `HWWall`, and `DoTexture` restores its saved flags (`hw_walls.cpp:1625,1677`) while `DoMidTexture` does not; on main the worker path kept the glow on parts after such a mid, so the change makes worker output equal the single-thread output rather than creating a new difference. [xc: added the multithread gates and the direction] | V (code); image effect I |
 | `HWWall::SetSectorLight/SetSideGlow/SetTierLight/SetTierLightLevel` | `hw_walls.cpp:2431-2461` | not called by `Process` (it keeps its own statements); compiled under /fp:fast | V |
 | `HWMeshHelper::order`/`recordOrder` pushes | `hw_walldispatcher.h` | a bool test per part on the mesh-helper path only | V |
 | Effect `EFF_LEVELMESH` compiled for every pass | `vk_shader.cpp` (`CompileNextShader`), `hw_shaderpatcher.cpp` | startup shader compile + pipeline cache entries, always | V |
@@ -225,8 +235,8 @@ TryRunTics (d_net.cpp:2493, :2557): R_SnapshotWrite (r_snapshot.cpp:278)
 | `r_levelmesh_drawall` | 0 | `:150` | `:4530`, `:4783` | 1: draw the whole static index buffer (no walk culling) |
 | `r_levelmesh_foldback` | **1** | `:155` | `:3698` | 2d fold-back on |
 | `r_wallcache` | 0 | `hw_wallcache.cpp:40` | `:315`, `hw_bsp.cpp:743`, global hash | stage 2b wall cache |
-| `r_snapshot` | 0 | `r_snapshot.cpp:28` | `:280`, `:323`, `:371` | 1 compact records, 2 + byte images, 3 + parallel measurement |
-| `r_snapshot_threads` | 6 | `:29` | `:197` | r_snapshot 3 only |
+| `r_snapshot` | 0 | `r_snapshot.cpp:28` | `:280`, `:323`, `:373` | 1 compact records; 2 records + byte images; 3 records + parallel measurement, **without** 2's serial byte images (`:323` tests `== 2`) [xc: was "3 + parallel measurement" on top of 2; read line :371 → :373] |
+| `r_snapshot_threads` | 6 | `:29` | `:191` | r_snapshot 3 only [xc: read at :191, not :197] |
 | `r_renderthread` | false | `:33` | its own callback | **stub**: prints "not built yet" and resets to false |
 
 CCMDs: `levelmeshstats` (`:4943`, prints and resets `FrameStats`), `levelstats` (`hw_levelstatic.cpp:103`),
@@ -235,7 +245,8 @@ CCMDs: `levelmeshstats` (`:4943`, prints and resets `FrameStats`), `levelstats` 
 ### B.3 What it builds at load (`Build`, `:2088-2596`) — V
 
 Build is called from `BeginScene` on the first accepted scene after a level loads or a switch/global hash moves
-(`:4242-4247`). It is rate-limited to once per 35 frames for global-hash changes (`REBUILD_FRAMES`, `:410`) and runs
+(`:4242-4247`). It is rate-limited to once per 35 frames for global-hash and switch (`otherBuild`) changes; only a
+new level bypasses the limit (`:4245`) [xc: the limit covers switch changes too] (`REBUILD_FRAMES`, `:410`) and runs
 inside `RenderBSP`'s `Bsp` clock, so the build frame shows a spike in the perf_track `bsp` column. It returns false:
 that frame and the next (`IsDrawable` needs `FrameCount > mAllocFrame + 1`, `hw_levelbuffers.cpp:172`) draw
 entirely on the old path.
@@ -243,8 +254,12 @@ entirely on the old path.
 1. **Classify** every side (`LevelStatic_Classify`, `hw_levelstatic.cpp:93`). A side is refused if it has: no segs,
    polyobject, line portal/horizon/mirror, translucent mid, heightsec, 3D floors/light list, sector portal, sky
    plane (accepted at ≥2 for a sky ceiling), an animated base pic (`TexAnim` base pics), a warped/canvas/translucent
-   texture, or a heightsec/3D-floor neighbour at either vertex. O(sides × 3 tiers).
-2. **Shadow**: per sector, `MakeSectorShadow` (264 B, `:905`) plus, for `r_levelmesh_verify` only, three hashes.
+   texture. The classifier also marks a heightsec/3D-floor neighbour at either vertex (`LSR_NEIGHBOUR`), but `Build`
+   accepts that reason like `LSR_ELIGIBLE` (`:2180`, and `FoldSide` `:3225`), so such sides are not refused
+   [xc: the doc listed the neighbour test as a refusal]. O(sides × 3 tiers).
+2. **Shadow**: per sector, `MakeSectorShadow` (264 B, `:905`) plus three hashes (`SectorBuildHash`, `SectorLightHash`,
+   `SectorPlaneBuildHash`, `:2138-2147`), computed for every sector at every build but read only under
+   `r_levelmesh_verify` (`:3709`) [xc: was "for r_levelmesh_verify only"; the computation is unconditional].
    Floor/ceiling texture pointers go into `SectorFlatTex`. Per vertex, `RecalcVertexHeights` if dirty and a hash of
    its height list (`:2150-2164`). Note: the build *writes* `vertex_t` state through `RecalcVertexHeights`, as
    `Process` itself does.
@@ -328,7 +343,8 @@ time is in the console line; I have no measured value to quote.
 
      Cost: O(numsectors) every pass, whatever is visible.
   2. Vertex height lists: only around sectors whose planes changed (`LookAtVertex :1036`, which may call
-     `RecalcVertexHeights`).
+     `RecalcVertexHeights`). Finding them is a second loop over all sectors' `SectorPlaneChanged` bytes whenever any
+     sector differs and `gl_seamless` is on (`:3814-3827`) [xc: added].
   3. `FoldBack :3637`: candidates still for one tic. At most `FOLD_SIDES_PER_PASS = 500` sides through `Process` a
      pass (`:837`); the first closure always runs, even over the cap.
   4. Dynamic lights: O(lights × (wall_tlist + flat_tlist)) when `Level->HasDynamicLights`; marks sides/flats
@@ -509,8 +525,11 @@ on, the saving shrinks toward zero while the added costs stay (**I**).
    textures render before the main view (`hw_entrypoint.cpp:726-730` vs `:753`) and are not portals. They can
    therefore be accepted, run the frame's change pass, and take one of the `FRAME_INDEX_SCENES = 2` regions
    (`hw_levelbuffers.h:78`). In non-multiview VR the second eye then finds no room. It draws the whole static index
-   buffer, or no mesh at all once a group changed (`:4302-4306`). The comment at `:58` ("main view only") is not
-   enforced.
+   buffer, or no mesh at all once a group changed (`:4302-4306`). The comments at `:57` and `:4227` ("main view
+   only") are not enforced [xc: line was :58]. A second consequence of the same gap: the camera scene, being the
+   frame's first accepted scene, sets the frame's light key; a later main-view scene whose `ComputeLightKey`
+   (`:1053`, includes `getExtraLight()`) differs is refused whole for that frame (`ScenesOtherLight`, `:4277-4283`)
+   [xc: added; I — not traced whether `r_viewpoint.extralight` differs between the camera and main scenes].
 2. **Eviction flags are frame-global** (`:4155-4187`): the GPU reads them when the frame's commands run. If two scenes
    in one frame decide differently for a side (mesh in scene A, evicted in scene B), A loses the side. The per-frame
    decisions (dither, decals, dynlights, damage, own fields once a frame) make this unlikely. EV_SECTOR depends on the
@@ -539,7 +558,8 @@ on, the saving shrinks toward zero while the added costs stay (**I**).
   - an `FSnapActorRec` per unique actor (312 B prev. measured; RENDER_THREAD_SHADOW_WORLD.md);
   - CSR index arrays.
 - `r_snapshot 2`: also memcpy of every actor in `thinglist` (class size) and whole `sectors`/`sides`/`lines` arrays.
-- `r_snapshot 3`: also `MeasureParallel :189`, which **creates and joins `std::thread`s on every write**
+- `r_snapshot 3`: the `r_snapshot 1` records plus `MeasureParallel :189` (not the `r_snapshot 2` serial byte images:
+  `:323` tests `== 2`) [xc: was "also", implying 3 includes 2], which **creates and joins `std::thread`s on every write**
   (`RunParallel :181`) for actor images and a 4 KB page diff of the level arrays against a shadow. Measurement only.
 - Prev. measured (RENDER_THREAD_SHADOW_WORLD.md, Abandon MAP13, `doomxr_rend1111b`): 17,481 records, 5.5 ms a
   write (max 8.4). Byte images (r_snapshot 2) 24.3 ms. r_snapshot 3: actor images 11.8 ms on 6 workers.
@@ -607,7 +627,7 @@ Cost class: C = per call constant; S = per sector; Sd = per side; V = per vertex
 | `r_levelmesh_verify`, `_sidescan`, `_clock`, `_drawall` | DORMANT dev switches | B.2 |
 | `r_levelmesh_foldback` | ON by default | `:155` |
 | `EFF_LEVELMESH` on GL/GLES | never compiled (skipped) | `gl_shader.cpp:1236`, `gles_shader.cpp:858` |
-| `SectorBuildHash`, `SectorLightHash`, `SectorPlaneBuildHash` arrays | computed at build and fold for **every** sector, read only under verify | `:2138-2147`, `:3605-3606`, `:3709-3762` — dead weight at verify 0 |
+| `SectorBuildHash`, `SectorLightHash`, `SectorPlaneBuildHash` arrays | computed at build for **every** sector and at fold for the folded sector, read only under verify [xc: fold recomputes one sector, not all] | `:2138-2147`, `:3605-3606`, `:3709-3762` — dead weight at verify 0 |
 | `HWMeshHelper::recordOrder/order` | used by the wall cache only | `hw_wallcache.cpp:369,396` |
 | `sim_prefetch` | DORMANT (0) | `dthinker.cpp` |
 | `sim_maxcatchup`, `snd_evictretry`, `snd_evictbudget` | ACTIVE by default (non-zero) | A.2.1 |
@@ -621,7 +641,9 @@ Cost class: C = per call constant; S = per sector; Sd = per side; V = per vertex
   `sector_t`'s layout (about ten cache lines a sector)" (HANDOFF_RENDER_2026-11-11.md).
 - `VertexChanged`/`VertexSeen`/`VertexBuildHash` by vertex.
 - `SurfaceRuns` (24 B) by surface id, `StaticIndices` CPU copy: the per-scene index copy reads both.
-- `Groups`/`FlatGroups`: one draw each; the number of groups is the floor on draw calls.
+- `Groups`/`FlatGroups`: at most one draw each per scene; groups with no reached indices are skipped
+  (`if (count == 0) continue;`, `:4680`, `:4914`), so the number of groups is the ceiling, not the floor, on mesh
+  draw calls [xc: was "floor"].
 - Mapped `LevelMeshSurfaceRecord[]` (32 B) and `LevelMeshLightRecord[]` (320 B): read per vertex (and, for lights,
   per fragment) by the GPU; written by the CPU for evictions, patches and folds.
 - Per-frame index buffer: written sequentially by the CPU each scene, read by the GPU as an index buffer.
@@ -817,3 +839,46 @@ Cost class: C = per call constant; S = per sector; Sd = per side; V = per vertex
 
 **model formats** (1)  
 `common/models/modelrenderer.h` M +6/-0
+
+## Cross-check (date 2026-11-13)
+
+Checked against the code in `/home/claude/uzdxrema` (src/wadsrc identical between 175063a1 and the current tip
+abb19af1), `/home/claude/uzdx_main`, and read-only `git log/rev-list/merge-base/diff/numstat` against
+`origin/main`, `origin/netplay`, `origin/selaco`, 175063a1. Cvar/dead-code greps ran over all of `src/` and `wadsrc/`
+(menudef, zscript, txt lumps included); none of the area's cvars or helpers is read from wadsrc.
+
+| category | checked | right | line-fixed | corrected | unconfirmed | added |
+|---|---|---|---|---|---|---|
+| a. Summary claims | 24 | 19 | 0 | 5 | 0 | 0 |
+| b. "What slows it down" items (rank + evidence) | 10 | 10 | 0 | 0 | 0 | 0 |
+| c. DEAD / DORMANT / never-read claims | 15 | 14 | 0 | 1 | 0 | 0 |
+| d. cvar defaults (both branches where relevant) | 15 | 15 | 2 (read sites) | 1 (r_snapshot 3 semantics) | 0 | 0 |
+| e. branch-difference claims | 38 | 31 | 0 | 6 | 0 | 2 |
+| f. per-function / call-graph / appendix rows | 46 | 46 | 0 | 0 | 0 | 0 |
+| other Part B body claims | 30 | 23 | 1 | 4 | 0 | 2 (one I) |
+
+Confirmed and worth stating: `sim_maxcatchup` (2, `d_net.cpp:207`, used `:2415` outside netgames), `snd_evictretry`
+(8, `s_sound.cpp:1341`), `snd_evictbudget` (64, `:1345`) exist only on renderer and are active at `r_newrenderer 0`;
+`sim_prefetch` 0; main has none of the four. The PutWall change at `hw_walls.cpp:894` is real and is the only
+old-path image change; R_SnapshotAcquire/Release, the three WallCache hash exports, `WallCache_NoBackSector`,
+`HWWall::SetTierLight` and `StorageCapacityBytes` have no callers anywhere in src/wadsrc. All commit counts and
+merge-bases in A.1 reproduce exactly at 175063a1.
+
+Corrections:
+- Summary 1: the 116 renderer commits include 5 merges of main; origin/renderer is now 120 ahead (4 docs-only teardown commits).
+- Summary 2: 12 new files, not 13.
+- Summary 3 / A.2.3 PutWall: workers also need `gl_multithread` and, in VR, `vr_scene_multithread` (default false); the change makes worker output match the single-thread path instead of creating a difference.
+- Summary 4: surface records are per slot surface (unused included) and per static flat plane, not per part; static VB/IB are Static usage, not Persistent.
+- Summary 6: one draw per non-empty material group.
+- A.1 main/renderer: 46 renderer-only + 29 main-only + 3 both = 78 (49/32 included the 3).
+- A.2.1: `hw_walldispatcher.h` is +18/−2, not +20; added the missing `hw_surfacedamage.h` (+11).
+- A.2.2: models +156/−10, vr_body +707/−2, vmthunks +196/−40, doombase +128/−26 (the doc gave add+delete sums as "+N").
+- B.2/B.9: `r_snapshot 3` = records + parallel measurement, without the `r_snapshot 2` byte images; read lines :373 and :191.
+- B.3 classify: `LSR_NEIGHBOUR` (heightsec/3D-floor neighbour at a vertex) is accepted by Build and FoldSide, not refused.
+- B.3 shadow: the three verify hashes are computed for every sector at every build, regardless of verify.
+- B.3: the 35-frame rebuild limit covers switch changes too; only a new level bypasses it.
+- B.8.1: comment line :57 (not :58).
+- B.11: fold recomputes the verify hashes for the folded sector only.
+- B.12: group count is the ceiling, not the floor, on mesh draw calls.
+- Added (B.4): the vertex step loops over all sectors' change bytes whenever any sector changed.
+- Added (B.8.1, I): a camera-texture scene sets the frame's light key, so a main view with a different key is refused whole.

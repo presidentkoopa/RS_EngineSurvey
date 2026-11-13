@@ -24,8 +24,12 @@ Conventions.
    `HWWall` (`HWWall::Process`, `walls:2419`) and every visible sector plane as an `HWFlat` (`flats:672`) into 8 draw lists.
 2. Walls have no persistent GPU geometry on M: their vertices are generated each scene (`HWWall::MakeVertices`, `wv:279`);
    on Vulkan (persistent buffers) this happens at **draw** time on the main thread, together with per-wall dynamic-light
-   gathering (`HWWall::DrawWall`, `walls:559-568`) [V]. Flats draw from a static index buffer built at map load (`CreateVBO`,
-   `vb:477`), patched in place when a visible plane moved (`CheckUpdate`, `vb:462`) [V].
+   gathering (`HWWall::DrawWall`, `walls:559-568`) [V]. Flats draw from a static vertex + index buffer built at map load (`CreateVBO`,
+   `vb:477`); the vertex z values (shadow copy + mapped buffer, then `Upload`) are patched in place when a reached plane moved
+   (`CheckUpdate` `vb:462` -> `UpdatePlaneVertices` `vb:406-421`); the index buffer is never patched [V] [xc: it is the vertex
+   buffer, not the index buffer, that is patched]. (M does build a static per-side wall mesh at map load, `DoomLevelMesh`,
+   `maploader/maploader.cpp:3251`, `rendering/hwrenderer/doom_levelmesh.cpp:22-28`, but it only feeds the ray tracer
+   (`ep:318`, `common/rendering/vulkan/renderer/vk_raytrace.cpp:49-62`, GPU copy only when `RaytracingEnabled`), never the raster draw [xc: added].)
 3. VR defaults make it worse: `vr_scene_multithread` is false (`common/rendering/hwrenderer/data/hw_cvars.cpp:278`), so the
    whole walk + wall/flat/sprite setup runs single-threaded on the main thread in VR (`bsp:1438-1439`); `vr_openxr_multiview`
    is false (`common/rendering/hwrenderer/data/hw_vrmodes.cpp:643`), so the scene is built **twice per frame**, once per eye
@@ -38,19 +42,26 @@ Conventions.
    range that hides everything behind it (`bsp:653`) [V]. It runs per **seg**, before the per-linedef de-duplication, so a
    linedef split into N segs yields N identical impostors (`bsp:632-655` vs `bsp:716-721`) [V]. It measures from the global
    `r_viewpoint.Pos`, not the scene's viewpoint, so skybox and camera-texture scenes cull by the player's position (`bsp:457`) [V] (bug [I]).
+   It tests only the seg's two endpoints (`bsp:457-459`), so a long seg passing close to the viewer is still culled, and the
+   impostor path never assigns `lightlevel`/`rellight` before `DoTexture` (`walls:2563-2580`; `HWWall` has no constructor,
+   `hw_drawstructs.h:197,200`; fresh stack `HWWall` at `bsp:648` (ST), `bsp:335` (scene worker), `bsp:304` (wall workers)), so impostors draw with an indeterminate light level
+   [V code, I effect] [xc: added, B12/B13].
 6. Portals (sky, skybox, mirror, line-to-line, stacked sector, plane mirror, horizon) are discovered only by the walk
    (`HWWall::PutPortal`, `walls:906`); every scene-type portal runs another full `CreateScene`/`RenderBSP` from the BSP root
    (`portal.h:187-195`, `di:4479`) [V]. Sky lines become one draw call per line (`portal:252-255`) [V].
 7. The walk writes level state that other systems read: `ML_MAPPED`, `SSECMF_DRAWN`, `SECMF_DRAWN` (automap, savegames,
    ZScript-readable), the global `validcount`, vertex clip-angle caches, sector VBO heights; plus dormant dither flags, and
-   per scene the billboard `drawPos` that ZScript hit-tests read (`di:3644`, `scripting/vmthunks.cpp:3076`) [V].
+   per scene the billboard `drawPos` that ZScript hit-tests read (`di:3644`, `scripting/vmthunks.cpp:3076`) [V]. Outside the
+   walk but in the same per-scene path, `RenderScene` -> `SetupHeatmap` decays `Level->HeatIntensity` (`di:3247-3261`), which
+   ZScript reads back through the clearscope native `HeatmapAt` (`scripting/vmthunks.cpp:5618-5629`, `wadsrc/static/zscript/doombase.zs:2098`) [V] [xc: added].
 8. Fork per-surface hooks on the draw path: surface damage (`unordered_map` lookup per wall/flat draw when active,
    `rendering/hwrenderer/hw_surfacedamage.cpp:146-160`), effect lights mode, glow seed/planes (every wall and flat), flat-edge
    glow (copies up to 64 sector lines per flat draw, `flats:478-487`), dither (dormant: needs an out-of-bounds camera) [V].
 9. The walk is the only producer of: visibility, all wall geometry, the flat/section visible set and moving-plane updates,
-   portal lists, thing/particle submission, decals, render-hack fills, automap bits, Boom heightsec view state (section 7).
+   portal lists, thing/particle submission, decals, render-hack fills, Boom heightsec view state (section 7); it is the only
+   *view-driven* producer of the automap bits (other writers exist, section 7 item 11) [xc: automap bits are not walk-only].
 10. Renderer branch: adds an opt-in static level mesh and wall cache, entered from inside this walk (`R:bsp:346,349,368,661,760,763,1158,1464`,
-    `R:di:3830,3835`); both default off (`r_newrenderer` 0, `r_wallcache` 0). The walk itself is unchanged on R, N and S except as listed in section 9.
+    `R:di:3830,3835`); both default off (`r_newrenderer` 0, `r_wallcache` 0). The walk itself is unchanged on R, N and S except as listed in section 10 [xc: cross-reference said section 9].
 
 ---
 
@@ -221,7 +232,7 @@ section-plane (Fp), per sector reached (Sec), per draw (Dr), per light candidate
 |---|---|---|---|---|---|
 | `RenderView` | ep:640 | d_main.cpp:1697 | F | O(canvases + camera textures) + main view | resets clocks, fake-flat arena [V] |
 | `RenderViewpoint` | ep:264 | ep:750, ep:727, ep:610 | view | eye loop | builds scene per eye unless multiview [V] |
-| `HWDrawInfo::StartDrawInfo` / `StartScene` | di:2046 / di:2066 | ep:417, di:4047 | Sc | O(MAX_BEAMS 128 + stamps 64 + fog disturb 32 + shapes 128 + sweep bands) uniform fill; `FillFogDynLights` walks all level lights when the fog slab is on (`di:1781-1843,2433`); `ClearBuffers` memsets | ~800 lines of fork uniform setup per scene [V]; `HWViewpointUniforms` ≈ 26.7 KB [I: summed declared fields of `common/rendering/hwrenderer/data/hw_viewpointuniforms.h`] |
+| `HWDrawInfo::StartDrawInfo` / `StartScene` | di:2046 / di:2066 | ep:417, di:4047 | Sc | O(MAX_BEAMS 128 + stamps 64 + fog disturb 32 + shapes 128 + sweep bands) uniform fill; `FillFogDynLights` walks all level lights when the fog slab is on **and** the level asks for fog lights (`Level->FogDynLights` > 0, capped by `fog_dynlights_max` 8; `di:1781-1843,2433`), measuring from the global `r_viewpoint.Pos` (`di:2433`) [xc: the walk also needs FogDynLights > 0, not only the slab]; `ClearBuffers` memsets | ~800 lines of fork uniform setup per scene [V]; `HWViewpointUniforms` ≈ 26.7 KB [I: summed declared fields of `common/rendering/hwrenderer/data/hw_viewpointuniforms.h`] |
 | `HWDrawInfo::ClearBuffers` | di:2892 | StartScene di:2849, `FDrawInfoList::Release` di:2035 | Sc ×2 | memset section/subsector/node flag arrays, clear TArrays/TMaps | twice per scene [V] |
 | `HWDrawInfo::SetViewArea` | di:2952 | ep:422, portal Setup | Sc | 1-2 `PointInRenderSubsector` | sets `in_area` [V] |
 | `HWDrawInfo::SetupView` | di:3336 | ep:455/468/476, portals | Sc | matrix build + copies of ~27 KB uniform structs (`previousLeft`, `previousRight`, `nextRight`) | upload when `upload` true [V] |
@@ -238,7 +249,7 @@ section-plane (Fp), per sector reached (Sec), per draw (Dr), per light candidate
 | `Clipper::IsRangeVisible` / `SafeCheckRange` | clip:121 / clip.h:106 | CheckBox, AddLine, DoSubsector | Sg, Nd | linear scan of sorted range list | list length grows with occluders [V] |
 | `Clipper::AddClipRange` / `SafeAddClipRange` | clip:146 / clip.h:116 | AddLine (occluding segs) | Sg | O(clip nodes), merges | node arena + freelist [V] |
 | `Clipper::GetClipAngle` | clip.h:187 | AddLine, UnclipSubsector, DoSubsector | Sg | cached in `vertex_t::angletime/viewangle` keyed on `starttime` | writes level vertices [V] |
-| `DoSubsector` | bsp:1193 | RenderBSPNode | Ss | flag tests, `hw_FakeFlat`, optional OoB per-seg pitch test | 10 `VRSubsector*` clock calls per subsector in VR [V] |
+| `DoSubsector` | bsp:1193 | RenderBSPNode | Ss | flag tests, `hw_FakeFlat`, optional OoB per-seg pitch test | 6 `VRSubsector*` clock calls per visible subsector in VR, 4 per culled one (`bsp:1195-1196,1342-1346`) [V] [xc: was "10"] |
 | `UnclipSubsector` | bsp:420 | DoSubsector | Ss (portal) | per seg `SafeRemoveClipRange` | portals only [V] |
 | `hw_FakeFlat` | ff:200 | DoSubsector, AddLine, flats, render hacks, workers | Ss/Sg | returns `sec` unless heightsec / overlapping back sector; else copies a full `sector_t` once per frame per sector into an arena | cache cleared once per frame (`ep:662`), shared by both eyes and all portals [V] |
 | `hw_CheckViewArea` | ff:153 | AddLine | Sg (heightsec maps) | 4 ZatPoint | [V] |
@@ -286,7 +297,7 @@ section-plane (Fp), per sector reached (Sec), per draw (Dr), per light candidate
 | `HWFlat::SetupLights` | flats:157 | DrawSubsectors, PutFlat | Fp × Lt | iterate `flat_dlist[section]` TMap; budget 16 | [V] |
 | `HWFlat::DrawOtherPlanes` / `DrawFloodPlanes` | flats:306 / 335 | DrawFlat | hack planes | 1 fan per subsector / 3 strips + 9 stencil/state changes per flood seg | [V] |
 | `HWDrawList::DrawSorted` / `Sort` | dl:931 / 702 | RenderTranslucent | Sc | BSP-style split sort of translucent walls/flats/sprites; maps vertex buffer for split vertices | [V] |
-| `HWDrawInfo::SetupHeatmap` | di:3233 | RenderScene | Sc | O(HEAT_RES²) decay loop when decay>0 | writes `Level->HeatIntensity` (bug, section 6) [V] |
+| `HWDrawInfo::SetupHeatmap` | di:3233 | RenderScene | Sc | O(HEAT_RES²) decay loop when decay>0 (`HEAT_RES` 256 -> 65,536 cells, `g_levellocals.h:4052`); whenever a cell moved, two fresh 256 KB heap arrays + 2 memcpy + `SetGrid` per scene (`di:3264-3276`) [xc: added] | writes `Level->HeatIntensity`, which ZScript `HeatmapAt` reads (bug B5, section 6) [V] |
 | `FPortalSceneState::RenderFirstSkyPortal` / `EndFrame` / `RenderPortal` | portal:123 / 83 / 171 | DrawScene | Sc | per portal: stencil passes + nested scene | [V] |
 | `HWPortal::DrawPortalStencil` | portal:212 | Setup/RemoveStencil | portal × pass | **one `Draw` per portal line** (`portal:252-255`) + caps | [V] |
 | `HWScenePortalBase::ClearClipper` | portal:568 | portal Setup | portal | O(portal lines) range removal, silhouette | [V] |
@@ -335,7 +346,7 @@ Counters that already exist for these: `rendered_lines`, `rendered_flats`, `vert
 | Structure | Where | What matters |
 |---|---|---|
 | `HWDrawInfo` (pooled by `FDrawInfoList`) | di.h:115-215, di:2001-2038 | 8 `HWDrawList`s, `Portals`, missing-texture arrays, 4 TMaps, per-section/subsector/node flag arrays memset twice per scene (di:2919-2921), 3 copies of `HWViewpointUniforms` (VPUniforms + 2 multiview) ≈ 80 KB [I] |
-| `HWViewpointUniforms` | common/rendering/hwrenderer/data/hw_viewpointuniforms.h | ≈ 26.7 KB (beams 6×128, shapes 5×128, stamps 4×64, fog disturb 2×32 FVector4 arrays) [I: field sum]; copied by value in `SetupView` (2-3 copies, di:3340-3372), `StartScene` (di:2083), `RenderViewpoint` (`viewpoints[2]` on the stack, ep:457), and uploaded whole per `SetViewpoint` |
+| `HWViewpointUniforms` | common/rendering/hwrenderer/data/hw_viewpointuniforms.h | ≈ 26.7 KB (beams 5×128 `mBeamA/B/Col/Look/Scroll`, shapes 5×128, stamps 4×64, fog disturb 2×32, fog lights 2×8 FVector4 arrays; `hw_viewpointuniforms.h:196-198,570,645`) [I: field sum] [xc: beams are 5×128, not 6×128]; copied by value in `SetupView` (2-3 copies, di:3340-3372), `StartScene` (di:2083), `RenderViewpoint` (`viewpoints[2]` on the stack, ep:457), and uploaded whole per `SetViewpoint` |
 | `Clipper` (3 statics) | clip.h:45-197, di:2061-2063 | doubly linked sorted angle ranges in an `FMemArena` + freelist; all tests are linear scans; the range list is what makes the walk occlusion-culled |
 | `vertex_t::angletime/viewangle` (+radar pair) | clip.h:187-195 | per-scene angle cache stored **in level vertices**; invalidated by `Clipper::starttime++` (clip:90) |
 | `RenderJobQueue` / `WallWorkQueue` | bsp:134-247 | fixed static arrays: 300,000 `RenderJob` (+ 300,000 `WallWorkItem` + 100,000 batches), **no overflow check** (bsp:140-147,174-181); tens of MB of BSS [I: element sizes ×counts] |
@@ -381,9 +392,11 @@ cost of a wall is the draw-list hand-off, not `Process`". These were flat-screen
    (`di:3340-3372`), uploaded per `ApplyViewpoint`; each translucent flat uploads twice (`flats:541-545`); under multiview
    `SetViewpoint` builds `{*vp, *vp}` (54 KB) for a single view (`hw_viewpointbuffer.cpp:112-115`) [V code].
 7. **`StartScene` fork uniform work per scene** (low-medium). ~800 lines, fixed-size loops (128 beams, 64 stamps, 128 shapes,
-   32 fog disturbs) and, with the fog slab, a walk over all level lights (`di:2433`, `di:1781-1843`) — per eye and per portal [V].
+   32 fog disturbs) and, with the fog slab and a level that asks for fog lights (`Level->FogDynLights` > 0), a walk over all
+   level lights (`di:2433`, `di:1781-1843`) — per eye and per portal [V] [xc: fog-light walk also needs FogDynLights > 0].
 8. **Distance-cull impostors** (low CPU, visible artefacts). N identical impostors per N-seg linedef; impostors drawn with
-   ceiling textures; not counted in `rendered_lines` in ST mode (section 6.3) [V].
+   ceiling textures and an uninitialised light level (B12); endpoint-only test (B13); not counted in `rendered_lines` in ST
+   mode (section 6.3) [V] [xc: B12/B13 added].
 9. **Render hacks** (low, map dependent): O(n²) missing-texture bookkeeping (`rh:278-294,345-361,629-638`), recursive
    collections, each with `validcount++` [V].
 10. **Heightsec maps**: whole-`sector_t` copies (`ff:243`) per affected sector per frame (cached across eyes) [V].
@@ -392,17 +405,19 @@ cost of a wall is the draw-list hand-off, not `Process`". These were flat-screen
 
 | # | Finding | Evidence | Conf. |
 |---|---|---|---|
-| B1 | Distance cull uses the global `r_viewpoint.Pos`, not the scene's viewpoint. Skybox scenes (viewpoint = skybox actor, `portal:866`) and camera textures (`texvp`, `ep:725-727`) cull against the player's position; a skybox room more than 4000 units from the player has its lines replaced by impostors and its view occluded. | bsp:457-458 | [V] code, [I] visible effect |
-| B2 | Distance-culled segs bypass the linedef de-duplication: one impostor per seg, each spanning the whole linedef (Process uses linedef v1/v2 with fracleft 0/fracright 1, walls:2487-2501). | bsp:632-655 before bsp:716-721 | [V] |
+| B1 | Distance cull uses the global `r_viewpoint.Pos`, not the scene's viewpoint. Skybox scenes (viewpoint = skybox actor, `portal:866`) and camera textures (`texvp`, `ep:725-727`) cull against the player's position; a skybox room more than 4000 units from the player has its lines replaced by impostors and its view occluded. Camera textures are rendered before the main view's `R_SetupFrame(r_viewpoint, ...)` (`ep:719-730` before `ep:750` -> `ep:268`), so they cull against the previous frame's main-view position [xc: refined]. | bsp:457-458 | [V] code, [I] visible effect |
+| B2 | Distance-culled segs bypass the linedef de-duplication: one impostor per seg, each spanning the whole linedef (Process uses linedef v1/v2 with fracleft 0/fracright 1, walls:2487-2501). On a linedef with some near and some far segs, the near seg emits the normal full-linedef wall and each far seg emits a coplanar full-linedef opaque impostor over it (z-fight / ceiling texture showing through) [xc: added, V code / I effect]. | bsp:632-655 before bsp:716-721 | [V] |
 | B3 | Impostors are textured with the front sector's ceiling flat (or become sky portal parts) and are opaque full-height walls; they also add a clip range. Culled lines do not get `ML_MAPPED`. | walls:2563-2580, bsp:653, bsp:711 | [V] |
 | B4 | `gl_render_walls 0` does not stop impostors (checked only after the cull branch). | bsp:632 vs bsp:723 | [V] |
-| B5 | `SetupHeatmap` decays `Level->HeatIntensity` by `HeatDecay * screen->FrameTime * 0.001` where `FrameTime` is milliseconds since the first frame (`d_main.cpp:1681`, `common/utility/i_time.cpp:193-196`), not the frame delta; and it runs per scene (per eye, per portal). Heat empties almost at once once uptime is large, faster with more scenes. | di:3247-3261 | [V] code, [I] effect |
-| B6 | Billboard `drawPos` is written per scene, including portal scenes (no `mCurrentPortal` gate) and the second eye; ZScript hit-tests read it (`scripting/vmthunks.cpp:3076`). The value seen by script is whichever scene ran last, and it is client-view dependent (a render→script path). | di:3644 | [V] code, [I] consequence |
-| B7 | `HWFlat::Process` writes `dithertransflag = false` into real sector planes from the scene worker (MT), concurrently with nothing today but against the "renderer may only draw" rule. | flats:592-593 | [V] |
+| B5 | `SetupHeatmap` decays `Level->HeatIntensity` by `HeatDecay * screen->FrameTime * 0.001` where `FrameTime` is milliseconds since the first frame (`d_main.cpp:1681`, `common/utility/i_time.cpp:193-196`), not the frame delta; and it runs per scene (per eye, per portal). Heat empties almost at once once uptime is large, faster with more scenes. The decayed array is the one ZScript reads back through the clearscope native `HeatmapAt` (`scripting/vmthunks.cpp:5618-5629`, `wadsrc/static/zscript/doombase.zs:2098`; written by `HeatmapAdd`, `vmthunks.cpp:5473-5514`), so script sees a value that depends on uptime, eye count, portals and frame rate: a render→script path, view- and machine-dependent (netplay hazard) [xc: added; section 8 said "read only by the renderer"]. | di:3247-3261 | [V] code, [I] effect |
+| B6 | Billboard `drawPos` is written per scene, including portal scenes (no `mCurrentPortal` gate) and the second eye; ZScript hit-tests read it (`scripting/vmthunks.cpp:3076`), but only for view-locked and hand-locked billboards with a non-zero `drawPos` (`BBFL_VIEWLOCKED|BBFL_HANDANY`); other billboards use `pos` [xc: scope narrowed]. The value seen by script is whichever scene ran last, and it is client-view dependent (a render→script path). | di:3644 | [V] code, [I] consequence |
+| B7 | `HWFlat::Process` writes `dithertransflag = false` into the model sector's planes (the real sector, or its per-frame fake copy for heightsec/overlap sectors) from the scene worker (MT) [xc: not always the real sector], concurrently with nothing today but against the "renderer may only draw" rule. | flats:592-593 | [V] |
 | B8 | Experimental wall workers: `vertex_t::RecalcVertexHeights` (walls:2504-2505) and lazily computed texture data (`GetAreas`, walls:1951) can run on two workers at once for walls sharing a vertex/texture. | bsp:280-311 | [I] |
 | B9 | `RenderJobQueue`/`WallWorkQueue` have no bounds check (comment says 300,000 is enough). | bsp:140-147,174-181 | [V] |
-| B10 | `AllocVertices` reads `GetBuffer()` before `fetch_add` (pointer from a stale index if two threads allocate). Single allocating thread today on Vulkan (walls/sprites allocate at draw time) except skybox flats on the scene worker. | common/rendering/hwrenderer/data/flatvertices.cpp:141-142 | [I] |
-| B11 | Dither: `RenderedTargets` scan reads `thing->validcount` on the main thread while the scene worker's `RenderThings` writes it (MT). Dormant (needs OoB camera). | bsp:1088-1097, bsp:923-924 | [V] |
+| B10 | `AllocVertices` reads `GetBuffer()` before `fetch_add` (pointer from a stale index if two threads allocate). Single allocating thread today on Vulkan (walls/sprites allocate at draw time) except skybox flats and portal/sky wall parts (`PutPortal` -> `MakeVertices` at walk time, `walls:913`) on the scene worker [xc: portal walls added]. | common/rendering/hwrenderer/data/flatvertices.cpp:141-142 | [I] |
+| B11 | Dither: `RenderedTargets` scan reads `thing->validcount` on the main thread while the scene worker's `RenderThings` writes it (MT). Dormant (needs OoB camera). In ST (the VR default) it is also broken: `RenderThings` runs first (`bsp:1078-1083`) and stamps `validcount` on every thing in `touching_renderthings` before any cull (`bsp:923-924`), so the scan's `thing->validcount == validcount` skip (`bsp:1091`) drops every thing and no dither target is ever collected [xc: added]. | bsp:1088-1097, bsp:923-924 | [V] |
+| B12 | Distance-cull impostors draw with an indeterminate light level: the culled branch of `Process` calls `DoTexture` without ever assigning `lightlevel`/`rellight` (assigned only in the later tier branches, `walls:2607,2682,2756,2807,2824`); `HWWall` has no constructor (`hw_drawstructs.h:143-235`) and every caller builds a fresh stack `HWWall` (`bsp:648` ST, `bsp:335` scene worker, `bsp:304` wall workers); `PutWall` reads it for the glow test (`walls:854`) and `RenderTexturedWall` feeds it to `SetFog`/`SetColor` (`walls:336,469-470`). [xc: added] | walls:2563-2580 | [V] code, [I] visible effect |
+| B13 | `IsDistanceCulled` compares only the two endpoints against 4000 (`bsp:457-459`); a long seg that passes close to the viewer with both ends far away is culled, replaced by an impostor, and `SafeAddClipRange` (`bsp:653`) then hides everything behind it, including near geometry. [xc: added] | bsp:451-462, 632-655 | [V] code, [I] how often maps have such segs |
 
 ### 6.2 What the clocks cover (for reading a measured run)
 
@@ -429,7 +444,7 @@ and camera textures [V].
 - `rendered_lines` counts `Process` calls: in ST the distance-culled path is not counted (bsp:648-652), in MT it is
   (bsp:342), wall workers add `mesh.wallCount` (bsp:1500); render-hack minisegs add more (rh:1185) [V].
 - `render_vertexsplit` is never incremented anywhere (only reset/printed) → always 0 [V: grep finds no increment].
-- `WallWorkersElapsed` is never clocked (only `Reset`, clock:124); elapsed is taken from `WallWorkersElapsedCycles` [V].
+- `WallWorkersElapsed` is never clocked (`Reset` at clock:124, read at clock:174 as a fallback that is always 0); elapsed is taken from `WallWorkersElapsedCycles` [V] [xc: it is read, not only reset].
 - The per-wall `rdtsc()` in the wall workers runs whether or not clocks are active (bsp:305,311,402-404) [V].
 
 ---
@@ -442,7 +457,7 @@ replacement must produce each one or drop it knowingly. [V] unless marked.
 | # | Output | Produced by | Consumers |
 |---|---|---|---|
 | 1 | Visibility: which subsectors, segs, sectors, sections are drawn (front-to-back angular occlusion via `Clipper`) | bsp:1361-1399, 517-749 | everything below |
-| 2 | **All wall geometry** (positions, UVs, lightmap UVs, T-junction splits, 3D-floor blocks and light-list slices, mid-texture `GetAreas` slices, fog boundaries, mirror envmap overlays). There is no persistent wall VBO on M. | walls:2419-2886, wv:187-288 | opaque/masked/translucent lists |
+| 2 | **All wall geometry** (positions, UVs, lightmap UVs, T-junction splits, 3D-floor blocks and light-list slices, mid-texture `GetAreas` slices, fog boundaries, mirror envmap overlays). There is no persistent wall VBO for raster drawing on M (the map-load `DoomLevelMesh` of every side, `maploader/maploader.cpp:3251`, `doom_levelmesh.cpp:22-28`, feeds only the ray tracer, `ep:318`) [xc: DoomLevelMesh note added]. | walls:2419-2886, wv:187-288 | opaque/masked/translucent lists |
 | 3 | Per-part light level, colormap, glow, translucency and list choice | walls:2533-2549, 827-898, dla:33-58 | draw |
 | 4 | The visible flat set (per section, per plane, 3D planes), with per-plane light/colormap from 3D light lists | flats:672-918 | draw |
 | 5 | Moving-plane updates of the static flat VBO, only for sectors reached (`CheckUpdate`) | bsp:1040-1043, vb:462 | flat draws (stale until next seen) |
@@ -451,9 +466,9 @@ replacement must produce each one or drop it knowingly. [V] unless marked.
 | 8 | Decals (only on processed walls) | walls:875-887 | `DrawDecals` |
 | 9 | Render-hack inputs: missing upper/lower textures, hacked (deep water) subsectors, flood gaps, lower minisegs | walls:2732,2880, bsp:1143, rh:* | `DispatchRenderHacks` flats |
 | 10 | Boom heightsec view state: `in_area` refined per seg (`hw_CheckViewArea`) and fake sectors | bsp:586,691, ff:200 | walls/flats/sprites of heightsec sectors |
-| 11 | Automap and save data: `ML_MAPPED`, `SSECMF_DRAWN`, `SECMF_DRAWN` | bsp:713,608-624,1070 | `am_map.cpp:2093,2230,2684,3323`; `p_saveg.cpp:444-539`; ZScript constants in repo-root `wadsrc/static/zscript/mapdata.zs:215,469` |
+| 11 | Automap and save data: `ML_MAPPED`, `SSECMF_DRAWN`, `SECMF_DRAWN`. The walk is the only **view-driven** producer on the Vulkan engine, not the only producer: `ML_MAPPED` is also set by `Line_SetAutomapFlags` (`playsim/p_lnspec.cpp:2771-2778`), the UDMF `mapped` key (`maploader/udmf.cpp:960`) and ZScript writes to `Line.flags`; `SSECMF_DRAWN` is also restored on savegame load (`p_saveg.cpp:457,539`); the software renderer sets all three (`swrenderer/line/r_line.cpp:99-169`, `swrenderer/scene/r_opaque_pass.cpp:506`) [xc: "only producer" was too strong] | bsp:713,608-624,1070 | `am_map.cpp:2093,2230,2684,3323`; `p_saveg.cpp:444-539`; ZScript constants in repo-root `wadsrc/static/zscript/mapdata.zs:215,469` |
 | 12 | Distance-cull impostors and their occlusion | bsp:632-655 | draw |
-| 13 | Dither targets and dither flags (dormant) | bsp:1085-1098,1547-1553 | `RenderWall`, `DrawFlat` |
+| 13 | Dither targets and dither flags (dormant). Targets: walk only (and never collected in ST, B11). Flags: also set outside the walk, by `DrawScene` for the camera's tracer or the player before `CreateScene` (`di:4461-4464`) [xc: flags are not walk-only] | bsp:1085-1098,1547-1553 | `RenderWall`, `DrawFlat` |
 | 14 | Ordering hooks: `PreparePlayerSprites` and `RenderAttached` run at the end of `RenderBSP` | bsp:1556-1563 | weapon/portal areas |
 
 Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as a lead; summarised in
@@ -470,13 +485,13 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 | `subsector_t::flags |= SSECMF_DRAWN` | bsp:608,612,624 | automap, savegames (p_saveg.cpp:444-539) [V] |
 | `sector_t::MoreFlags |= SECMF_DRAWN` | bsp:1070 | constant exposed to ZScript (repo root `wadsrc/static/zscript/mapdata.zs:469`); no C++ reader found [V grep] |
 | global `validcount` (++ per RenderBSP and in render hacks); `sector/line/subsector/AActor::validcount` | bsp:1436, 681, 720, 924, 1069; rh:608-917,1195-1219 | shared with the playsim's sight/iterator code; equality-only use makes it harmless between tics [I] |
-| `vertex_t::angletime/viewangle/radar*` | clip.h:187-195 | render-only [V grep of names not done for sim; I] |
+| `vertex_t::angletime/viewangle/radar*` | clip.h:187-195 | render-only [V grep: outside `hw_clipper.*` the names appear only in their declaration/initialisation, `gamedata/r_defs.h:99-102,158-161`] [xc: grep done, upgraded from I] |
 | `vertex_t` height lists (`RecalcVertexHeights` when dirty, `gl_seamless`) | walls:2504-2505 | render-only (only caller) [V grep] |
 | `subsector_t::BSP` (polyobject BSP rebuild when dirty) | bsp:819-822 | render-only (hw + sw renderers) [V grep] |
 | `sector_t::vboheight[pipeline][plane]` | vb:446-451 | render-only [V] |
 | `side_t::Flags` WALLF_DITHERTRANS_*, `dithertranscount`; `secplane_t::dithertransflag` | di:4154-4163,4173-4213; walls:225-239; flats:592-593 | dormant (needs `r_dithertransparency` + `VPSF_ALLOWOUTOFBOUNDS` camera, `rendering/r_utility.cpp:160,912-915`) [V] |
 | `FBillboard::drawPos` | di:3644 | read by ZScript hit-tests (`scripting/vmthunks.cpp:3076`) — render→script leak (B6) [V] |
-| `Level->HeatIntensity` decay | di:3253-3260 | written by ZScript natives (`scripting/vmthunks.cpp:5460-5538`), read only by the renderer; not serialized [V grep] |
+| `Level->HeatIntensity` decay (not the walk: `RenderScene` -> `SetupHeatmap`, per scene) | di:3247-3261 | written by ZScript natives (`scripting/vmthunks.cpp:5460-5538`) and read back by ZScript through the clearscope native `HeatmapAt` (`vmthunks.cpp:5618-5629`, `doombase.zs:2098`) — render→script leak (B5); not serialized [V grep] [xc: was "read only by the renderer"] |
 | `light->...` via `gl_GetLightPosRelative` caches keyed on `gl_dynlight_viewid` | walls:672, flats:212 | render-only [I] |
 
 ---
@@ -490,7 +505,7 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 | `gl_bsp_worker_threads` | bsp:46-52 | 1 | bsp:395,1440,1452 | DORMANT. Message says "takes effect after restart" but it is read every scene [V]; pool is fixed at 8 threads (bsp:87), so 8 workers + scene worker serialise one job [I] | [V]/[I] |
 | `gl_bsp_worker_sky_mainthread` | bsp:53 | false | bsp:469 | DORMANT (wall workers only) | [V] |
 | `gl_bsp_wall_batch_size` | bsp:54 | 96 | bsp:56-61 | DORMANT (wall workers only) | [V] |
-| `gl_line_distance_cull` | bsp:449 | 4000 | bsp:453 | ACTIVE (bugs B1-B4) | [V] |
+| `gl_line_distance_cull` | bsp:449 | 4000 | bsp:453 (via `IsDistanceCulled`, called from bsp:632 and walls:2563); menu slider `menudef.txt:3215`; reset to default on configs older than engine version 223 (`gameconfigfile.cpp:699-700`) | ACTIVE (bugs B1-B4, B12, B13) | [V] [xc: B12/B13 added] |
 | `gl_sprite_decor_distance_cull` | hw_sprites.cpp:1042 | 1200 | bsp:72-79 | ACTIVE (things) | [V] |
 | `gl_render_walls/flats/things` | bsp:416-418 | true | bsp:723,1101,1046,1072 | debug, ACTIVE gate; walls gate misses impostors (B4) | [V] |
 | `gl_render_segs` | — | — | `EXTERN_CVAR` at bsp:413 only | DEAD declaration (no definition, no read) | [V grep] |
@@ -503,14 +518,14 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 | `r_radarclipper` | rendering/r_utility.cpp:159 | false (CHEAT) | bsp:559,1244,1430 | DORMANT (+ needs OoB camera) | [V] |
 | `r_dithertransparency` | r_utility.cpp:160 | false (CHEAT) | bsp:1085, di:4461 | DORMANT (+ needs OoB camera) | [V] |
 | `gl_mirror_envmap` / `gl_mirrors` | hw_cvars.cpp:105/103 | true/true | walls:981, 1652 | ACTIVE on mirror lines | [V] |
-| `gl_noskyboxes` | sky:34 | false | sky:141,226 | DORMANT | [V] |
+| `gl_noskyboxes` | sky:34 | false | sky:141,226 | DORMANT; not set directly but driven by the menu-exposed `gl_skydome` callback (`gl_noskyboxes = !gl_skydome`, sky:35-38; `menudef.txt:3199`), so `gl_skydome 0` turns skyboxes off [xc: added driver] | [V] |
 | `gl_no_skyclear` | di:75 | false | di:4497 | DORMANT | [V] |
 | `topskew/midskew/bottomskew` | walls:2410-2412 | 0 | walls:2613,2689,2761,2830 | debug defaults | [V] |
 | `hw_npottest` + NPOT code | walls:329-331,392-407 | — | — | DEAD (no `NPOT_EMULATION` define found in src or CMake) | [V grep] |
 | `gl_coronas` | di:82 | true | only inside a commented block (di:4356) | DEAD cvar | [V grep] |
 | `DrawCorona` body / `DrawCoronas` loop | di:4060-4125, 4300-4327 | — | `#if 0`; `DrawCoronas` call commented out | DEAD | [V] |
 | `bool inited` | bsp:88 | — | never read | DEAD | [V grep] |
-| `WallWorkersElapsed` clock | clock.h | — | only reset | DEAD clock | [V grep] |
+| `WallWorkersElapsed` clock | clock.h:42 | — | reset (clock:124) and read (clock:174) but never clocked → always 0 | DEAD clock | [V grep] [xc: it is read, not only reset] |
 | `render_vertexsplit` | clock:70 | — | never incremented | DEAD counter | [V grep] |
 | `HWWall::SplitWallComplex` | walls:1069 | — | only when `RFL_NO_CLIP_PLANES` (walls:1213); Vulkan sets `RFL_SHADER_STORAGE_BUFFER|RFL_BUFFER_STORAGE` only (`common/rendering/vulkan/system/vk_renderdevice.cpp:510`) | DEAD on the Vulkan-only engine (reachable only on legacy GL) | [V] |
 | Non-persistent branches (`PutWall` lights/verts walls:859-866, `PutFlat` lights flats:572-578) | — | — | Vulkan is persistent | DEAD on Vulkan | [V] |
@@ -530,7 +545,7 @@ Note: R's own stage-3 plan (`docs/plans/STAGE3_VISIBILITY_PLAN.md`, read only as
 | Branch | Differences in this area (against M) | Evidence |
 |---|---|---|
 | **netplay (N)** | Scene path identical except `DrawScene` lacks the `[WORLDPSPR]` `DrawWorldPlayerSprites` call (`git diff origin/main origin/netplay -- .../hw_drawinfo.cpp`); `hw_bsp/walls/flats/clipper/fakeflat/renderhacks/portal/sky/vertexbuilder/entrypoint`, `hw_clock`, `flatvertices`, `hw_cvars` unchanged | [V] |
-| **renderer (R)** | (a) `RenderBSP` asks `LevelResidency_BeginScene` (R:bsp:1464); wall jobs/inline walls call `LevelResidency_SkipWall` and `WallCache_Process` before `Process` (R:bsp:346,349,661,760,763); flat jobs/inline call `LevelResidency_FlatPlanes` (R:bsp:368,1158); `RenderScene` draws `LevelResidency_Draw/DrawFlats` before the plain lists (R:di:3830,3835). Defaults off: `r_newrenderer` 0 (R:rendering/hwrenderer/hw_levelresidency.cpp:137), `r_wallcache` 0 (R:rendering/hwrenderer/scene/hw_wallcache.cpp:40). (b) wall workers disabled while either is on (R:bsp:650,743). (c) `Process` skips the distance-cull impostor in the static build (`HWMeshHelper::noDistanceCull`, R:walls:2616-2617). (d) `PutWall` clears `HWF_GLOW` at white light 255 without a draw info (R diff in walls:886-897). (e) new `HWWall::SetSectorLight/SetSideGlow/SetTierLight/SetTierLightLevel` (R:hw_drawstructs.h; R:walls:2431-2461) used only by the residency light patch. (f) `HWMeshHelper` records emission order (R:wd). (g) `P_FreeLevelData` resets wall cache and residency (R:p_setup.cpp:641-643). (h) Tracy zones `REMA_ZONE_N` in RenderViewpoint/eye/RenderBSP/CreateScene/RenderScene/RenderTranslucent/RenderPortal/DrawScene/ProcessScene/DrawWalls/DrawFlats/SortTranslucent (no-ops when off). (i) `opaque.walls/flats/masked/models/decals` GPU groups (R:di:3828-3866). (j) perf_track `scene` falls back to `ProcessAll+RenderAll` in flat runs and adds `cpu_bsp/clip/walls/flats/sprites` (R:clock:163-168, R:hw_perftrack.cpp:539-543). The walk itself is otherwise the same. Area 09 covers the static path. | [V] |
+| **renderer (R)** | (a) `RenderBSP` asks `LevelResidency_BeginScene` (R:bsp:1464); wall jobs/inline walls call `LevelResidency_SkipWall` and `WallCache_Process` before `Process` (R:bsp:346,349,661,760,763); flat jobs/inline call `LevelResidency_FlatPlanes` (R:bsp:368,1158); `RenderScene` draws `LevelResidency_Draw/DrawFlats` before the plain lists (R:di:3830,3835). Defaults off: `r_newrenderer` 0 (R:rendering/hwrenderer/hw_levelresidency.cpp:137), `r_wallcache` 0 (R:rendering/hwrenderer/scene/hw_wallcache.cpp:40). (b) wall workers disabled while the level mesh is on (R:bsp:650, distance-culled segs, and R:bsp:743) and also while `r_wallcache` > 0 (R:bsp:743 only, normal segs) [xc: R:bsp:650 tests only `mLevelMeshScene`]; with the level mesh on, a culled seg whose side the mesh draws skips the impostor but still adds its clip range (R:bsp:661-667) [xc: added]. (c) `Process` skips the distance-cull impostor in the static build (`HWMeshHelper::noDistanceCull`, R:walls:2616-2617). (d) `PutWall` clears `HWF_GLOW` at white light 255 without a draw info (R diff in walls:886-897). (e) new `HWWall::SetSectorLight/SetSideGlow/SetTierLight/SetTierLightLevel` (R:hw_drawstructs.h; R:walls:2431-2461) used only by the residency light patch. (f) `HWMeshHelper` records emission order (R:wd). (g) `P_FreeLevelData` resets wall cache and residency (R:p_setup.cpp:641-643). (h) Tracy zones `REMA_ZONE_N` in RenderViewpoint/eye/RenderBSP/CreateScene/RenderScene/RenderTranslucent/RenderPortal/DrawScene/ProcessScene/DrawWalls/DrawFlats/SortTranslucent (no-ops when off). (i) `opaque.walls/flats/masked/models/decals` GPU groups (R:di:3828-3866). (j) perf_track `scene` falls back to `ProcessAll+RenderAll` in flat runs and adds `cpu_bsp/clip/walls/flats/sprites` (R:clock:163-168, R:hw_perftrack.cpp:539-543). The walk itself is otherwise the same. Area 09 covers the static path. | [V] |
 | **selaco (S)** | Adds a `ParticlePoolJob` and `RenderDefinedParticles` per subsector (S:bsp, diff `+ParticlePoolJob`); lacks effect-light mode, glow seed (`SetGlowPlanes` takes two planes), glow inset in walls/flats; `HWViewpointUniforms` without stamps (smaller); `hw_drawinfo.cpp` ~1,000 lines fewer (fork uniforms), `hw_entrypoint.cpp` older `CollectLights`; same `gl_line_distance_cull` (S:bsp:460), same `vr_scene_multithread` false (S:hw_cvars.cpp:253) | [V] |
 
 ---

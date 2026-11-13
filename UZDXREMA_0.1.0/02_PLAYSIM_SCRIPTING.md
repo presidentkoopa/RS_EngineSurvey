@@ -18,14 +18,22 @@ in `/tmp`); MSVC layout may differ by padding [I].
    overlaps the renderer. At 35 tics/s and 72 Hz, roughly every second frame carries a whole tic [I, from TICRATE=35 doomdef.h:57 and the loop].
 2. A world tic walks **every world actor at least three times** (interpolation reset p_tick.cpp:727-757, `RunThinkers`
    dthinker.cpp:149, light-recreation scan dthinker.cpp:318-333), plus a fourth (`WorldStateHash`, d_net.cpp:1235) in any
-   netgame [V]. `AActor` is **3,104 bytes** (49 cache lines); the reset alone touches ~11 of them per actor [V offsets, I lines].
+   netgame [V]. [xc: the light-recreation scan is not inside the world tic: it runs in `RunClientSideThinkers` under
+   `P_RunClientSideLogic` (p_tick.cpp:199), `totalTics` times a frame, so "three walks" is per real tic, not per `P_Ticker`]
+   `AActor` is **3,104 bytes** (49 cache lines); the reset alone touches ~11 of them per actor [V offsets, I lines].
+   [xc: 3,104 B / `DThinker` 80 B hold with `NDEBUG` (release); without it they are 3,112 / 88 B because of a debug-only
+   field in `DObject` (dobject.h:181); re-probed with clang -fsyntax-only]
 3. Every thinker tick goes through the VM call layer even when nothing is scripted: `DThinker::CallTick` →
    `VMCallVoid` (runtime signature validation every call) → `VMCall` → native thunk → C++ `Tick` (dthinker.cpp:1584-1590, vm.h:688-714) [V].
 4. ZScript JIT (asmjit) is compiled in on x86-64 by default and `vm_jit` defaults to true (CMakeLists.txt:304-306,
    vmframe.cpp:43) [V]; it is forced off by `-debug` or the archived cvar `vm_debug` (d_main.cpp:4188-4195) [V]. Whether the
    owner's Windows build was configured with it cannot be read from the repo [open].
-5. Ranked hot spots: memory-bound multi-walks of 3 KB actors; per-thinker VM entry and mod `Tick`/`DoEffect`/inventory
-   ticks; fast small projectiles doing up to `1+speed/(radius-1)` full `P_TryMove`s per tic (p_mobj.cpp:2707-2734);
+5. Ranked hot spots: the per-thinker `Tick` bodies inside `RunThinkers` (VM entry, mod `Tick`/`DoEffect`/inventory
+   ticks, state changes and their actions, monster walking with blocked-direction retries, look/sight); then the
+   memory-bound side walks of 3 KB actors (interpolation reset, light scan, netgame hash) [xc: order was reversed;
+   newly measured on the owner's PC (old path, owner's mod set, Abandon MAP13): thinkers 61-87 ms a tic against
+   6.5-6.8 ms for the interpolation reset and 2.3-3.4 ms for WorldTick handlers, so `RunThinkers` is the dominant term;
+   Sunder MAP15 ~250 ms of sim per frame at 53,116 thinkers; see §5.0]; fast small projectiles doing up to `1+speed/(radius-1)` full `P_TryMove`s per tic (p_mobj.cpp:2707-2734);
    O(things-in-block) `P_CheckPosition`; O(n²) `P_ChangeSector`; un-cached `P_CheckSight` (more of it in multiplayer);
    O(channels) sound queries (main only; fixed on renderer); a heap copy per direct state action call (info.cpp:179).
 6. Main has **no tic catch-up cap**: a slow tic makes the next frame run up to a second of tics (d_net.cpp:2374-2426) [V];
@@ -150,7 +158,7 @@ entered, and sets `MF8_RECREATELIGHTS` whenever the class has light associations
 Movement: `P_XYMovement` (p_mobj.cpp:2593) splits the move into `steps = 1 + speed/(radius-1)` when speed exceeds
 `radius-1` (2707-2734) and calls `P_TryMove` per step (2769) [V]. `P_TryMove` (p_map.cpp:3717) → `P_CheckPosition`
 (3170: `PointInSector` 3182; things via `FMultiBlockThingsIterator` + `PIT_CheckThing` 3267-3317; lines via
-`FMultiBlockLinesIterator` + `PIT_CheckLine` 3341-3368) → on success `UnlinkFromWorld` + `LinkToWorld` (4079-4093) →
+`FMultiBlockLinesIterator` + `PIT_CheckLine` 3341-3368) → on success `UnlinkFromWorld` + `LinkToWorld` (4081-4094) →
 spechit line crossings → `CheckSectorTransition`. `LinkToWorld` (p_maputl.cpp:412-534) does `PointInSector` +
 `PointInRenderSubsector` (428, 437), sector thing list, `P_CreateSecNodeList` (blockmap-lines walk, 468;
 p_secnodes.cpp:216-283), render sector list (471), `CollectConnectedGroups` (485), blockmap node per touched block
@@ -193,7 +201,7 @@ per frame, independent of how many world tics ran (d_net.cpp:2504-2505).
 - **Single-player VR:** `VKOpenXRDeviceMode::SetUp` → `UpdateControllerState` (vk_openxrdevice.cpp:3575,3628,3906)
   writes `HmdPos`, `Attack*`, `Offhand*` on the pawn (5603-5617, 5690-5696, 5774-5778) and calls
   `VR_ApplyRenderMove` (5831, 5850) → `ApplyRenderMoveBody` → **`P_XYMovement`** on the pawn (p_vrdemo.cpp:494-548)
-  every frame; the teleport aim calls `P_LineTrace` from the frame (5806). Gated by `!VR_InputViaCommand()` (5842).
+  every frame; the teleport aim calls `P_LineTrace` from the frame (5807). Gated by `!VR_InputViaCommand()` (5843).
 
 ---
 
@@ -236,7 +244,7 @@ S = per state change / action call; L = per light; B = O(objects in blockmap cel
 | `Affect_Tick` | p_affect.cpp:821 | p_mobj.cpp:4807 | A | one `Active()` test idle | [V] |
 | `AActor::TickBehaviors` | p_mobj.cpp:712 | :4827 | A | TMap walk (+VM per behavior) | two local TArrays (no alloc when empty) [V] |
 | `Inventory.DoEffect` dispatch | p_mobj.cpp:4872-4882 | AActor::Tick | A × items | VM per item (empty base returns early in `VMCall`, vmframe.cpp:720) | [V] |
-| `P_XYMovement` | p_mobj.cpp:2593 | :5215; p_vrdemo.cpp:536,546 | M | **steps = 1+speed/(radius−1)** × `P_TryMove` | [V] |
+| `P_XYMovement` | p_mobj.cpp:2593 | :5215; p_vrdemo.cpp:532,543 | M | **steps = 1+speed/(radius−1)** × `P_TryMove` | [V] |
 | `P_TryMove` | p_map.cpp:3717 | P_XYMovement, P_Move, scripts | per step | `P_CheckPosition` + relink | [V] |
 | `P_CheckPosition` | p_map.cpp:3170 | P_TryMove, many | call | 1 BSP + **B** things + B lines | corpses iterated and rejected at 2617 [V] |
 | `PIT_CheckThing` | p_map.cpp:2600 | :3274 | thing in cells | C; VM `CanCollideWith` ×2 when solid contact (2713-2717 → 145-178) | hurtbox/guard tests for missiles (2887-2990) [V] |
@@ -258,7 +266,7 @@ S = per state change / action call; L = per light; B = O(objects in blockmap cel
 | `P_ChangeSector` | p_map.cpp:9345 | movers (DFloor/DCeiling etc.) | mover × tic | **N²** in things touching sector (9445-9464) + `P_Recalculate3DFloors` | [V] |
 | `DScroller::Tick` (carry) | mapthinkers/a_scroll.cpp:187-206 | RunThinkers | scroller | O(things touching sector) flag set | [V] |
 | `DACSThinker::Tick` | p_acs.cpp:3452 | RunThinkers / client-side | running script | interpreter | `ACSTime` reset per thinker (3454) [V] |
-| `FDynamicLight::Tick` / `UpdateLocation` / `LinkLight` | a_dynlight.cpp:253, 377, 671 | dthinker.cpp:389-408 | **L per client tic** | relink = section flood (541) when moved/radius changed | `::validcount++` (687) [V] |
+| `FDynamicLight::Tick` / `UpdateLocation` / `LinkLight` | a_dynlight.cpp:253, 377, 671 | dthinker.cpp:389-408 | **L per client tic** | relink = section flood (541) when moved/radius changed | `::validcount++` (683) [V] |
 | `RecreateDynamicLights` scan | dthinker.cpp:279-292, 318-333 | RunClientSideThinkers | A (world + client) per client tic | C each | [V] |
 | `EventManager::WorldThingSpawned` | events.cpp:690 | p_mobj.cpp:6106 | spawn × handler | VM | [V] |
 | `EventManager::WorldThingDestroyed/Damaged/Died` | events.cpp:817, 805, 702 | p_mobj.cpp:6235, p_interaction.cpp:1649,1695,417 | event × handler | VM | [V] |
@@ -336,8 +344,40 @@ still reads the live device (§2.7, §5.13).
 Ranking is for a slaughtermap with heavy mods (tens of thousands of thinkers, ZScript-heavy actors). Confidence:
 H = code read and previously measured; M = code read, cost inferred; L = plausible, needs measurement.
 
-### 5.1 Memory-bound repeated walks over 3 KB actors — H
-Evidence: the interpolation reset (p_tick.cpp:727-757), `RunThinkers` (dthinker.cpp:149-183), the light-recreation
+[xc: ranking re-ordered against new measurements (owner's PC, old path, owner's mod set): Abandon MAP13 thinkers
+61-87 ms a tic, actor interpolation reset 6.5-6.8 ms, WorldTick handlers 2.3-3.4 ms; Sunder MAP15 ~250 ms of sim per
+frame at 53,116 thinkers. `RunThinkers` is ~10× the reset walk, so the old 5.1 (which put `RunThinkers` among
+"walks") cannot rank first as written. §5.0 is added as the first item; 5.1 now covers only the side walks that do no
+gameplay work. The numbering below is kept.]
+
+### 5.0 Per-thinker `Tick` bodies inside `RunThinkers` — H (aggregate measured; split by path not measured) [xc: added]
+Evidence [V]: `RunThinkers` (dthinker.cpp:149-183) → `TickThinkers` (962-1000) → `CallTick` (1584-1590) for every
+thinker in statnums 32..127. For an `AActor` the body (p_mobj.cpp:4741-5432) does, every tic, even standing still:
+`Affect_Tick` test, `TickBehaviors` TMap walk (4827 → 712-751), one VM `Inventory.DoEffect` call per carried item
+(4872-4882), `P_XYMovement` entry (5215; early out on zero move), Z handling only when `Vel.Z`/`BlockingMobj`/off-floor
+(5239), `CheckPortalTransition` (5321), `UpdateWaterLevel` (5323), `P_ActorOnSpecial3DFloor` (5358),
+`UpdateRenderSectorList` (5377, never skipped, §5.9), then the state countdown and `SetState` → `CallAction`
+(5382-5392). Each touches different lines of the 3,104 B object and its sector. The paths that make one thinker cost
+many times another, all on this call chain:
+- **State changes and actions**: `SetState` (p_mobj.cpp:1000-1105) loops 0-tic states and calls `FState::CallAction`
+  per state (info.cpp:148), with the `DefaultArgs` heap copy (§5.10) and a VM call for script actions.
+- **Monster walking with blocked-direction retries**: `A_DoChase` calls `P_SmartMove` → `P_Move` (p_enemy.cpp:3180-3183,
+  778-791); on failure `P_ChaseDirFor` (2695) → `P_NewChaseDirTo` (1007) → `P_DoNewChaseDir` (847-965; or
+  `P_RandomChaseDir`, 1227-1314, same shape) tries up to 8 more directions,
+  each `P_TryWalk` → `P_SmartMove` → `P_Move` → `P_TryMove` (826-834, 535-640). `P_Move` itself splits fast moves into
+  `steps` `P_TryMove`s (p_enemy.cpp:600-640). So a boxed-in monster in a crowd runs up to ~9 `P_CheckPosition` scans
+  of its crowded cells per chase call (§5.4) [V code, I frequency]. The section's §5.3/§5.4 cover projectiles and the
+  scan itself, not this multiplier.
+- **Look/sight**: idle `A_Look` → `P_LookForPlayers` → `P_IsVisible` → `P_CheckSight` (§5.6).
+- **Sound starts from actions**: `CheckSoundLimit` O(channels) on main (§5.7).
+- **Script overrides**: per-class ZScript `Tick` and inventory `Tick` (§5.2).
+Previously measured per-class split: §5.2. Settle with: `profilethinkers` sorted by total time on Sunder MAP15 and
+Abandon MAP13 with the owner's list, plus per-tic counters of `SetState`, `CallAction`, `P_TryMove` (by caller:
+`P_XYMovement` / `P_Move`), `P_CheckSight` and `S_StartSound`.
+
+### 5.1 Memory-bound repeated walks over 3 KB actors — H (second to §5.0) [xc: was ranked first; measured reset is ~1/10 of thinkers]
+Evidence: the interpolation reset (p_tick.cpp:727-757), `RunThinkers` (dthinker.cpp:149-183) [xc: `RunThinkers` is
+listed here only for its list walk; its time is the `Tick` bodies, §5.0], the light-recreation
 scan over all world and client-side actors (dthinker.cpp:318-333, run `totalTics` times a frame), `WorldStateHash` in
 netgames (d_net.cpp:1243-1253), `P_ClearLevelInterpolation` when waiting on the network (d_net.cpp:2440,
 p_tick.cpp:606-639), and the paused branch (p_tick.cpp:665-678) [V]. Each uses `FThinkerIterator` with `IsKindOf`
@@ -346,9 +386,10 @@ over every thinker. Previously measured (renderer `SIM_AT_MOD_SCALE.md`, `doomxr
 (`doomxr_rend1112d.exe`, rr139-142). My reading of why prefetch failed [I]: the reset's fields span lines 0-36 of a
 3,104 B object (§4), and the sector dereference is a second dependent miss; the walk is bandwidth- and
 dependent-load-bound, not first-touch-bound. Settle with: `ticprofile` (renderer) at 10k/20k/40k thinkers, and a
-VTune/uProf memory-bound breakdown of the reset loop.
+VTune/uProf memory-bound breakdown of the reset loop. Newly measured (owner's PC, old path, owner's mod set, Abandon
+MAP13): reset 6.5-6.8 ms a tic [xc: added].
 
-### 5.2 Per-thinker VM entry and ZScript ticks — H
+### 5.2 Per-thinker VM entry and ZScript ticks — H for ZScript tick classes (per-class measured); M for the call-layer share [xc: the VM entry layer's share of the ~1 µs/thinker is not measured; was H]
 Evidence [V]: `DThinker::CallTick` always finds a non-null virtual (Thinker.Tick is `virtual native`, doombase.zs:277),
 so every thinker — sector movers, lights, scrollers, ACS thinker, plain actors — goes `VMCallVoid` →
 `VMValidateSignatureSingle` (three out-of-line checks: `VMCheckParamCount`, `VMCheckReturn<void>`,
@@ -362,9 +403,10 @@ tic ~46 ms, 37,000 thinkers "at about a microsecond each", top classes `RSQTHP_B
 build that bypasses `VMValidateSignatureSingle` in `CallTick` to measure the call-layer share.
 
 ### 5.3 Fast, small projectiles: many full moves per tic — M
-Evidence [V]: `steps = int(1 + speed/(radius-1))` when speed > radius−1, radius ≤ 1 uses MAXMOVE
+Evidence [V]: `steps = int(1 + speed/(radius-1))` when speed > radius−1, radius ≤ 1 uses MAXMOVE [xc: "speed" is the
+larger of |move.X| and |move.Y|, not the vector length (p_mobj.cpp:2715-2732)]
 (p_mobj.cpp:2707-2734); each step is a `P_TryMove` (2769) with `P_CheckPosition` and, on success, a full
-`UnlinkFromWorld`/`LinkToWorld` (p_map.cpp:4079-4093) including two BSP walks and `P_CreateSecNodeList`. A radius-2,
+`UnlinkFromWorld`/`LinkToWorld` (p_map.cpp:4081-4094) including two BSP walks and `P_CreateSecNodeList`. A radius-2,
 speed-100 projectile does 101 moves a tic [I arithmetic]. Settle with: `profilethinkers` sorted by average time while
 firing projectile-bullet weapons; count `P_TryMove` calls per tic with a counter.
 
@@ -378,8 +420,9 @@ counter of things visited in `FBlockThingsIterator::Next`.
 
 ### 5.5 Movers in crowded sectors: `P_ChangeSector` restart loop — M
 Evidence [V]: for each mover tic the loop restarts from the head after each processed thing (p_map.cpp:9445-9464; same
-for 3D-floor attachments 9385-9401 and deep-water transfers 9479-9494), i.e. O(n²) node visits for n things touching the
-sector; each `PIT_*` may run `P_CheckPosition`-class work. A lift or crusher under a pile of corpses scales
+for 3D-floor attachments 9385-9401), i.e. O(n²) node visits for n things touching the
+sector [xc: the deep-water transfer loop 9479-9494 has no `break`, so it is one O(n) pass per affected sector, not
+O(n²)]; each `PIT_*` may run `P_CheckPosition`-class work. A lift or crusher under a pile of corpses scales
 quadratically [I]. Settle with: node-visit counter in that loop on a slaughtermap crusher.
 
 ### 5.6 Sight checks without a cache, more of them in co-op — M
@@ -415,8 +458,9 @@ render line/sector-portal lists every tic (AActor::Tick 5377). Without portals t
 Evidence [V]: `FState::CallAction` copies `ActionFunc->DefaultArgs` into a local `TArray` (malloc + free) whenever the
 action function has default arguments (info.cpp:177-197; TArray copy allocates, tarray.h:247-250, 848-858). Direct
 state actions bind the function itself when called without arguments (codegen.cpp:9976-9991), and `A_Chase`,
-`A_FaceTarget`, `A_Wander` declare defaults (actor.zs:2384, 2407, 2456), so `POSS A 4 A_Chase` allocates on every entry
-[I: depends on how each state was written]. Each `CallAction` also does 2 `rdtsc` (`ActionCycles`, info.cpp:152, 227),
+`A_FaceTarget`, `A_Wander` declare defaults (actor.zs:2407, 2384, 2456), so `POSS A 4 A_Chase` allocates on every entry
+[I: depends on how each state was written]. [xc: `A_Look` has no parameters (actor.zs:2406) and `DefaultArgs` is only
+filled when a function has defaults (zcc_compile.cpp:2911-2913), so idle look states take the no-copy branch] Each `CallAction` also does 2 `rdtsc` (`ActionCycles`, info.cpp:152, 227),
 each script `VMCall` 2 more (`VMCycles[0]`), each `NativeScriptCall` 2 more (vmframe.cpp:351-353), each `P_CheckSight`
 2 more; `cycle_t` is unconditional rdtsc on Windows (stats.h:214-237). Same pattern in
 p_actionfunctions.cpp:175-194.
@@ -425,7 +469,8 @@ p_actionfunctions.cpp:175-194.
 Evidence [V]: `WorldThingSpawned` per spawn (incl. client-side effect actors, via `CallPostBeginPlay`, p_mobj.cpp:6103-
 6107), `WorldThingDamaged` per damage (p_interaction.cpp:1649, 1695), `WorldThingDestroyed`, `WorldHitscanPreFired/Fired`
 per hitscan (p_map.cpp:6428, 7010), each a VM call per handler that overrides it; a world event struct is built per
-handler (events.cpp:1811-1822). Previously measured WorldTick handlers 3.5 ms/tic (renderer, owner list).
+handler (events.cpp:1811-1822). Previously measured WorldTick handlers 3.5 ms/tic (renderer, owner list); newly measured
+2.3-3.4 ms a tic (owner's PC, old path, owner's mod set, Abandon MAP13) [xc: added].
 
 ### 5.12 Dynamic lights on the client tic — M
 Evidence [V]: every `FDynamicLight` ticks every client tic (dthinker.cpp:389-395); a moved light or changed radius relinks
@@ -455,7 +500,8 @@ Evidence [V]: `P_PredictClient`'s writer and `P_UnPredictClient`'s reader run wh
 Evidence [V]: functions with ≥200 registers or containing a function-pointer call (`blockJit`, codegen.cpp:10010) never
 JIT (vmframe.cpp:300-311); the interpreter calls `DebugServer::RuntimeEvents::EmitInstructionExecutionEvent` on every
 instruction (vmexec.cpp:57; RuntimeEvents.cpp:74-80, a global-flag test in another TU). On MSVC `COMPGOTO` is not
-defined, so the interpreter is a `switch` (vmexec.cpp:52-61). If the build lacks JIT or `vm_debug` is set, every
+defined, so the interpreter is a `switch` (vmexec.cpp:50-60) [xc: the switch loop emits the same hook once per
+instruction at vmexec.h:64; vmexec.cpp:57 is the computed-goto path only]. If the build lacks JIT or `vm_debug` is set, every
 script function takes this path.
 
 ### 5.B Shared mutable state that blocks a multi-threaded sim or sim ∥ render
@@ -463,7 +509,7 @@ script function takes this path.
 Global sim state (any parallel thinker execution must privatise these) [V]:
 - `validcount` (r_utility.cpp:253) and per-object `validcount` fields of `line_t`, `sector_t`, `AActor`, polyobjects —
   bumped by blockmap iterators (p_maputl.cpp:565, 576), `P_CheckPosition` (p_map.cpp:3245, 3330), sight (p_sight.cpp:917),
-  noise (p_enemy.cpp:236), light linking (a_dynlight.cpp:687).
+  noise (p_enemy.cpp:236), light linking (a_dynlight.cpp:683).
 - `spechit`, `portalhit` (p_map.cpp:109-110); `NextToThink` (dthinker.cpp:65); `intercepts`, `portals`, `SightCycles`
   (p_sight.cpp:53-55, 89-90); free lists `headsecnode`, `FBlockNode::FreeBlocks` (p_secnodes.cpp:30, 447); `actionParams`
   (info.cpp:146); `NoiseList` (p_enemy.cpp:118); `currentVMLevel` (used vmiterators.cpp:47, 108, 181); RNG streams `pr_*`
@@ -517,7 +563,7 @@ buffer, off by default (`r_snapshot 0`) (renderer:d_net.cpp:2557, renderer:src/r
 | `vm_jit` (default true), `vm_jit_aot` (true) | vmframe.cpp:39-59 | ACTIVE when built with `HAVE_VM_JIT` | not saved; restart required [V] |
 | `vm_debug` (archived) / `-debug` | d_main.cpp:3662, 4188-4195 | DORMANT | sets `vm_jit=false` for the session [V] |
 | `vmengine` CCMD | vmframe.cpp:919-939 | ACTIVE | checked/unchecked interpreter [V] |
-| DAP per-instruction hook | vmexec.cpp:57; RuntimeEvents.cpp:74-80 | interpreter only; no-op unless debugger subscribed | not emitted by JIT (no reference in jit/*.cpp) [V] |
+| DAP per-instruction hook | vmexec.cpp:57 (goto path), vmexec.h:64 (switch path, MSVC) [xc: switch site added]; RuntimeEvents.cpp:74-80 | interpreter only; no-op unless debugger subscribed | not emitted by JIT (no reference in jit/*.cpp) [V] |
 | `vr_synclog`, `vr_synclog_actors` | p_vrsynclog.cpp:38-39 | DORMANT | per-tic hash+fflush when set [V] |
 | `vr_telemetry` | p_vrtelemetry.cpp:32 | DORMANT | [V] |
 | world clock: `P_TickRealTimeActors`, `worldclock` CCMD, `worldclock_log` | p_tick.cpp:79-143; read at vmthunks.cpp:2822 | DORMANT at scale 1.0 | `AdvanceWorldClock` returns true every tic at full speed (g_levellocals.h:1581) [V] |
@@ -526,9 +572,9 @@ buffer, off by default (`r_snapshot 0`) (renderer:d_net.cpp:2557, renderer:src/r
 | `MBF_FRIENDS` block | p_enemy.cpp:1867-1898 | **DEAD** | `MBF_FRIENDS` defined nowhere (grep src, CMake); block would not compile (`i` undefined at 1877) [V] |
 | `cl_noprediction` | p_user.cpp:297 | **DEAD** | no reader in src or wadsrc; only `EXTERN_CVAR` in src/gl/stereo3d/gl_openxrdevice.cpp:65, a file not in src/CMakeLists.txt [V] |
 | `src/gl/stereo3d/gl_openxrdevice.cpp` | — | **DEAD** (not compiled) | CMake lists only rendering/gl/stereo3d/gl_openvr.cpp (src/CMakeLists.txt:1069) [V] |
-| `VMException` code | vmframe.cpp:64-66, 707-751, 880-885 | **DEAD** (`#if 0`) | [V] |
+| `VMException` code | vmframe.cpp:64-66, 707-709, 741-751, 880-885 | **DEAD** (`#if 0`) | [V] [xc: 710-740 is the live body of `VMCall`, not dead; only the try/catch wrappers are `#if 0`] |
 | `cl_predict_specials` | p_user.cpp:295; p_spec.cpp:375 | ACTIVE | [V] |
-| `nomonsterinterpolation` | p_enemy.cpp:74, 3191 | DORMANT | [V] |
+| `nomonsterinterpolation` | p_enemy.cpp:74, 656, 3191; menudef.txt:1419 | DORMANT (default false; menu option) | [V] [xc: reader at 656 and the menu entry added] |
 | `netplay_desynctest` | p_user.cpp:291, 2014-2019 | DORMANT (debug) | [V] |
 | `hurtvolume_debug`, `drawnshape_debug`, `vr_slotload_debug`, `vr_shotclamp_debug`, `aimdebug` | p_map.cpp:264, 665, 309, 5245; p_user.cpp:2137 | DORMANT (debug prints) | [V] |
 | Thinker sleep API (`Sleep`, `SleepIndefinite`, `STAT_SLEEP*`) | dthinker.cpp:97-141, 1209-1335 | ACTIVE, opt-in by script | ported from GZSelaco [V] |
@@ -554,7 +600,7 @@ buffer, off by default (`r_snapshot 0`) (renderer:d_net.cpp:2557, renderer:src/r
 | `TryRunTics` | no catch-up cap | `sim_maxcatchup`=2 SP, `simprofile`, `R_SnapshotWrite` (renderer:d_net.cpp:184-214, 2413-2416, 2493, 2557) | no cap | no cap |
 | `WorldStateHash` in consistency | yes (d_net.cpp:1235) | yes (renderer:d_net.cpp:1267) | yes (netplay:d_net.cpp:1218) | no |
 | sound per-source lists / evict budget | no | yes (renderer:s_sound.cpp:74, 1341-1345) | no | no |
-| `P_PlayerThink` VR chain | latch, canonical pose, torso, gear, gear-play, grab, laser trace, sim roomscale, telemetry | latch, canonical, torso, gear (older), laser trace, sim roomscale; **no VRGrab**, no gear-play (renderer:p_user.cpp:1985-2015) | latch + canonical pose only; no torso/gear/grab/laser trace/sim roomscale | none |
+| `P_PlayerThink` VR chain | latch, canonical pose, torso, gear, gear-play, grab, laser trace, sim roomscale, telemetry | latch, canonical, torso, gear (older), laser trace, sim roomscale; **no VRGrab**, no gear-play (renderer:p_user.cpp:1985-2015) | latch + canonical pose + telemetry (netplay:p_user.cpp:1949-1961); no torso/gear/grab/laser trace/sim roomscale | `UpdateCanonicalMainHandPose` only (selaco:p_user.cpp:1902); no latch [xc: was "none"; renderer also calls `VRTelemetry_Tic`, renderer:p_user.cpp:2021] |
 | `sizeof(AActor)` | 3104 | 3104 (actor.h identical) | 3096 | 2464 |
 | `Affect_Tick` in AActor::Tick | yes | yes | yes | no |
 | p_map.cpp | — | `shotclamp` print differs only | missile origin uses `AttackPos/OffhandPos` directly instead of `P_ShotOrigin` (netplay:p_mobj.cpp:8513-8520) | separate fork |
@@ -589,3 +635,42 @@ buffer, off by default (`r_snapshot 0`) (renderer:d_net.cpp:2557, renderer:src/r
 11. **Does anything still read `OldRenderPos` intentionally?** If not, writing it after the rebuild in
     `UpdateRenderSectorList` restores the intended skip; measure on a line-portal map.
 12. **Multiplayer haptics**: confirm on the rig that `VR_HapticEvent` fires for remote players' health (p_user.cpp:1933-1946).
+
+---
+
+## Cross-check (date 2026-11-13)
+
+Checked against main f182cbcc (plus renderer, netplay and selaco for branch claims) by opening each cited line. Struct
+sizes and `AActor` offsets were re-probed with clang -fsyntax-only on main, netplay and selaco. All 26 offsets and all
+sizes match **with `NDEBUG`**. New measurements from the owner's PC (old path, owner's mod set) were used for the
+ranking check only. No timings of my own.
+
+| category | checked | right | line-fixed | corrected | unconfirmed | added |
+|---|---|---|---|---|---|---|
+| a. Summary items | 10 | 8 | 0 | 2 | 0 | 0 |
+| b. "What slows it down" items (5.1-5.16, 5.B) | 17 | 9 | 2 | 6 | 0 | 1 item (5.0) + 2 measurement lines |
+| c. DEAD/DORMANT/never-read claims (greps re-run over src/ and wadsrc/, incl. menudef.txt and .zs) | 13 | 11 | 0 | 1 | 0 | 1 |
+| d. cvar defaults (vm_jit, vm_jit_aot, vm_debug, sim_maxcatchup, sim_prefetch, cl_predict_specials, cl_noprediction, nomonsterinterpolation, netplay_desynctest, vr_synclog, vr_telemetry, perf_track, r_perflog) | 13 | 13 | 0 | 0 | 0 | 0 |
+| e. branch-difference claims | 7 | 6 | 0 | 1 | 0 | 0 |
+| f. table rows (§2.3 all 23; §3 44 of ~60; §2.4/§2.7 call-graph lines) | 75 | 69 | 6 | 0 | 0 | 0 |
+
+Corrections:
+- Ranking (Summary 5, §5 intro, §5.1): `RunThinkers` time is the `Tick` bodies, not a "walk". New measurements put
+  thinkers at 61-87 ms a tic against 6.5-6.8 ms for the reset, so the per-thinker `Tick` path ranks first and the side
+  walks second.
+- Added §5.0: the per-thinker `AActor::Tick` path, including the missed multiplier. A blocked chasing monster runs
+  `P_SmartMove` plus up to 8 `P_TryWalk` retries (`P_DoNewChaseDir`, `P_RandomChaseDir`), and each retry is a
+  `P_Move` → `P_TryMove` → `P_CheckPosition` over crowded cells (p_enemy.cpp:535-640, 778-834, 847-965, 3180-3183).
+- §5.2: the share of the VM call layer is not measured. Confidence changed from H to M for that part.
+- §5.5: the deep-water `P_ChangeSector` loop (p_map.cpp:9479-9494) has no `break`. It is O(n), not O(n²).
+- §5.3: "speed" in the step count is the larger of the axis components, not the vector length.
+- §5.10: actor.zs citations were out of order. `A_Look` has no defaults, so idle look states do not copy (zcc_compile.cpp:2911-2913).
+- §5.16 and §6: on MSVC (switch interpreter) the DAP hook is at vmexec.h:64. vmexec.cpp:57 covers only the computed-goto path.
+- §6 `VMException`: only 707-709 and 741-751 are `#if 0` inside `VMCall`. Lines 710-740 are live code.
+- §6 `nomonsterinterpolation`: added the reader at p_enemy.cpp:656 and the menu option at menudef.txt:1419. It remains DORMANT.
+- §7 VR chain: selaco calls `UpdateCanonicalMainHandPose` (selaco:p_user.cpp:1902), so "none" was wrong. Netplay and renderer also call `VRTelemetry_Tic`.
+- Summary 2: the light-recreation scan runs in client-side logic (`totalTics` times a frame), not inside `P_Ticker`.
+  The sizes 3,104 / 80 B hold only with `NDEBUG`. Without it they are 3,112 / 88 B (dobject.h:181).
+- Line fixes: P_TryMove relink 4079-4093 → 4081-4094 (§2.4, §5.3); `P_LineTrace` 5806 → 5807 and gate 5842 → 5843
+  (§2.7); p_vrdemo.cpp `P_XYMovement` 536,546 → 532,543 (§3); a_dynlight `::validcount++` 687 → 683 (§3, §5.B);
+  vmexec.cpp switch macros 52-61 → 50-60.

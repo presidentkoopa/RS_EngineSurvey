@@ -10,12 +10,18 @@ here are measured by this teardown; the few quoted numbers are marked "previousl
 ## 1. Summary
 
 1. Dynamic lights (`FDynamicLight`) are a render-only linked list ticked once per tic after an O(all actors) scan;
-   any light whose X/Y or max radius changed **relinks**: unlink from every side/section hash map, then a 2D flood
+   any active light whose X/Y or link radius changed **relinks** (link radius = 2 × max(intensity, secondary) for
+   flicker/pulse lights, but 2 × *current* intensity for point and sector lights, so a sector light relinks on every
+   change of its sector's light level; X/Y also changes when a light with an X/Y offset turns with its actor, and
+   every tic a pose-anchored light follows the hand) [xc: "max radius" was only true for flicker/pulse lights;
+   triggers made explicit, a_dynlight.cpp:392-439]: unlink from every side/section hash map, then a 2D flood
    fill over sections that heap-allocates one `FLightNode` per touched section and side (V, `a_dynlight.cpp:377-727`).
 2. Per-surface light lists are built **at draw time, per eye, on the main thread** (Vulkan reports persistent buffers),
    by iterating the side/section `TMap`, filtering, insertion-sorting to a budget (8 walls / 16 flats) and appending
    4 vec4 per light into one 80,000-light SSBO; the shader gets a per-draw index in a push constant (V).
-3. Sprites and particles get one CPU-summed RGB per draw (with a CPU AABB ray test per light when shadow-mapped);
+3. Sprites and particles get one CPU-summed RGB per draw (with a CPU AABB ray test per light when shadow-mapped,
+   the shadow pass ran this frame and the light's own switch allows it — `gl_light_shadowmap` or the cast-shadow
+   setting; none at defaults [xc: the ray test is gated by `LightShadowAllowed`, hw_shadowmap.cpp:154-160]);
    models get a full light list via a BSP circle walk at BSP time (V, `hw_spritelight.cpp:101-321`).
 4. Shadows: a 1D shadow map (1024 rows × `gl_shadowmap_quality`=128 R32F), one full-target fragment pass that ray-walks
    a 2D AABB tree of one-sided lines per texel, run once per frame when wanted; optional ray-query shadows decided at
@@ -34,6 +40,9 @@ here are measured by this teardown; the few quoted numbers are marked "previousl
    and model light gathering; StreamData copies; fragment light loops ×2 eyes; bloom/exposure pass count (I, §5).
 10. On the `renderer` branch every wall/flat a dynamic light touches is **evicted** from the static mesh back to the old
    path, so dynamic lights are the main blocker of the static path (V, `hw_levelresidency.cpp:3835-3873, 4357-4362`).
+   The marking walks every light's touch lists without testing `IsActive`, radius or distance cull, and `Deactivate`
+   (a_dynlight.h:293) does not unlink, so a deactivated light still evicts the sides/flats it was last linked to
+   [xc: added].
 
 ---
 
@@ -69,13 +78,14 @@ While paused, `P_Ticker` still runs the recreate scan (`p_tick.cpp:662-679`, V).
 ### 2.2 Per displayed frame, once (main view)
 
 ```
-D_Render (d_main.cpp:690-699): Level->HasDynamicLights = r_dynlights && (lights || LightProbes)
+D_Render (d_main.cpp:693-697): Level->HasDynamicLights = (r_dynlights || LightProbes) ? (lights || LightProbes) : false
+     [xc: was "r_dynlights && (lights || LightProbes)"; with r_dynlights 0 a level with light probes still reports true]
 RenderView (hw_entrypoint.cpp:640)
   :664  iter/draw counters reset; :669 ResetProfilingData; :675 screen->mLights->Clear()   (light SSBO cursor -> 0)
   RenderViewpoint (hw_entrypoint.cpp:264)
-    :273  EmissiveVolumes::BeginFrame        (hands its lights to EffectLights)
-    :285  BeamLights_HandOver                (beam slot lights -> EffectLights::AddFrameLight)
-    :292  EffectLights::BeginFrame (hw_effectlights.cpp)  drain queue, evaluate pool, rank/cap, row order -> wantsRows
+    :274  EmissiveVolumes::BeginFrame        (hands its lights to EffectLights)
+    :286  BeamLights_HandOver                (beam slot lights -> EffectLights::AddFrameLight)
+    :293  EffectLights::BeginFrame (hw_effectlights.cpp:153)  drain queue, evaluate pool, rank/cap, row order -> wantsRows
     :299  DynamicLightShadowRowsWanted (hw_dynlightdata.cpp:210)  O(lights) walk unless setting is Off
     :301-316  if wanted: SetAABBTree, SetCollectLights(CollectLights), screen->UpdateShadowMap()
               VulkanRenderDevice::UpdateShadowMap -> VkPostprocess::UpdateShadowMap (vk_postprocess.cpp:586)
@@ -85,7 +95,7 @@ RenderView (hw_entrypoint.cpp:640)
     :322  FLightDefaults::SetAttenuationForLevel
     :327  vrmode->SetUp(); :330 R_UpdatePoseAnchoredLights (hw_entrypoint.cpp:185): relink if moved > 4 units
     :337  PrepareFrameCompute -> EffectLights::PrepareFrame (bin + upload), SmokeVolume::PrepareFrame
-          (-> SmokeVolume::GatherLights hw_smokevolume.cpp:1349, O(lights)), ... ; screen->RunFrameCompute
+          (-> SmokeVolume::GatherLights hw_smokevolume.cpp:1348, O(lights)), ... ; screen->RunFrameCompute
     :341  lightmask.SetPinnedLightLive; :345 ExposureImpulses::BeginFrame
     eye loop :359 (2 iterations in stereo VR) -> §2.3
 ```
@@ -108,7 +118,11 @@ di->ProcessScene (hw_drawinfo.cpp:4597) -> SyncViewLights (:671, O(lights), only
         -> DrawSubsectors (:279) -> SetupLights (:157) -> UploadLights
     HWSprite::DrawSprite (hw_sprites.cpp ~:300-572): if no list index -> GetDynSpriteLight (hw_spritelight.cpp:101/212)
         (+ IShadowMap::ShadowTest -> LevelAABBTree::RayTest on CPU when the light is shadowmapped)
-    DrawPlayerSprites (hw_weapon.cpp:2421-2549): GetDynSpriteLight / hw_GetDynModelLight (gl_light_weapons only)
+    PreparePlayerSprites2D/3D (hw_weapon.cpp:2298, 2435; light at :2424-2426, :2546-2549): GetDynSpriteLight
+        (gl_light_sprites, default on) / hw_GetDynModelLight (gl_light_weapons only)
+        [xc: these lines are in PreparePlayerSprites2D/3D, not DrawPlayerSprites]
+    DrawWorldPlayerSprites (hw_weapon.cpp:2586, light at :2630-2634): hw_GetDynModelLight + UploadLights per other
+        player's world weapon model, every draw pass but sky portals (gl_light_weapons only) [xc: added; absent on netplay]
   SSAO (only gl_ssao>0 and GBUFFER_PASS): screen->AmbientOccludeScene (hw_drawinfo.cpp:4552-4556)
 PostProcess per eye: screen->PostProcessScene (hw_entrypoint.cpp:501 / :398) -> §2.5
 ```
@@ -168,10 +182,10 @@ particles drawn per eye; M = per-pixel-lit models per eye; A = actors (+ client-
 | `FDynamicLight::Tick` | a_dynlight.cpp:253 | dthinker.cpp:389-408 | tic × light | O(1) + relink | Flicker uses `FCRandom randLight` (:42); clamps to `gl_light_max_intensity` (V) |
 | `FDynamicLight::UpdateLocation` | a_dynlight.cpp:377 | Tick, AttachLight, RelinkDynamicLightsForLevel | tic × light | O(1) or relink | Relinks only on X/Y/radius change (:434); Z moves do not relink (V) |
 | `FDynamicLight::LinkLight` | a_dynlight.cpp:671 | UpdateLocation, R_UpdatePoseAnchoredLights | relink | Unlink + flood | Increments `dynlights_links_total` (V) |
-| `FDynamicLight::UnlinkLight` | a_dynlight.cpp:695 | LinkLight, DeleteAttachedLights, Tick | relink | O(S) hash removes (each frees a `unique_ptr<FLightNode>`) | (V; free INFERRED from `std::unique_ptr` value type, g_levellocals.h:58-59) |
+| `FDynamicLight::UnlinkLight` | a_dynlight.cpp:695 | LinkLight, DeleteAttachedLights, Tick, `RelinkDynamicLightsForLevel` (g_level.cpp:2988), `FLightDefaults::ReleaseLightsBuiltFrom` (a_dynlightdata.cpp) [xc: last two added]; not `Deactivate` | relink | O(S) hash removes (each frees a `unique_ptr<FLightNode>`) | (V; free INFERRED from `std::unique_ptr` value type, g_levellocals.h:58-59) |
 | `FDynamicLight::CollectWithinRadius` | a_dynlight.cpp:541 | LinkLight | relink | O(sections reached × (segs+sides)) DistToSeg, capped at `gl_light_max_collected_subsectors`=1000 sections | 2D only; sets `shadowmapped` if it saw the back of a one-sided line (:662) (V) |
 | `FDynamicLight::AddLightNode` | a_dynlight.cpp:455 | CollectWithinRadius | touched side/section | heap `new FLightNode` + `TMap::TryEmplace` + `SortedAddUnique` | One heap alloc per link (V) |
-| `RelinkDynamicLightsForLevel` | g_level.cpp:2981 | level code | event | O(L) relinks | (V) |
+| `RelinkDynamicLightsForLevel` | g_level.cpp:2981 | level load (g_level.cpp:1569) [xc: caller cited] | event | O(L) relinks of active lights | (V) |
 | `R_UpdatePoseAnchoredLights` | hw_entrypoint.cpp:185 | RenderViewpoint :330 | frame | O(anchored) + relink if moved > 4 units | Main view only (V) |
 | `EffectLights::BeginFrame` | hw_effectlights.cpp (BeginFrame) | RenderViewpoint :292 | frame | O(pool) eval + O(pool log pool) rank when over cap + sort of row candidates | `r_effectlights_max`=1024 cap (V) |
 | `DynamicLightShadowRowsWanted` | hw_dynlightdata.cpp:210 | RenderViewpoint :299 | frame | O(L) when cast-shadow setting on; O(1) when Off (default) | 10 s linger (V) |
@@ -181,7 +195,7 @@ particles drawn per eye; M = per-pixel-lit models per eye; A = actors (+ client-
 | `PPShadowMap::Update` | hw_postprocess.cpp:2840 | VkPostprocess::UpdateShadowMap | shadow pass frame | GPU: quality×1024 fragments, each walks the AABB tree (stack 32) | Empty rows early-out (`radius > 0` test, shadowmap.fp) (V) |
 | `FillFogDynLights` | hw_drawinfo.cpp:1783 | StartScene :2433 | draw info (eye, portal) with fog slab | O(L) + nth_element | `fog_dynlights_max`=8 cap; level asks via `Level->FogDynLights` (V) |
 | `SyncViewLights` | hw_drawinfo.cpp:671 | ProcessScene :4681 | eye (toscreen) | O(L) × 5-plane frustum test + nth_element | Only while lit GPU particles/mesh particles/debris are alive (:687-692) (V) |
-| `SmokeVolume::GatherLights` | hw_smokevolume.cpp:1349 | SmokeVolume::PrepareFrame | frame with smoke | O(L) + nth_element to `SMOKE_LIGHTS_MAX`=32 | (V) |
+| `SmokeVolume::GatherLights` | hw_smokevolume.cpp:1348 | SmokeVolume::PrepareFrame | frame with smoke | O(L) + nth_element to `SMOKE_LIGHTS_MAX`=32 | (V) |
 | `HWWall::SetupLights` | hw_walls.cpp:600 | DrawWall :565 (every eye); PutWall :883 (walls with decals) | wall part × eye | O(Ls) filter + insertion sort to budget 8 + per-candidate 4-vertex touch test + AddLightToList + UploadLights | Called twice for walls with decals (BSP and draw) (V) |
 | `HWFlat::SetupLights` | hw_flats.cpp:157 | DrawSubsectors :289 | flat (section) × eye | O(Ls) + insertion sort to 16 + UploadLights | Plane side test via `ZatPoint` (V) |
 | `HWDrawInfo::SetupLightsForOtherPlane` | hw_renderhacks.cpp:112 | AddOtherFloor/CeilingPlane :238/:248 | hack subsector × eye | as flats | (V) |
@@ -190,9 +204,9 @@ particles drawn per eye; M = per-pixel-lit models per eye; A = actors (+ client-
 | `gl_IsDistanceCulled` | hw_dynlightdata.h:103 | list builders | light × surface | O(1); called up to twice per light | Uses global `r_viewpoint.Pos`, not the eye (V) |
 | `gl_GetLightPosRelative` | hw_dynlightdata.h:58 | list builders | light × surface | O(1) | Cache off by default (V) |
 | `gl_InsertBestLightCandidate` | hw_dynlightdata.h:76 | list builders | candidate | O(budget) insertion | (V) |
-| `FLightBuffer::UploadLights` | hw_lightbuffer.cpp:81 | list builders | surface × eye | atomic fetch_add + memcpy 16 B + 64 B/light into persistent SSBO | Overflow at 80,000 lights → returns -1 and the surface is drawn unlit (V) |
-| `HWDrawInfo::GetDynSpriteLight` | hw_spritelight.cpp:101 / :212 | DrawSprite hw_sprites.cpp:320, DrawPlayerSprites hw_weapon.cpp:2426 | sprite/particle × eye | FindLightProbe (3×3 cells) + O(Ls of the actor's section) + CPU `ShadowTest`→`RayTest` per shadow-mapped light | Spot trig recomputed every call (V) |
-| `hw_GetDynModelLight` | hw_spritelight.cpp:228 | PutSprite hw_sprites.cpp:847, hw_weapon.cpp:2548 | model × eye | BSPWalkCircle over subsectors; per subsector its section's whole map; linear dedupe `std::find` | Section revisit guard never armed (see §6) (V) |
+| `FLightBuffer::UploadLights` | hw_lightbuffer.cpp:81 | list builders | surface × eye | atomic fetch_add + memcpy 16 B + 64 B/light into persistent SSBO | Overflow at 80,000 lights → returns -1 and the surface is drawn unlit (V); the cursor has already advanced, so every later upload that frame fails too [xc: added] |
+| `HWDrawInfo::GetDynSpriteLight` | hw_spritelight.cpp:101 / :212 | DrawSprite hw_sprites.cpp:320, DrawPlayerSprites hw_weapon.cpp:2426 | sprite/particle × eye | FindLightProbe (3×3 cells) + O(Ls of the actor's section) + CPU `ShadowTest`→`RayTest` per shadow-mapped light whose shadow switch is on | Spot trig recomputed every call (V). Caller hw_weapon.cpp:2426 is `PreparePlayerSprites2D`, not DrawPlayerSprites [xc] |
+| `hw_GetDynModelLight` | hw_spritelight.cpp:228 | PutSprite hw_sprites.cpp:847, hw_weapon.cpp:2548 (`PreparePlayerSprites3D`), hw_weapon.cpp:2633 (`DrawWorldPlayerSprites`) [xc: third caller added] | model × eye | BSPWalkCircle over subsectors; per subsector its section's whole map; linear dedupe `std::find` | Section revisit guard never armed (see §6) (V) |
 | `FindLightProbe` | hw_spritelight.cpp:40 | sprite/model paths | call | 9 cells × probes | Probes are static (maploader.cpp:3384-3433) (V) |
 | `SetColor`, `SetFog`, `SetShaderLight`, `CalcLightLevel`, `GetFogDensity` | hw_setcolor.cpp; hw_lighting.cpp:69-208 | every draw | draw | O(1) table lookups | Cheap (V) |
 | `CheckFog` | hw_lighting.cpp:221 | wall Process (fog boundaries) | wall | O(1) | Fog boundary drawn as an extra translucent wall with `EFF_FOGBOUNDARY` (hw_walls.cpp:248-263) (V) |
@@ -214,6 +228,10 @@ particles drawn per eye; M = per-pixel-lit models per eye; A = actors (+ client-
   for sections (`flat_dlist`) and sides (`wall_dlist`), indexed by section/side index, grown lazily (V). Readers iterate
   the hash map (`TMap::Iterator`), whose cost follows the map's allocated size, not only its count (I, standard
   open-hash iteration).
+- A deactivated light stays in the maps: `Deactivate` only clears `m_active` (a_dynlight.h:293), `Tick` returns before
+  `UpdateLocation` for an inactive light (a_dynlight.cpp:279), and `SetDynamicLights` deactivates surplus slots rather
+  than releasing them (a_dynlight.cpp:792-795). Every reader (wall/flat `SetupLights`, sprite and model gathering)
+  still iterates it and rejects it by `IsActive`, so Ls counts dead lights too (V) [xc: added].
 - `FDynamicLightTouchLists` (a_dynlight.h:244-248): per light, sorted arrays of touched sections and sides, used to
   unlink (V).
 
@@ -252,7 +270,12 @@ particles drawn per eye; M = per-pixel-lit models per eye; A = actors (+ client-
 - Grid header + one 32-bit word per bin `(offset<<6)|count` + index list (main.fp:806-811, hw_effectlightbuffer.h:96-108,
   V). Grid covers 3072 × 768 × 3072 map units (x, up, y) around the eye, eye-centred and moving by whole bins: quality
   1/2/3 = 64/32/24-unit bins, 48×12×48 / 96×24×96 / 128×32×128 bins (`GridForQuality`, `GridAround`,
-  hw_effectlightcore.h:440-468; used at hw_effectlights.cpp:467), V.
+  hw_effectlightcore.h:440-468; used at hw_effectlights.cpp:467), V. That is the candidate grid only: `Build` uploads
+  the bounding box of the bins actually touched (`lo..hi`), with its own corner and size in the header, so the bin array
+  and the shader's lookup cover only the occupied box, and a pixel outside it returns no effect light
+  (hw_effectlightcore.h:590-636; main.fp:884-888) [xc: added — "grid covers 3072 × 768 × 3072" is the candidate
+  grid, not what is uploaded]. Per-bin list length is `r_effectlights_perbin` (default 16, after
+  `EffectsGovernor::LightsPerBin`), up to 32 only for important lights in crowded bins (hw_effectlightcore.h:762).
 - Limits: pool 4,096, records 8,192, bins 128×32×128, indices 262,144, per-bin loop 32
   (hw_effectlightbuffer.h:99-108, V). Built on the CPU once per frame by `EffectLightCore::BinBuilder::Build`
   (hw_effectlightcore.h:530-630: per-light bin touch, counting sort, crowded bins merged into a residual glow), V.
@@ -286,7 +309,14 @@ mods with many lamps), VR, no multiview (default `vr_openxr_multiview false`, hw
 
 1. **Per-tic relink of every moving light** — confidence high.
    Every light attached to a moving actor (projectiles, flashes following a weapon, gore) changes X/Y every tic and
-   relinks (a_dynlight.cpp:434-439, V). A relink = O(S) hash removals + a flood fill doing `DistToSeg` against every seg
+   relinks (a_dynlight.cpp:434-439, V). Also relinked: a light with an X/Y offset on an actor that only turns (the
+   offset is rotated by the actor's yaw, a_dynlight.cpp:395-405); a point or sector light whose current intensity
+   changes (link radius = 2 × current intensity, :421-432 — a sector light on a flickering sector relinks every change);
+   a pose-anchored light every tic its hand moves at all (ResolvePoseAnchor, :392) and again per frame when it moved
+   > 4 units (hw_entrypoint.cpp:190-193). Not relinked: Z-only moves, flicker/pulse cycling (radius is the max), and
+   inactive lights (Tick returns at :279 and leaves them linked). A new point light links twice in its first tic:
+   once from `AttachLight` with radius 0 (no flood, :677), then from `Tick` with its real radius (V) [xc: added; the
+   item named only moving actors]. A relink = O(S) hash removals + a flood fill doing `DistToSeg` against every seg
    and side of every reached section + one heap allocation and hash insert per touched side/section (a_dynlight.cpp:
    455-495, 541-727, V). Cost ∝ Lm × S, and S grows with radius² (I). Light creation goes through the same path
    (AttachLight → UpdateLocation). The flood is 2D, so a light near a floor/ceiling in a tall multi-level area touches
@@ -303,12 +333,14 @@ mods with many lamps), VR, no multiview (default `vr_openxr_multiview false`, hw
    candidate, insertion sort, 64 B copy per light, atomic upload. Walls with decals do it twice (PutWall :879-884 and
    DrawWall). Cost ∝ eyes × Σ_surfaces Ls (I).
    *Measure:* `RenderWall`/`RenderFlat` clocks wrap the whole draw loop incl. SetupLights and `Apply`
-   (hw_drawlist.cpp:843-848, 858-864, V); `drawcalls` (vk_renderstate.cpp:228) is nested inside, so SetupLights+MakeVertices
+   (hw_drawlist.cpp:843-848, 858-864, V); `drawcalls` (vk_renderstate.cpp:225) is nested inside, so SetupLights+MakeVertices
    ≈ RenderWall − drawcalls share (I). `iter_dlight[f]`/`draw_dlight[f]` count light×surface pairs (V).
 
 3. **Sprites, particles and models** — medium-high (scales with monster/particle count).
    `GetDynSpriteLight` per sprite/particle per eye walks its section's map and, for shadow-mapped lights while the shadow
-   pass runs, does a CPU `RayTest` per light (hw_spritelight.cpp:174, hw_shadowmap.cpp:154-160, V).
+   pass runs, does a CPU `RayTest` per light (hw_spritelight.cpp:174, hw_shadowmap.cpp:154-160, V) — only when
+   `LightShadowAllowed` passes for that light (`gl_light_shadowmap`, or `gl_light_castshadows` ≥ 1 for lights that ask);
+   when the pass runs only for effect lights (the default) no sprite ray test happens [xc: gate added].
    `hw_GetDynModelLight` walks every subsector a model's radius touches and re-scans the same section's map for each
    subsector of that section (guard at :259 never armed, §6), with `std::find` dedupe (:298) (V). No candidate budget
    for models (V); the shader caps each class at `gl_light_range_limit` (§GPU 1).
@@ -345,8 +377,9 @@ mods with many lamps), VR, no multiview (default `vr_openxr_multiview false`, hw
    **10 at the default filter** (main.fp:593-613, V). Effect lights with rows add one tap/ray each (main.fp:821-844).
 4. **Volumetric beam cones** — medium when present: one full-scene-viewport additive pass per beam, up to 32
    (hw_postprocess.cpp:126-155, hw_postprocess.h:765, V).
-5. **Smoke / emissive volume marches** — medium-high when present: half-res march + temporal resolve + 2 keeps +
-   2 blurs + curve + scatter + full-res composite per eye (hw_postprocess.cpp:659-1046, V); shared march across eyes
+5. **Smoke / emissive volume marches** — medium-high when present: depth downsample + half-res march + temporal
+   resolve + 2 keeps + 2 blurs + curve + scatter + full-res composite (+ light-mask carry when the mask is live) per eye
+   (hw_postprocess.cpp:659-1046, V) [xc: depth pass (:710-716) and mask carry (:1019-1043) were missing]; shared march across eyes
    optional (`r_effects_sharedmarch` 1, :739-784, V).
 6. **`main.fp` size** — unknown magnitude. All fork features are compiled into one program per material/variant and
    gated by uniforms (V for the gates, e.g. ShapesAt :1574, BeamLightAt :2301, FogSlabAt :3245). Branches are
@@ -399,20 +432,21 @@ without effect), VR-only / flat-only where it matters.
 | `gl_bloom` | hw_postprocess_cvars.cpp:37 | true | ACTIVE | :1691 bloom, :2288 exposure |
 | `gl_bloom_pin_beams` (+ `gl_bloom_pin_*`) | :139-192 | false | DORMANT | PPLightMask::WantedByCvars hw_postprocess.cpp:3418-3421 |
 | `r_lightmask_debug` | :252 | 0 | DORMANT (debug) | :3441-3456 |
-| `gl_tonemap` | :416 | 0 (None) | DORMANT | :2554-2559 |
+| `gl_tonemap` | :416 | 0 (None) | DORMANT unless the level's MAPINFO sets `level_tonemap`, which overrides the cvar [xc: level override added] | :2554-2559 |
 | `gl_lens` | :472 | false | DORMANT | :2143 |
 | `gl_fxaa` | :478 | 0 | DORMANT | :2197 |
 | `gl_ssao` | :486 | 0 | DORMANT | :2681; also switches the scene to `GBUFFER_PASS` (hw_entrypoint.cpp:384, 413) |
-| `r_smoke` / `r_smoke_preset` | hw_cvars.cpp:561; :287 | true / 3 | ACTIVE only with smoke content | :666 |
+| `r_smoke` / `r_smoke_preset` | hw_cvars.cpp:561; hw_postprocess_cvars.cpp:287 [xc: file named] | true / 3 | ACTIVE only with smoke content | :666 |
 | `r_effects_sharedmarch`, `r_effects_foveated`, `r_emissivevolumes_*` | :357-394 | on | ACTIVE with content | — |
 | `vr_openxr_multiview` / `_postprocess` | hw_vrmodes.cpp:643, 655 | false / true | DORMANT (multiview off by default) | |
 | `stat lightstats`, `stat shadowmap`, `stat gpu`, `bench` | hw_clock.cpp:282; hw_shadowmap.cpp:119; hw_postprocess.cpp:48; hw_clock.cpp bench | — | ACTIVE tools | see §8 |
-| `#if 0` ColorFlickerLight / RandomColorFlickerLight | a_dynlight.cpp:319-344 | — | DEAD | compiled out; types still in `ELightType` (a_dynlight.h:37-48) |
-| `SectorLight`, `DummyLight` types | a_dynlight.h:43-44 | — | SectorLight ACTIVE (:346-358); DummyLight: no case in Tick, so radius stays the activation value | V (switch has no DummyLight case) |
+| `#if 0` ColorFlickerLight / RandomColorFlickerLight | a_dynlight.cpp:319-344 | — | DEAD | compiled out; types still in `ELightType` (a_dynlight.h:36-47) |
+| `SectorLight`, `DummyLight` types | a_dynlight.h:42-43 | — | SectorLight ACTIVE (:346-358); DummyLight: no case in Tick, so radius stays the activation value | V (switch has no DummyLight case) |
 | Section revisit guard in `hw_GetDynModelLight` | hw_spritelight.cpp:253, 259 | — | DEAD check | `dl_validcount++` then `if (section->validcount == dl_validcount) return;` but nothing in the function sets `section->validcount`; `BSPWalkCircle` (models.h:162-168) does not either |
-| Coronas | hw_drawinfo.cpp:4356-4359 | — | DEAD | commented out |
+| Coronas | hw_drawinfo.cpp:4356-4359 | — | DEAD | commented out; the `Coronas` member is commented out too (hw_drawinfo.h:186) and the only push is under `#if 0` (hw_sprites.cpp:1079-1084) |
+| `gl_coronas` | hw_drawinfo.cpp:82 | true | DEAD | read only inside the commented-out block (:4356); its menu row is commented out (menudef.txt:3198); a_corona.h:27 only declares it [xc: added] |
 | `SHADER_LITE` paths in main.fp / material_normal.fp | material_normal.fp:26-50 | — | DEAD on Vulkan | defined only by the GL backend (gl_shader.cpp:1064); Vulkan never defines it (grep) |
-| `FLightBuffer` UBO path (`mBufferType=false`, `GetBinding`) | hw_lightbuffer.cpp:42-49, 128-136 | — | DEAD on Vulkan | Vulkan device sets SSBO caps (vk_renderdevice.cpp:510) (I: `useSSBO()` true there) |
+| `FLightBuffer` UBO path (`mBufferType=false`, `GetBinding`) | hw_lightbuffer.cpp:42-49, 128-136 | — | DEAD on Vulkan | `useSSBO()` returns true for any Vulkan device (`IsVulkan() || …`, v_video.h:225-228) [xc: was I, now V] |
 | `!BuffersArePersistent()` branches in PutWall/PutSprite/flat | hw_walls.cpp:859-866; hw_sprites.cpp:854; hw_flats.cpp:572-576 | — | DEAD on Vulkan | `RFL_BUFFER_STORAGE` always set (vk_renderdevice.cpp:510) |
 | `IShadowMap::ShadowTest(lpos,pos)` 2-arg overload | hw_shadowmap.cpp:145 | — | DEAD (no caller) | full-tree grep of `ShadowTest(`: the only call is the 3-arg one at hw_spritelight.cpp:174 |
 | "unused" record floats 14/15 | hw_dynlightdata.cpp:187-188 | — | DEAD payload | 8 B per light per surface |
@@ -436,8 +470,14 @@ Compared file by file (`diff` of the four trees) for every file read above.
     mark `FB_DYNLIGHTS` (V).
   - `hw_entrypoint.cpp`: Tracy zones only (V). `dthinker.cpp`: `sim_prefetch` (prefetch next thinker), not the light loop
     (V). `hw_clock.cpp`: flat-screen fallback for the summary (V).
-- **netplay** (`1c1805f8`): every lighting/post file identical to `main` except `main.fp` (look-down fade in
-  `MODEL_EYE_FADE` only, :5082-5088) and `hw_drawinfo.cpp` (world psprites), neither affecting lights (V).
+  - `hw_drawinfo.cpp` also differs: `LevelResidency_Draw`/`LevelResidency_DrawFlats` inside `RenderScene`, `opaque.*` GPU
+    groups and Tracy zones; no light-list code changed. `hw_renderstate.h` adds `EFF_LEVELMESH` (V, diff) [xc: added —
+    both files were omitted from the renderer list].
+- **netplay** (`1c1805f8`): every lighting/post file identical to `main` except `main.fp` (main has the look-down fade
+  at :5082-5088, netplay does not), `hw_drawinfo.cpp` (main calls `DrawWorldPlayerSprites`, :4543-4551) and
+  `hw_weapon.cpp` (~105 diff lines: netplay has no `DrawWorldPlayerSprites`, so none of its per-world-weapon
+  `hw_GetDynModelLight` + `UploadLights` at main :2630-2634; plus laser-trace publishing) (V, diff)
+  [xc: hw_weapon.cpp was missing, and the world-psprite difference does touch model lighting].
 - **selaco** (`7e111a3d`): no effect lights (`hw_effectlights.*` missing), no emissive volumes or exposure impulse in
   `Pass1` (selaco hw_postprocess.cpp:2564-2580), no cast-shadow ladder (selaco hw_shadowmap.cpp has only
   `gl_light_shadowmap` and `gl_shadowmap_quality`), no `DynamicLightShadowRowsWanted`, no `[LIGHTLIFETIME]`
@@ -468,7 +508,8 @@ move the binning to a compute pass. Either way:
   (hw_drawstructs.h:208,356,421,509; `SetLightIndex`); the budget cvars `gl_light_{flat,wall}_{max_lights,candidate_budget}`.
 - Sprites/models: `HWDrawInfo::GetDynSpriteLight` (hw_spritelight.cpp:101-222; including the per-sprite CPU
   `ShadowTest` ray), `hw_GetDynModelLight` (:228-321), the model branch of `HWSprite::PutSprite` (hw_sprites.cpp:843-849),
-  psprite lighting in `DrawPlayerSprites` (hw_weapon.cpp:2421-2426, 2546-2549). Sprites would read the cluster at the
+  psprite lighting in `PreparePlayerSprites2D/3D` (hw_weapon.cpp:2421-2426, 2546-2549) and `DrawWorldPlayerSprites`
+  (:2630-2634) [xc: function names corrected, world-psprite site added]. Sprites would read the cluster at the
   vertex or fragment stage like `effectLightMode 2`.
 - Shader: the `lights[uLightIndex]` range header and three loops in `ProcessMaterialLight` (material_normal.fp:85-146,
   material_pbr.fp:~100-180, material_specular.fp:~55-120) become a loop over the pixel's cluster list (keeping three
@@ -484,7 +525,7 @@ move the binning to a compute pass. Either way:
 **Things the current design does that a cluster must reproduce** (V unless noted): the side test that rejects lights
 behind a wall (hw_walls.cpp:678) and below/above a flat (hw_flats.cpp:205-209) — a cluster needs N·L plus a side test or
 the light leaks through thin walls (I); the wall 4-vertex footprint test; `DontLightMap`/`DontLightSelf`/
-`DontLightOthers`/`DontLightActors` per receiver (a_dynlight.h:259-265); `RF2_LIGHTMULTALPHA` scaling;
+`DontLightOthers`/`DontLightActors` per receiver (`ShouldLightActor` a_dynlight.h:259-265, accessors :289-292); `RF2_LIGHTMULTALPHA` scaling;
 `lightadditivesurfaces`; portal displacement (`PosRelative` per portal group, a_dynlight.h:254-257) — clusters must be
 built per portal group or lights pre-offset per view (I); flood-fill occlusion: today a light only reaches sections
 connected within its radius through open lines, a pure distance cluster lights through closed doors and solid walls
