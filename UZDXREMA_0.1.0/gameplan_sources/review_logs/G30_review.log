@@ -1,0 +1,103 @@
+G30 review of /home/claude/work/out/30_GAMEPLAN_90HZ.md  (2026-11-13, independent reviewer)
+Model check: the sim waterfall was re-run in a script (/home/claude/work/verify/g30tmp/sim*.py; scratch only).
+The as-written plan reproduced exactly (64.93 / 32.82 / 12.26), so the original arithmetic was internally right. The changes below
+fix double counting, a scaling inconsistency, mismatches between tables and errors in the claims.
+Process note: changes 23-25 (four one-line number swaps) were made with an in-place python str.replace (each asserted unique),
+not with the Edit tool. Every other change used Edit. The file was never rewritten wholesale.
+
+== ARITHMETIC / DOUBLE COUNTING ==
+1  §3.2 new rule 9 + W2: BSP point grid 0.3/1.15/2 -> 0.05/0.25/0.5. [A] P9.4's saving is derived from 3,622 RSQTHP bars + parts
+   relinking every tic, and W1 already removes the bars. This was the HP-bar fix being counted twice (W1 bar removal vs W2 grid).
+   W2 thinkers -2.5/-6.55/-11.7 -> -2.25/-5.65/-10.2.
+2  W4: derivation said "[G]'s -5/-10/-20 at 112 ms scaled to the remaining ~60 ms", but the numbers (-3.6/-6.2/-9.3) were not
+   that scaling. Now pro rata per column (81.1/63.6/46.7 of 112): -3.62/-5.68/-8.33.
+3  Waterfall rows: W2 89.7/70.3/51.7 -> 89.9/71.2/53.2; W3 84.3/65.6/47.6 -> 84.5/66.5/49.1; W4 80.7/59.4/38.3 -> 80.9/60.8/40.8;
+   W5 72.9/46.8/24.3 -> 73.2/47.9/25.8; W6 64.9/32.8/12.3 -> 65.1/33.5/12.7. W5 T and W6 T stated (W6 T = thinkers only).
+4  End components (med): thinkers 27.6 -> 28.3, WorldTick 2.4 -> 2.3; total 33.5.
+5  Reading: 60/80/92 % -> 59/79/92 %; "86 -> 33" -> "86 -> 33.5". [G] S6 also includes Tick LOD (it was described as Phase 10 only).
+6  §3.5 closers recomputed with the same model: L1 per 10 ms -5 -> -4.6; +20: 22.8 -> 24.4; +30: 17.8 -> 19.8.
+   L2: 26.9/25.4/19.1 -> 27.4/25.9/20.3/19.2. The old "19.1 with L1" was p 0.7 + L1 at k 1.8, which the text did not make clear.
+   Added p 0.8 + k 2.5 alone = 22.3. L3: 27.6 -> 28.3, -10 -> -10.6. Intro 33/36 -> 33.5/35.5-37.5.
+7  Residual tail 45-65 -> 41-65 ms (78.3-30-7 .. 78.3-10-3), in rule 8, U2 and R1.
+8  Headline sim 65/33/12 -> 65.1/33.5/12.7. D3 "32.8 -> 46.8" -> "33.5 -> 47.9".
+9  Headline render CPU 7.1/3.8/2.7 -> 7.3/4.0/2.2. It did not match §5.2 R7, whose arithmetic re-adds correctly.
+10 Headline "XR loop overhead 5-8 ms": now marked as part of the render-CPU line, not additive. The polled waits and SetUp were counted
+   in both lines. 5-8 ms is the no-mod case; on the modlist the spin is 0 today ([C] P0-F12).
+11 Memory: the [G] line was "+50-120 MB", but [G]'s 50-120 total includes AOT, which the ledger lists again. Line -> +50-82 MB (items summed).
+   VRAM +0.2-0.45 GB (0.45 not derivable) -> +0.17-0.32 GB. Host +0.35-0.55 -> +0.35-0.53 GB, derivation shown. Headline row too.
+12 §5.2 R3: per-column -0.4/-0.75/-1.0 shown against -0.78 nominal; noted that R3 lands in M12 (build order).
+13 §5.2 floor check 6.1 -> 6.15 (sum of the stages).
+14 §4.1 exposure 2.7 / bloom 6.3: noted that they are [D]'s ranges (2.6-2.8, 6.0-6.5); strict x2 gives 2.76/6.46 (total 47.0 vs 46.9).
+15 §4.3 C1: explicit 8.2 at S=1.75 (still 0.4 over), 7.5 at S=1.55, C1+C2 7.0-7.7.
+16 §9 effort: SIM 13-16 -> 13-15; ML 24-29 -> 23-27 (re-added); total 158-228 -> 157-225 pw, 3.2-4.6 -> 3.1-4.5 person-years.
+17 §9 calendar: 70-100 pw of serial work cannot be done by one lane in 12-18 months -> 16-22 months at one person-equivalent
+   (12-18 needs 1.3-1.5). The GPU after M1-M8 "≈20-25 ms" -> ≈32-33 (G5-G8 land in M12). Render CPU "≈7" -> 7.4 (R3 is M12).
+18 §9 stage table: M4+M5 70 -> 71; M6-M8 6.7 -> 7.4; M11 sim 60 -> 61, render 4.4 -> 5.2, headset "≈45 Hz reprojected" -> GPU-bound
+   ≈30 Hz (GPU 32 ms); M12+M13 GPU 8 -> 8.2 / 7-7.7, headset rate 45 Hz reprojected on the base plan.
+
+== OWNER RULES ==
+19 Lead: the closing condition was wrong. "Both close ... or if p >= 0.7 and k >= 2.2" -> p 0.7 + k 2.2 alone gives 25.9; even
+   p 0.8 + k 2.5 gives 22.3. Corrected: only L1 (>=30 ms removable tail) or L1(20) + p0.7 + k2.2, or Tick LOD, closes it.
+20 Dynamic resolution: checked every lever. None found (the governor trims effects, not resolution: hw_effectsgovernor.cpp:42-92).
+   No change needed beyond the lead wording.
+21 M7: "default on for vr_mode 15" -> off by default on `renderer` while built; the default flip comes after the gates + a headset
+   round + the owner's go-ahead (D4/D11), because it changes the model/avatar draw path.
+22 R1 (render loop): the pose sample is for the view only; the sim gets controller data only through usercmd_t (owner decision 4).
+23 U2/R1 tail numbers (python replace, see process note).
+24 D3 numbers (python replace).
+25 Stage table M12+M13 sim cell (python replace).
+26 §3.8 BD22/XMVE: added the Cyberdemon exception. LoB replaces 17 vanilla monster classes but not the Cyberdemon (grep of all LoB
+   files); XMVE's `CyberdemonSpawner ... Replaces Cyberdemon` (1.4 Decorate.txt:444, 1.5 Decorate.txt:508) means XMVE/BD22 monster
+   code does tick. The "what does not run" sentence is scoped to the 17 families. New R19.
+27 D3: sim_rule recorded in demo/save headers ([G] F-MT-7), stateless keyed streams, spawn-key ordering; Open risk: cross-rule saves.
+
+== OWNER UPDATE (coordinator message): RSQ Monsters rewrite ==
+28 §3.8: new bullet. The current RS_RosterHandler/RS_RetierHandler is temporary; U10 is kept for today's ticking set. The rewrite
+   must meet five requirements: F-MON-1 spawn-event filters (no unfiltered spawn override, no per-map ThinkerIterator("Actor")
+   scan); no per-monster helper actors (overlays/attachments, parked inventory); deterministic play scope (no consoleplayer);
+   a cheap replacement path (one IsFinal CheckReplacement decision per spawn, no RandomSpawner chains); the netplay replay gate
+   (GATE-SUITE NETSET=1 at every rsq_monster_set). Done-when criterion added.
+29 §7 new D17 (RSQ_Monsters rewrite standard). §6.1 ML row and §6.4 Owner (mods) bullet reference it. R18 extended. §9 ML notes
+   that it is owner mod work and not counted.
+
+== ROADMAP / LANES ==
+30 §6.1 GPU row: render-lane backend items onto `main` early now need the owner's go-ahead; new D16 row (ROADMAP keeps step-4 work on `renderer`).
+31 §6.1 T0 row: read-only code lands on main only through a lane already on main, or the sim lane after D1.
+32 Lead: lists the decisions that need the owner's go-ahead (D1, D2, D3, D4, D11, D12, D16).
+33 §4.4: Open risk. The clustered lighting line vs the "model/avatar draw path untouched" rule: models keep per-draw lights until D11.
+
+== TECHNICAL SOUNDNESS ==
+34 §3.1 + M1 + R6b: sim_maxcatchup is single-player only (`!netgame`, [FR] d_net.cpp:2415, re-read). W0 does not protect 4-player.
+   Open risk added; M1's Tics<=2 gate marked SP-only; new risk R6b.
+35 M13 + R6: AOT must use -fwrapv (ZScript int wrap vs C++ UB), the VM's g_* math entries (vmexec.h:2030-2050, jit_math.cpp:993-1009,
+   re-read), and no libm/builtins. Open risk: the handshake needs the AOT/JIT manifest, not only the DLL hash (mixed-mode peers unproven).
+36 G2: Open risk. [D]'s x0.5 for layered PP vs [C] P2-8 ("saves only per-pass overhead, pixels stay"); U-G6 settles it.
+37 G5: misattribution fixed. hw_drawlistadd.cpp:136-146 sends every non-model, non-wall sprite to GLDL_TRANSLUCENT regardless; the
+   champion STYLE_Translucent changes blending, not list routing.
+38 §2.2: Open risk. The owner's Reverb (FEATURES.md:229) may exceed S=1.75.
+Sim thread + snapshot, frames in flight and multiview design: no errors found; the existing R7/R8 and the M6/M11 gates cover them.
+Clustered lighting at 1.8 ms: 0.28 ns/fragment re-derived (9.03 x 0.85 x 0.65 x 1.3 = 6.49 M) -> plausible; model-path risk added (33).
+
+== READABILITY ==
+39 Lead rewritten as a plain verdict + "honest gap" (render CPU closes; sim and GPU do not, and why) + order + owner decisions + calendar.
+   Every substantive number kept.
+
+== CITATIONS SPOT-CHECKED (46; re-read in code/mods) ==
+OK: d_net.cpp 2251-2284, 1235-1256, 1248, 1291; hw_vrmodes.cpp 643, 649, 1504-1556; vk_pprenderstate.cpp 112, 159;
+vk_renderdevice.cpp 731-750, 1467-1478, 100; vk_commandbuffer.cpp 181-221, 219; vk_openxrdevice.cpp 2191-2196, 2888, 4802-4852;
+dthinker.cpp 1021-1044, 1617-1629, CCMD profilethinkers modes 4/8; statnums.h 42; p_tick.cpp walks use the default iterator;
+s_sound.cpp [F] 1073-1085 and [FR] 1089-1102; [FR] d_net.cpp 207, 2413-2416; champions cvarinfo weights (=146), handler.txt 400-403;
+hw_perftrack.cpp 119-123, 310, 460, 618; palettecontainer.cpp 65535 I_Error; d_main.cpp 3662, 4188-4195; main_boottest.ps1:59;
+[FR] RENDER_THREAD_SHADOW_WORLD.md 146-152; LoB DECORATE 62-65; randomspawner.zs:201; RS_Roster.zs 351-420 (IsFinal set); RSQ_Monsters
+CVARINFO 1181 (=3); info.cpp 624-631; hw_postprocess.cpp 1800-1816, 3557; hw_postprocess_cvars.cpp 357, 391; vk_renderpass.cpp 640-641;
+hw_effectsgovernor.h 50-54; main.fp:882 and 5,128 lines; hw_walls.cpp 678; hw_flats.cpp 205-209; hw_cvars.cpp 278; hw_bsp.cpp 1438-1439;
+[FR] hw_levelresidency.cpp 4667, 4903; a_decals.cpp 664; FEATURES.md:229; HANDOFF_NETPLAY item 1 commits; rsb_presets.zs 82-123;
+GITD handler.zs 98, 555; cvars vk_gpu_checkpoints, r_perflog, perf_bench_hash, vr_synclog, gl_bloom_pin_beams, gl_bloom_step,
+rsqgd_debug, rig_eyeshot exist.
+WRONG / FIXED: hw_drawlistadd.cpp claim (37); hw_effectlightcore.h:441 is GridForQuality, not BinBuilder -> 434-447 + 518-630;
+"LoB replaces every monster" (26); sim_maxcatchup scope (34).
+
+TOTALS: 39 logged changes (51 individual edits to the file), 6 "Open risk" items added (sim_maxcatchup netgame, layered PP,
+model-path lighting, cross-rule saves, AOT manifest, Reverb S) + 2 new risk rows (R6b, R19) + 2 new decisions (D16, D17).
+46 citations checked, 4 wrong claims corrected. New headline numbers: sim 65.1/33.5/12.7 ms; render CPU 7.3/4.0/2.2;
+GPU 18.5/10.9/7.6 (unchanged, re-verified); memory +0.35-0.53 GB host / +0.17-0.32 GB VRAM; effort 157-225 pw; 16-22 months.

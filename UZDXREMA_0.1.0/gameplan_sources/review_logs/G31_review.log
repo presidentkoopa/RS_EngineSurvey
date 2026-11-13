@@ -1,0 +1,119 @@
+G31 review of work/out/31_FORK_DELTA_CHECKLIST.md  (2026-11-13, independent reviewer)
+Trees: [F] uzdxrema @e84623f, [FR] uzdxrema_renderer @abb19af (shallow), [U] 5.0.0. Edit tool only.
+Method: script work/verify/g31tools/cites.py extracted every file:line citation in Where / What / Don't-touch of all
+rows, resolved paths (excluding _backups/ and shaders_gles), checked ranges, printed first/last cited line; each
+printout read against the row; non-colon line lists (e.g. "Remove 1068-1080") and semantic claims checked by hand.
+Re-run after edits: 0 MISSING / 0 OUT-OF-RANGE / 0 AMBIGUOUS (all.txt before, all2.txt after).
+
+TOTALS
+- rows before 192, after 193 (XR-G added); IDs unique; all rows 10 columns
+- citations checked: ~520 refs in 192 rows (all rows, not a sample)
+- citation fixes (wrong line, path, tag or command): 36
+- lane/branch/milestone tag added: 193/193 rows
+- Done-when made runnable+numeric or filled: ~95 rows (14 were empty "—")
+- What-to-do made concrete/corrected: 22 rows
+- STOPGAP / owner-rule fixes: 6 rows (ST-SIM-1, ST-SIM-2, F-XR-4, P2-6, RL-Q, X-DYN tag)
+- header/rules/gates blocks rewritten: 10 edits
+- new row: 1 (XR-G)
+
+HEADER / RULES / GATES
+H1  header: defined [BDW] [RAD] [GITD] [M]; bare-file convention; "owner decision N" (binding) vs "D<n>" (plan §7, open);
+    lane-tag legend.
+H2  rule 5: ROADMAP order (avatar lane 1->2->3, av rows only in step 3/D11; sim lane does not exist until D1; render
+    lane on standby until RL-Q); render lane's own checkout E:\DOOMWork\UZDXREMA_render; lane start docs;
+    [FR] CLAUDE.md "STICK TO THE PLAN" (2026-11-12): RL rows not in RENDERER_REBUILD/STAGE2 plan = "ideas, not
+    scheduled" until owner moves them; departures -> STOP and tell owner. (Original rules missed this rule.)
+H3  rule 6: keep E:\DOOMWork\UZDXREMA and GitHub equal (CLAUDE.md).
+H4  rule 7: cfg names too; render lane uses its own build_named_render.py, exe doomxr_rend<date><letter>.exe,
+    bats RENDER TEST <date>.bat, requests rr###; builds/packs/desk tests via bridge; benchreplay; rig cannot install
+    packages but the suite runs ("look before saying it cannot"); publish from main only, render lane never runs
+    publish.sh; Vulkan-only, vr_mode 15 + vid_preferbackend 1.
+H5  rule 9: standing don't-touch list ("—" now means only this list): + hw_vrmodes.h/.cpp, hw_vrwheel.cpp,
+    handinput / xrLast*/xrNet* edge states (RENDER_LANE_HANDOFF §5), owner ini and pk3s.
+H6  rule 13 matches CLAUDE.md wording (no bed/rest); rule 14 memory footprints (owner decision 8, plan §2.3).
+H7  RUN-SUNDER: added -Iwad (boottest defaults to doom.wad, main_boottest.ps1:17-21); ticprofile/simprofile only on
+    renderer exes until P0.5-T.
+H8  RUN-HEADSET: owner runs it; lane never launches; bat name per lane (was a render-lane-only name for all lanes).
+H9  GATE-SUITE: "13 scenarios" wrong -> 11 plain, 13 with NETSET=1 (suite.sh); how to run "cvar on" (EXTRA=...,
+    suite.sh:31-33); TRAP: netset/netset_room overwrite EXTRA (suite.sh:160,166); renderer merge gate run.sh 2 600.
+    GATE-BENCH: "against the goldens" - no golden set exists; defined via benchreplay, result string
+    "hashes=N result=identical" (g_perfbench.cpp:407), first row records the set. GATE-MT: exists only after F-MT-8.
+H10 RL table note (lavapipe merge gate, off-limits files); UM header (sim lane needs D1); change-log line.
+
+CITATION FIXES (row: before -> after)
+C1  M0-1: blockJit fallback vmframe.cpp:300 (a comment) -> :302; register message :308
+C2  P0.5-1, P9.9c, F-MON-2: command `csprofilethinkers` does not exist -> `profilecsthinkers` (dthinker.cpp:1512)
+C3  P9.9b: "QuestSaber zscript.txt:3928ff" (ambiguous, no such file in that name) -> RSQ_Saber/zscript.txt:3928,
+    3978, 3983, 4113, 4158
+C4  F-MOD-8: inventory.zs:113-147 -> 115-149; p_mobj.cpp:4870-4881 -> 4870-4882
+C5  P9.1c: DoEffect 4872-4882 -> 4870-4882 (consistent with F-MOD-8)
+C6  SND-P: cited [F] lines for code that exists only after the F-SIM-2 merge -> [FR] CheckSoundLimit :852,
+    RestoreEvictedChannel(s) :1349-1360, 1397-1406, plus today's [F] :843, :1387-1391 with file names
+C7  ST-ML-2: cvarinfo.txt with no lines -> :5, :7
+C8  F-MOD-9: randomise.zs path made explicit (2.4-Enemies_UniversalEntropy/)
+C9  ST-GPU-1: vk_renderdevice.cpp:114 inherited the [RAD] tag -> [F] common/rendering/vulkan/system/...
+C10 ST-GPU-2: common/rendering/vulkan/buffers/vk_buffer.cpp (no such dir) -> .../system/vk_buffer.cpp; end test
+    131-139 -> NextStreamDataBlock 131-140
+C11 P1.3: vk_renderstate.cpp:376-397 -> ApplyStreamData 379-395
+C12 F-VM-3: CreateRegUseInfo vmbuilder.cpp:969 (a brace) -> :970; codegen.cpp:10366 is the static/virtual choice,
+    not "OP_VTBL"; path made explicit
+C13 F-VM-6a: AllFunctions vmframe.cpp:64 (#if 0) -> :68 (registered vm.h:451)
+C14 F-VM-4: register zeroing jit.cpp:391-398 (error check) -> 399-406; path explicit
+C15 F-VM-7: common/utility/name.cpp (wrong) -> utility/name.cpp
+C16 P4.10: "ZVulkan vulkanobjects.h" -> libraries/ZVulkan/include/zvulkan/vulkanobjects.h:391-392
+C17 P4.9: line numbers with no file -> [FR] src/rendering/hwrenderer/hw_levelresidency.cpp
+C18 P5.3/P5.5: "[FR] :4229-4233, 4388-4401" no file -> hw_levelresidency.cpp
+C19 P5.1/5.2: "frustum planes hw_drawinfo.cpp ≈612-660" is ViewLightFrustum (lights) -> labelled as such + plan cite
+C20 XR-LOOP: "xrWaitFrame at d_main.cpp:1685" -> 1685 is screen->BeginFrame() which reaches VK-XR:6051
+C21 PORT-CH: champ_*.txt are under champions/champs/; Pink's whole-world ThinkerIterator at :64
+C22 PORT-BDW: Blood.dec/Options.acs full paths; what p_acs.cpp:3172-3180 shows (array read at -1 returns 0)
+C23 P6.A, P6.B, P2-6: shader files ambiguous (shaders_gles vs shaders) -> wadsrc/static/shaders/glsl/...
+C24 P2-6: RENDERER_REBUILD.md -> [FR] docs/plans/RENDERER_REBUILD.md; P8-4 RENDER_THREAD_SHADOW_WORLD.md -> docs/plans/
+C25 F-XR-5: "~197" -> 198 (AnchorBoneWorld)
+C26 M0-9: `benchreplay` had no source -> [FR] CLAUDE_BRIDGE.ps1:14-16 -> bench_replay.ps1 (not in [F]'s bridge copy)
+C27 P10.5: Where "none" -> the scans to replace (SlowMo Gather, champ_pink :64)
+C28 P9.5: "FBlockLinesIterator (stock)" -> p_maputl.h:241, p_maputl.cpp:563-683, p_blockmap.h:56, p_map.cpp:2062
+C29 P9.7: "CollectConnectedGroups (stock)" -> portal.cpp:1049-1184 (:1070-1081), portal.h:110,125, p_secnodes.cpp:382-388
+C30 P7.1: + FSnapActorRec r_snapshot.h:34
+C31 P9.9a: + FThinkerIterator ctor dthinker.cpp:1617-1631 (proves the reset set is statnums 32-127)
+C32 P9.3: Where "—" -> thinker loop dthinker.cpp:164-200
+C33 F-XR-4: + d_protocol.h:82-99 (vrhandinput_t), VK-XR:8317-8380, grip arbiter VK-XR:4811-4825
+C34 P2-6: hw_vrmodes.cpp:643 is CVAR_ARCHIVE vr_openxr_multiview (default flip does not reach his ini)
+C35 F-SIM-2..: commit ids cfaf6ac/7227983/... not in the shallow [FR] clone; matched HANDOFF_NETPLAY_2026-11-11.md:35
+C36 P6.A: `iter_dlight` is a draw-time counter (hw_walls.cpp:670), not a ms clock -> Done-when rewritten
+
+CONTENT / OWNER-RULE FIXES
+R1  F-XR-4 (owner decision 4): the plan kept `vr_input_in_command` as a switch; now the render-frame publish path is
+    deleted once gates pass (engine-level fix, no mode); grip arbiter results computed in the tic, not carried.
+R2  NEW XR-G (owner decision 4 "shared globals"): GetRawStickMove/GetRawStickTurn are play-callable and return
+    render-frame/local globals (g_game.cpp:586-593, 1331-1332; VK-XR:4022-4023; vmthunks.cpp:8479-8519;
+    doombase.zs:1310-1333). No row covered them.
+R3  ST-SIM-2: "Removal: stays as an SP safety net" is not a removal condition -> measurable removal at P8-3, keeping
+    it needs the owner's yes. ST-SIM-1: removal condition added (SND-P).
+R4  RL-Q: told the implementer to "record Q1 = (b), Q2 = ..., Q4 = ..." - those are the plan's recommendations, not
+    owner answers -> must record the owner's answers; no stage-3/M7 code before.
+R5  P2-6: default flip edits hw_vrmodes.cpp (off limits to render lane) -> handed to net/owner; launcher arg needed.
+R6  F-MT-4 vs P9.6: duplicate cache -> F-MT-4 builds on P9.6, saving counted once. F-VM-1 after P0-F4.
+R7  P9.6 / P9.4 / P9.5 / P9.7 / P9.3 / F-VM-6b / P6.A / P7.4 / P7.6: "as playbook"/"as listed" replaced with the
+    concrete steps (playbook 20_REBUILD_PLAYBOOK.md Phase 9 and [G] F-VM-6).
+R8  F-MOD-1 netplay gate "render only" while adding a play-scope setter -> GATE-SUITE for the setter.
+R9  F-SIM-11: hidden dependency M10 (F-MT-2) inside M11a -> stated, with single-thread fallback.
+R10 ST-GPU-1: BloomBoost toggle must ship in a new-name pk3, never by editing his pk3.
+R11 VR9.b: marked fixed-rate, never adaptive (owner decision 6).
+R12 P9.9a: clarified the dense set = statnums 32-127 incl. sleepers, parked <32 excluded (verified iterator).
+    (Initial suspicion that parked actors were dropped was wrong: today's iterator also skips <32.)
+Owner rules check: no dynamic-resolution lever left (X-DYN excluded, governor has no resolution rung, VR9.b fixed);
+multiview fix rows (P2-3/4, P2-5, P2-6, P2-7, P2-8, F-XR-9, F-RL-4) all plan of record; every sim-affecting row has
+a netplay gate; every STOPGAP row has a removal condition.
+
+BUILD ORDER: tags follow plan 30_GAMEPLAN_90HZ.md §6.3 M0-M14; all rows mapped; no conflict except F-SIM-11 (R9).
+
+NOT VERIFIED (no evidence available here)
+- [M] baseline numbers and every Est. saving derivation (not re-measured; out of scope)
+- counts: "1,116 _NATIVE + 798 plain natives", "78 named FRandom", "16 __Pos writers", "~171 handlers",
+  AActor 3,104 B and field offsets (from [A]'s probe), "22 passes/eye", "Pink scans ≈9 avg"
+- owner-PC facts: the Doom 2 IWAD path used by rr342, build_named_render.py existence, bench_replay.ps1 live copy,
+  whether Khronos sync validation can be enabled there
+- [FR] renderer commit ids (shallow clone; matched only against HANDOFF_NETPLAY text)
+- whether `levelmeshstats` prints LSR_ANIMATED rejection counts (P4.3 Done-when)
+- M0-* rows: Done-when is "values filed" by nature (measurement rows)

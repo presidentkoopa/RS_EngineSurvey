@@ -1,0 +1,10 @@
+# Owner decisions during the 90 Hz gameplan (2026-11-13) — binding for the plan
+1. Wants robust, permanent engine-level solutions; workarounds only as labelled stopgaps.
+2. Netplay is robust (four-engine bit-for-bit replays in tools/netplay); it is the regression gate for every sim change.
+3. RSQ series will be uplifted into REMA (incl. RSQ GlowInTheDark). RS Radiance stays in some form, possibly rewritten with GITD ideas; plan for a REMA "dialed to 11" lighting system.
+4. Controller data that reaches the sim outside usercmd_t (grip/trigger/stick/VRTurnYaw on the pawn, VRMode::SetUp multiplayer gate, shared globals/event ring, avatar draw path writing bone fields the sim reads) MUST be fixed at engine level.
+5. Multiview MUST be fixed (culling from both eyes / combined frustum, post-processing once for both eyes) — it is plan of record, not optional.
+6. Dynamic resolution is NOT a solution. Do not include it in the plan of record (not even as the main lever); the budget must close without it.
+7. Owner refuses to accept that engine resource usage cannot be cut down or used far better. The plan must contain a structural "use the whole machine" track (deterministic multi-core simulation, much faster script execution, data-oriented actor storage, parallel engine subsystems, GPU-driven work), quantified against his i9-9900KF (8 cores / 16 threads) + RTX 3080 Ti — not just incremental fixes inside today's single-threaded structure.
+8. Owner's machine (confirmed): i9-9900KF (8C/16T), RTX 3080 Ti, 16 GB RAM. Memory budget is 16 GB shared with the OS, SteamVR/OpenXR runtime and the 57-file mod set — designs that add memory (snapshots, dense copies, AOT code, frames in flight) must state their footprint.
+9. RSQ Monsters is due for a rewrite. Treat its current roster handler as temporary: the plan should state what the rewrite must follow (engine spawn filters, no per-monster helper actors, deterministic play-scope code, cheap replacement path) rather than optimise today's code.
