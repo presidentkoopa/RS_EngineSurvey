@@ -9,7 +9,7 @@ the summary `00_UZDXR_ENGINE_TEARDOWN.md` and the measured numbers (`10_MEASUREM
 
 | Section | Area |
 |---|---|
-| 01 | Frame loop, tic timing, threads, every place the main thread waits |
+| [01](01_FRAME_LOOP_TIMING_THREADS.md) | Frame loop, tic timing, threads, every place the main thread waits |
 | [02](02_PLAYSIM_SCRIPTING.md) | Playsim and ZScript/ACS cost per tic; what blocks a parallel sim |
 | [03](03_SCENE_BUILD_BSP_WALLS_FLATS.md) | CPU scene build: BSP walk, clipper, walls, flats, portals, sky; why the walk is needed |
 | [04](04_SPRITES_MODELS_PARTICLES_WEAPONS.md) | Sprites, models, particles, decals, weapons, HUD; finding actors without the walk |
