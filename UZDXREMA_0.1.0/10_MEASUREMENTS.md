@@ -237,3 +237,32 @@ replaced by another lane's build: `doombase.zs line 3504: The function 'VRTorso.
 the executable` (no `ViewLean` exists in `main` at e429f22). Every named exe in that folder shares one `doomxr.pk3`, so
 an exe is only bootable until the next build by any lane. The rotation also changed twice during the session
 (2.0.4s → t → v), so a before/after pair must be queued back to back on one zdl.
+
+**M0-7, second try (`sm028`-`sm031`, one zdl `SIM_ABANDON_1113_c.zdl`, 47 files, BD22 VR Reloaded 2.0.4v).** Renderer
+exe again: thinkers 61.83 ms a tic over 296 steady tics (`sm030`). **`main` does not run this list:**
+`doomxr_sim1113b.exe` (main fedac7e, built in the sim lane's own folder `E:\DOOMWork\UZDXREMA_sim`, its own
+`doomxr.pk3`) loaded Abandon MAP13 and stopped at level time 71 with `Attempted to write past end of stream`
+(`I_Error` in src/common/engine/i_protocol.cpp:287-332), then sat in the error state until the 900 s timeout (`sm031`,
+log `boot_20261113-060020.txt`). The renderer exe on the same files runs. So there is no `Shifter` number for `main`
+yet, and the first fact about `main` on the owner's list is that it aborts.
+
+### 6.6 First headset runs (owner, 2026-11-13; `E:\DOOMWork\_reports\sim_lane\headset_1113_A` and `_B`)
+
+`doomxr_rend1113a.exe`, `vr_mode 15`, Sunder MAP15 start, a copy of the owner's ini (`vr_openxr_multiview=false`,
+`r_ticstability=true`, `vid_refreshrate=72`), `perf_track` summary files. **Indicative only:** desk boot tests of this
+lane were running on the same PC at about the same minutes, the runs were started several times and one file of each
+survived, and the launcher's memory reading failed (a mistake in the launcher).
+
+| Run | frames | frame ms avg / p50 / p95 | scene build (`cpu.scene`) avg | `cpu.syncwait` avg | `think_ms` per frame with a tic, avg / p50 / p95 |
+|---|---|---|---|---|---|
+| A, no mods | 2,094 in 60.5 s | 28.9 / 26.8 / 44.6 | 11.7 | 3.7 | 6.8 / 4.0 / 19.3 |
+| B, 47-file list | 223 in 64.3 s | 288.5 / 294.4 / 514.8 | 16.2 | 22.3 | 319.4 / 290.0 / 419.7 (max 2,850) |
+
+**Reading:** in the headset even the no-mod map runs at ≈35 frames a second (two scene builds of ≈5.8 ms each and a
+frame of ≈29 ms), and with the list at ≈3.5. The runtime reported no dropped or stale frames in either.
+
+### 6.7 God mode (owner: "iddqd crashes the engine")
+
+Desk, flat, Sunder MAP15, 47-file list, `doomxr_rend1113a.exe`: `god` at tics 100, 200, 300 (`sm033`) and `iddqd` at
+the same tics (`sm034`): both GREEN, "Degreelessness Mode ON / OFF / ON", no crash in 500 tics. **Not reproduced at the
+desk.** Not tried: the headset, a `main` exe, and staying in the level longer.

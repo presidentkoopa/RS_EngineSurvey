@@ -395,6 +395,9 @@ tic's commands; thread count, timing and work stealing never change it (GATE-MT 
 2026-11-13 F-SIM-12 added (owner: handle the Balrog burst in the engine, for any mod, not by patching the mod): radius-give bursts; measure the split with M3's counters first. Not started. Owner also confirmed: the baseline is measured without RSQ_Monsters until its rewrite (D17).
 2026-11-13 M0-11 Done: 11 loads of Sunder MAP15 in one session, no translation abort (sm017). Prediction not reproduced; F-MON-6's abort claim unproven until a counter exists.
 2026-11-13 M0-7 Blocked: renderer half on Abandon MAP13: thinkers 61.66 ms steady, `Shifter` 7,040 calls 1.79-2.02 ms (sm015). `main` exe `doomxr_sim1113a.exe` built at e429f22 (sm014) but failed to boot (sm024): the shared `doomxr.pk3` had been replaced by another lane's build. Owner asked for a sim-lane build folder.
+2026-11-13 Sim lane build folder (owner: yes): `E:\DOOMWork\UZDXREMA_sim`, a worktree detached at `mine/main`; `scripts\pull_sim.py`, `scripts\build_named_sim.py <doomxr_sim*.exe>`. Sim lane rows build there, never in the main tree (one shared `doomxr.pk3` per folder).
+2026-11-13 M0-7 still Blocked, new reason: `doomxr_sim1113b.exe` (main fedac7e) aborts on the owner's list at Abandon MAP13 level time 71, `Attempted to write past end of stream` (i_protocol.cpp); renderer exe on the same zdl: thinkers 61.83 ms (sm030, sm031). Handed to the owner for the netplay lane.
+2026-11-13 M0-3/M0-6/M0-8 Partial: first headset runs filed ([M] §6.6), indicative only; memory reading failed; eye size not read yet.
 
 ```
 2026-11-13  (checklist created from reports A-G; no row started)
