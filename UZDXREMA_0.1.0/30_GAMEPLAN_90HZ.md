@@ -268,6 +268,19 @@ not been recomputed yet; these change its inputs:**
   Balrog aura (≈30 ms a tic of mean, and most of the gap between the median and the p95). Still open: U3 (s), U4, U5,
   U6, U7, U9, the 976 ms tic seen once in 64, and the split of the ≈14.5 ms.
 
+**Answers from the M3 tools (sim lane, 2026-11-13, [M] §7; §3.9 has not been recomputed with them):**
+
+- **The ≈14.5 ms outside the class clocks is spawn events** (`WorldThingSpawned` handlers, 16.6 ms a tic on Sunder at
+  5.5-7 µs a spawn); the loop's own overhead is 0.9 ms. F-MON-1 (spawn-event filters) is aimed at all of it.
+- **The 976 ms tic is mk-champions' `champion_PinkController`**: every 70th tic, 130 controllers at 6.1 ms each
+  (≈0.86 s; 10.9 ms a tic as a mean). It is D10's "Pink scans" item, now measured; it sets the tic's maximum and is the
+  one-second freeze.
+- **New on the light tic:** mk-champions spawns `champion_AggroPower`/`Effect`/`Giver`, 562 of each, **every tic**
+  (≈9.9 ms of spawn events and ≈3.2 ms of Tick a tic).
+- **The Balrog burst split:** on the heavy tic `BalrogFireSpawner` itself is 78 ms, its gifts' spawn events 26 ms and
+  their first Tick ≈8 ms (F-SIM-12's "measure first": the scan/sight/give split inside the 78 ms still needs P0.5-5).
+- Still open: U3 (s), U4, U5, U6, U7, U9.
+
 ### 3.7 Disagreements between the reports, and how this plan resolves them
 
 - **[Fm] "stage-6 thread first was closed by measurement, so the tic runs inside a frame" vs [A]/[C]/[G] "sim thread is

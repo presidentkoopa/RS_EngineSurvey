@@ -266,3 +266,52 @@ frame of ≈29 ms), and with the list at ≈3.5. The runtime reported no dropped
 Desk, flat, Sunder MAP15, 47-file list, `doomxr_rend1113a.exe`: `god` at tics 100, 200, 300 (`sm033`) and `iddqd` at
 the same tics (`sm034`): both GREEN, "Degreelessness Mode ON / OFF / ON", no crash in 500 tics. **Not reproduced at the
 desk.** Not tried: the headset, a `main` exe, and staying in the level longer.
+
+## 7. Sim lane M3 tools, first runs on `main` (2026-11-13, bridge requests `sm053`-`sm063`)
+
+`doomxr_sim1113c.exe`, built in `E:\DOOMWork\UZDXREMA_sim` from `main` 9c82694 (`sm053`, 744 s), desk, flat,
+`-Tics 700`, `+vid_vsync 0 +vid_maxfps 0 +cl_capfps 0 +perf_track 1 -rngseed 1113 +sim_profile 1
++sim_profile_interval 0`, cfg `tools/sim_lane/sim_m3_dump1113c.cfg` (`sim_profile_reset` at tic 390, `sim_profile_dump 60`
+at 690: 300 steady tics). `r_ticstability` and `perf_bench_hash` as in the owner's ini. The numbers include the
+profiler's own cost (two clock reads and a map lookup per thinker, four clock reads per spawn). Load orders made fresh
+(`sm054`, `sm055`): 47 files, the same lists as §6 except `1.2-BD22_VR-Reloaded_2.0.4u.pk3`. Every `simprof` line of the
+four logs is in `measurements_raw/sm056..sm059_simprof_*.txt`. **This is the first run of the owner's list on a `main`
+exe that did not abort** (netplay lane's fixes) **and the first with the sound fixes on `main`.**
+
+| Run | map, list | loop mean | median | p95 | max | classes (Tick) | spawn bucket (events / native) | rest | thinkers | spawns a tic |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `sm056` | Sunder MAP15, no mods | 3.44 | 2.96 | 5.78 | 8.85 | 3.26 | 0.00 | 0.18 | 8,065 | 0 |
+| `sm057` | Sunder MAP15, 47 files | 115.09 | 73.47 | 203.46 | 881.96 | 97.22 | 17.01 (16.61 / 0.40) | 0.87 | 54,001 | 2,742 |
+| `sm058` | the same, second run | 112.81 | 73.76 | 194.82 | 885.09 | 94.89 | 17.05 (16.68 / 0.37) | 0.87 | 54,001 | 2,742 |
+| `sm059` | Abandon MAP13, 47 files | 80.54 | 54.80 | 194.64 | 662.71 | 65.20 | 13.76 (13.46 / 0.30) | 1.58 | 41,277 | 1,778 |
+
+All ms per run of `RunThinkers` (one a tic). Classes + spawn bucket = 99.2 % of the loop on Sunder (P0.5-1's and
+F-MON-0's gate: within 5 %).
+
+**What the thinker loop is made of (Sunder, `sm057`, mean ms a tic over 300 tics):** `BalrogFireSpawner` 22.18;
+`RSQTHP_Bar` 14.15; `champion_PinkController` 10.93; `champion_CyanController` 7.17; `champion_Icon` 5.17;
+`SkeletonImp` 3.52; `champion_DarkRedController` 2.57; `Shifter` 2.56 (7,686 calls, 0.333 µs each); `champion_Leaves`
+2.25; everything else ≈27. Spawn bucket by class: `champion_AggroPower` 3.53, `champion_AggroEffect` 3.20,
+`champion_AggroGiver` 3.17 (562 spawns of each **every tic**), `PowerBalrogFireBuffGiver` 2.29, `PowerBalrogFireBuff`
+2.16, `BalrogFireGiver` 2.10 (327 of each a tic on average). A spawn costs 5.5-7 µs of `WorldThingSpawned` handlers.
+
+**The ≈14.5 ms "outside every class clock" (§6.2) is spawn events.** The loop itself (sleep cycle, list walk, profiler)
+is 0.87 ms.
+
+**The every-fourth-tic burst, split (`sm058`, six heavy tics, maptime 392-412):** loop 182-192 ms = classes 144-153 +
+spawn events 36-38 (≈5,880 spawns) + rest ≈1. In it `BalrogFireSpawner` is 78.3 ms (191 calls, 410 µs each), and
+its three gift classes cost 26.2 ms of spawn events (1,307 spawns each) plus ≈7.7 ms of their own first Tick.
+
+**The one-second tic is `champion_PinkController`** (mk-champions). Sunder: every 70th tic (maptime 69, 139, 209, ...
+699), loop 860-885 ms, of which 130 Pink controllers are ≈793 ms (6.1 ms a call). Abandon: the same tics at 300-510 ms
+(63 controllers), one at 663. As a mean it is 10.9 ms a tic on Sunder; as a freeze it is 0.86 s every 2 seconds of
+game time.
+
+**Map start (Sunder):** tic 0 = 2,873 ms (45,428 spawns; spawn events 1,294 ms), tic 1 = 1,894 ms (84,892 spawns),
+tic 4 = 459 ms. Abandon: 2,338 / 1,168 / 564 ms.
+
+**Client side (`RunClientSideThinkers`, Sunder):** 4.36 ms a call, of which the dynamic lights' own ticks are 0.22; the
+rest is the recreate-lights walk over every actor (P9.9c's target).
+
+**Not measured here:** the script share s (F-MT-0), anything outside `RunThinkers` (no `ticprofile` on `main`), a fight.
+

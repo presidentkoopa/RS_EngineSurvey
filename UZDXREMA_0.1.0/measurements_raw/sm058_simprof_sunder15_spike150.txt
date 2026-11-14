@@ -1,0 +1,315 @@
+simprof sim: SPIKE 1 run=1 maptime=0  loop=2874.537 ms (sim_spike_ms 150.0)  classes=1543.162  post=1329.654 (events=1278.290)  rest=1.721  thinkers=40087  spawns=45428
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick  1450.929  1450929.495        1  ACSThinker
+simprof sim: SPIKE tick    14.048    117.065      120  champion_CyanController
+simprof sim: SPIKE tick    13.765     26.421      521  ShortTorch_Red
+simprof sim: SPIKE tick     6.611      4.046     1634  champion_Icon
+simprof sim: SPIKE tick     5.536     54.273      102  champion_DarkRedController
+simprof sim: SPIKE tick     3.436     24.200      142  ShortTorch_Blue
+simprof sim: SPIKE tick     3.346      3.486      960  champion_Leaves
+simprof sim: SPIKE tick     2.757     24.839      111  champion_OrangeController
+simprof sim: SPIKE tick     2.603    123.964       21  champion_SilverController
+simprof sim: SPIKE tick     2.466     25.692       96  champion_GreyController
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn  275.785    178.501     1545  PhantomRevenant
+simprof sim: SPIKE spawn  274.903    159.457     1724  SkeletonImp
+simprof sim: SPIKE spawn  172.179    177.139      972  SlayerKnight
+simprof sim: SPIKE spawn   83.245    170.236      489  CacoLich
+simprof sim: SPIKE spawn   73.241    140.577      521  ShortTorch_Red
+simprof sim: SPIKE 2 run=2 maptime=1  loop=2020.881 ms (sim_spike_ms 150.0)  classes=1228.173  post=789.871 (events=777.488)  rest=2.836  thinkers=123903  spawns=84892
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick  1001.399  15646.852       64  LDLegendaryMonsterChooserHard
+simprof sim: SPIKE tick   164.708      2.052    80255  LDLegendaryMonsterPickupHard
+simprof sim: SPIKE tick    15.177  15177.347        1  ACSThinker
+simprof sim: SPIKE tick     6.973     57.153      122  champion_CyanController
+simprof sim: SPIKE tick     5.069      3.079     1646  champion_Icon
+simprof sim: SPIKE tick     3.901      2.263     1724  SkeletonImp
+simprof sim: SPIKE tick     2.611     25.595      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.238    106.584       21  champion_SilverController
+simprof sim: SPIKE tick     2.207      2.261      976  champion_Leaves
+simprof sim: SPIKE tick     1.985      0.323     6149  Shifter
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn  753.626      9.390    80255  LDLegendaryMonsterPickupHard
+simprof sim: SPIKE spawn    8.554      5.313     1610  RSQTHP_ChampKind
+simprof sim: SPIKE spawn    6.326      7.898      801  Clip1
+simprof sim: SPIKE spawn    3.339      6.289      531  champion_AggroPower
+simprof sim: SPIKE spawn    3.044      5.733      531  champion_AggroEffect
+simprof sim: SPIKE 3 run=5 maptime=4  loop=441.402 ms (sim_spike_ms 150.0)  classes=106.721  post=333.558 (events=332.162)  rest=1.123  thinkers=52963  spawns=9989
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    35.569    186.227      191  BalrogFireSpawner
+simprof sim: SPIKE tick     7.856     15.078      521  ShortTorch_Red
+simprof sim: SPIKE tick     6.763     55.434      122  champion_CyanController
+simprof sim: SPIKE tick     5.357      3.254     1646  champion_Icon
+simprof sim: SPIKE tick     4.050      2.349     1724  SkeletonImp
+simprof sim: SPIKE tick     3.857      3.935      980  RSQTHP_Bar
+simprof sim: SPIKE tick     2.641      0.348     7587  Shifter
+simprof sim: SPIKE tick     2.630      2.012     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.597      1.987     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.411     16.981      142  ShortTorch_Blue
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn  100.468    192.837      521  ShortTorch_RedFlames
+simprof sim: SPIKE spawn   99.931    191.805      521  ShortTorch_RedCOre
+simprof sim: SPIKE spawn   27.523    193.821      142  ShortTOrch_BlueFlames
+simprof sim: SPIKE spawn   27.096    190.820      142  ShortTOrch_BlueCore
+simprof sim: SPIKE spawn    9.973      6.955     1434  Shifter
+simprof sim: SPIKE 4 run=9 maptime=8  loop=167.028 ms (sim_spike_ms 150.0)  classes=125.794  post=40.312 (events=39.456)  rest=0.921  thinkers=54779  spawns=6112
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    47.918    250.877      191  BalrogFireSpawner
+simprof sim: SPIKE tick     8.538     69.982      122  champion_CyanController
+simprof sim: SPIKE tick     7.303    608.575       12  RS_ScoreHS_Cyber
+simprof sim: SPIKE tick     7.110      3.909     1819  RSQTHP_Bar
+simprof sim: SPIKE tick     5.297      3.218     1646  champion_Icon
+simprof sim: SPIKE tick     4.203      2.438     1724  SkeletonImp
+simprof sim: SPIKE tick     2.946     28.879      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.780      2.127     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.598      1.988     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.390      1.734     1378  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.268      7.091     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.679      6.640     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.452      6.467     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.529      6.560      538  champion_AggroPower
+simprof sim: SPIKE spawn    3.306      6.145      538  champion_AggroEffect
+simprof sim: SPIKE 5 run=13 maptime=12  loop=179.652 ms (sim_spike_ms 150.0)  classes=135.703  post=42.980 (events=42.069)  rest=0.970  thinkers=56508  spawns=6196
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    61.951    324.351      191  BalrogFireSpawner
+simprof sim: SPIKE tick    10.997      3.937     2793  RSQTHP_Bar
+simprof sim: SPIKE tick     7.666     62.835      122  champion_CyanController
+simprof sim: SPIKE tick     5.478      3.328     1646  champion_Icon
+simprof sim: SPIKE tick     4.045      2.346     1724  SkeletonImp
+simprof sim: SPIKE tick     3.249     31.851      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.936      2.247     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.800      2.142     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.532      1.838     1378  PowerBalrogFireBuff
+simprof sim: SPIKE tick     2.417      0.315     7682  Shifter
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.648      7.382     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.991      6.879     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.985      6.874     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    4.489      8.344      538  champion_AggroPower
+simprof sim: SPIKE spawn    3.176      5.903      538  champion_AggroEffect
+simprof sim: SPIKE 6 run=17 maptime=16  loop=212.904 ms (sim_spike_ms 150.0)  classes=163.798  post=47.871 (events=46.887)  rest=1.235  thinkers=58027  spawns=6107
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    79.310    415.234      191  BalrogFireSpawner
+simprof sim: SPIKE tick    14.634      4.040     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     9.257     75.876      122  champion_CyanController
+simprof sim: SPIKE tick     7.564      4.596     1646  champion_Icon
+simprof sim: SPIKE tick     3.968      2.302     1724  SkeletonImp
+simprof sim: SPIKE tick     3.624     35.531      102  champion_DarkRedController
+simprof sim: SPIKE tick     3.151      3.229      976  champion_Leaves
+simprof sim: SPIKE tick     3.083    146.794       21  champion_SilverController
+simprof sim: SPIKE tick     2.847      2.178     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.816      2.154     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.595      7.342     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    9.040      6.917     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.878      6.793     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    5.387      9.957      541  champion_AggroGiver
+simprof sim: SPIKE spawn    5.380      9.945      541  champion_AggroEffect
+simprof sim: sim_spike_max reached, no more spike reports until sim_profile_reset
+simprof sim: SPIKE 1 run=4 maptime=392  loop=185.635 ms (sim_spike_ms 150.0)  classes=146.788  post=37.960 (events=37.200)  rest=0.887  thinkers=56965  spawns=5878
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    78.320    410.054      191  BalrogFireSpawner
+simprof sim: SPIKE tick    13.933      3.847     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     6.638     54.407      122  champion_CyanController
+simprof sim: SPIKE tick     5.112      3.106     1646  champion_Icon
+simprof sim: SPIKE tick     3.165      1.836     1724  SkeletonImp
+simprof sim: SPIKE tick     2.668      2.041     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.654      2.030     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.630     25.781      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.372      1.721     1378  PowerBalrogFireBuff
+simprof sim: SPIKE tick     2.289      2.346      976  champion_Leaves
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.178      7.022     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.513      6.514     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    8.491      6.497     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    3.694      6.572      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.286      5.847      562  champion_AggroEffect
+simprof sim: SPIKE 2 run=8 maptime=396  loop=188.981 ms (sim_spike_ms 150.0)  classes=150.760  post=37.289 (events=36.560)  rest=0.932  thinkers=56946  spawns=5876
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    80.795    423.011      191  BalrogFireSpawner
+simprof sim: SPIKE tick    13.960      3.854     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     6.893     56.500      122  champion_CyanController
+simprof sim: SPIKE tick     5.789      3.517     1646  champion_Icon
+simprof sim: SPIKE tick     3.151      1.828     1724  SkeletonImp
+simprof sim: SPIKE tick     2.643     25.908      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.595      1.985     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.531      1.937     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.408      0.313     7686  Shifter
+simprof sim: SPIKE tick     2.357      2.415      976  champion_Leaves
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    8.951      6.849     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.429      6.449     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.297      6.348     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.687      6.560      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.193      5.682      562  champion_AggroEffect
+simprof sim: SPIKE 3 run=12 maptime=400  loop=191.893 ms (sim_spike_ms 150.0)  classes=152.753  post=38.185 (events=37.317)  rest=0.955  thinkers=56957  spawns=5897
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    80.519    421.567      191  BalrogFireSpawner
+simprof sim: SPIKE tick    14.245      3.933     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     6.716     55.048      122  champion_CyanController
+simprof sim: SPIKE tick     5.390      3.275     1646  champion_Icon
+simprof sim: SPIKE tick     3.300      1.914     1724  SkeletonImp
+simprof sim: SPIKE tick     3.069     30.088      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.910      0.379     7686  Shifter
+simprof sim: SPIKE tick     2.744      2.099     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.664      2.038     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.425      1.760     1378  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.082      6.949     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.707      6.662     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.469      6.480     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.517      6.257      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.303      5.878      562  champion_AggroEffect
+simprof sim: SPIKE 4 run=16 maptime=404  loop=184.682 ms (sim_spike_ms 150.0)  classes=145.780  post=38.006 (events=37.203)  rest=0.896  thinkers=56951  spawns=5876
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    75.609    395.860      191  BalrogFireSpawner
+simprof sim: SPIKE tick    14.896      4.113     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.368     60.396      122  champion_CyanController
+simprof sim: SPIKE tick     4.918      2.988     1646  champion_Icon
+simprof sim: SPIKE tick     3.466      2.011     1724  SkeletonImp
+simprof sim: SPIKE tick     2.715      2.077     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.694      2.061     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.614      0.340     7686  Shifter
+simprof sim: SPIKE tick     2.545      1.847     1378  PowerBalrogFireBuff
+simprof sim: SPIKE tick     2.252     22.081      102  champion_DarkRedController
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.253      7.079     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.670      6.633     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.424      6.445     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.465      6.165      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.359      5.977      562  champion_AggroGiver
+simprof sim: SPIKE 5 run=20 maptime=408  loop=188.829 ms (sim_spike_ms 150.0)  classes=149.340  post=38.486 (events=37.723)  rest=1.003  thinkers=56966  spawns=5886
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    75.220    393.824      191  BalrogFireSpawner
+simprof sim: SPIKE tick    14.430      3.984     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     6.793     55.681      122  champion_CyanController
+simprof sim: SPIKE tick     5.503      3.343     1646  champion_Icon
+simprof sim: SPIKE tick     3.814      2.212     1724  SkeletonImp
+simprof sim: SPIKE tick     3.616      0.470     7686  Shifter
+simprof sim: SPIKE tick     2.752      2.106     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.663      2.038     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.366      1.717     1378  PowerBalrogFireBuff
+simprof sim: SPIKE tick     2.309      2.366      976  champion_Leaves
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    9.250      7.077     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.747      6.693     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.602      6.582     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.787      6.739      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.182      5.661      562  champion_AggroEffect
+simprof sim: SPIKE 6 run=24 maptime=412  loop=182.457 ms (sim_spike_ms 150.0)  classes=144.327  post=37.173 (events=36.404)  rest=0.957  thinkers=56955  spawns=5886
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    75.940    397.591      191  BalrogFireSpawner
+simprof sim: SPIKE tick    13.662      3.772     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.450     61.068      122  champion_CyanController
+simprof sim: SPIKE tick     4.854      2.949     1646  champion_Icon
+simprof sim: SPIKE tick     3.125      1.813     1724  SkeletonImp
+simprof sim: SPIKE tick     2.576      1.971     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.530      1.936     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.384     23.368      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.373      1.722     1378  PowerBalrogFireBuff
+simprof sim: SPIKE tick     2.206      2.260      976  champion_Leaves
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    8.911      6.818     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE spawn    8.416      6.439     1307  PowerBalrogFireBuff
+simprof sim: SPIKE spawn    8.203      6.276     1307  BalrogFireGiver
+simprof sim: SPIKE spawn    3.397      6.044      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.303      5.877      562  champion_AggroEffect
+simprof sim: sim_spike_max reached, no more spike reports until sim_profile_reset
+simprof sim: total runs=300  loop mean=112.808 median=73.763 p95=194.822 max=885.089 ms/run  classes=94.890 (84.1%)  outside=17.918  thinkers=54001/run  class rows=276
+simprof sim: spawn total spawns=2742.4/run  post=17.048 ms/run (events=16.676 native=0.372)  loop 112.808 = classes 94.890 + post 17.048 + rest 0.870
+simprof sim:     ms/run     us/call   calls/run  class
+simprof sim:    19.9319     104.356       191.0  BalrogFireSpawner
+simprof sim:    14.1190       3.898      3622.0  RSQTHP_Bar
+simprof sim:    10.9477      84.213       130.0  champion_PinkController
+simprof sim:     7.0471      57.763       122.0  champion_CyanController
+simprof sim:     5.1846       3.150      1646.0  champion_Icon
+simprof sim:     3.4307       1.990      1724.0  SkeletonImp
+simprof sim:     2.5767       0.335      7686.1  Shifter
+simprof sim:     2.5731      25.227       102.0  champion_DarkRedController
+simprof sim:     2.2601       2.316       976.0  champion_Leaves
+simprof sim:     1.7721      84.386        21.0  champion_SilverController
+simprof sim:     1.7713       1.146      1545.0  PhantomRevenant
+simprof sim:     1.7552       1.806       972.0  SlayerKnight
+simprof sim:     1.3036       2.666       489.0  CacoLich
+simprof sim:     1.1437       1.016      1125.1  champion_AggroPower
+simprof sim:     1.1155       1.980       563.4  champion_AggroVisual
+simprof sim:     1.1040       1.965       561.8  champion_AggroEffect
+simprof sim:     1.0073       1.793       561.8  champion_AggroGiver
+simprof sim:     0.9849       0.387      2544.0  IA_Sound
+simprof sim:     0.9005       0.159      5666.0  csh_critController
+simprof sim:     0.8947       0.158      5666.0  csh_Brain
+simprof sim:     0.8882       9.157        97.0  champion_GreyController
+simprof sim:     0.8815       7.870       112.0  champion_OrangeController
+simprof sim:     0.6916       1.764       392.0  SkeletonDemon
+simprof sim:     0.6637       2.031       326.8  PowerBalrogFireBuffGiver
+simprof sim:     0.6532       1.999       326.8  BalrogFireGiver
+simprof sim:     0.6123       1.539       397.8  PowerBalrogFireBuff
+simprof sim:     0.6058       0.385      1572.0  BalrogFire
+simprof sim:     0.5728       4.854       118.0  champion_IndigoController
+simprof sim:     0.4855       4.807       101.0  champion_VioletController
+simprof sim:     0.4334       2.269       191.0  Balrog
+simprof sim:     0.4261       0.535       797.0  AmmoRocketBox
+simprof sim:     0.3313       0.204      1622.0  champion_PersistentInfo
+simprof sim:     0.2961       0.183      1622.0  RSQTHP_ChampKind
+simprof sim:     0.2849       4.012        71.0  BalrogBuffEffectSpawner
+simprof sim:     0.2750       1.834       150.0  Reaper
+simprof sim:     0.2556       0.491       521.0  ShortTorch_RedFlames
+simprof sim:     0.2555       0.490       521.0  ShortTorch_Red
+simprof sim:     0.2239     223.936         1.0  ACSThinker
+simprof sim:     0.1984       2.017        98.3  champion_SilverMagnetism
+simprof sim:     0.1965       0.244       806.0  Clip1
+simprof sim:     0.1724       0.331       521.0  ShortTorch_RedCOre
+simprof sim:     0.1435       1.157       124.0  champion_BlackController
+simprof sim:     0.1434       1.121       128.0  champion_DarkGreenController
+simprof sim:     0.1397       0.268       521.0  ShortTorchBall
+simprof sim:     0.1344       1.149       117.0  champion_YellowController
+simprof sim:     0.1269       1.113       114.0  champion_BlueController
+simprof sim:     0.1206       1.096       110.0  champion_RedController
+simprof sim:     0.1186       1.163       102.0  champion_GreenController
+simprof sim:     0.1182       2.110        56.0  Abhorrent
+simprof sim:     0.1165       1.120       104.0  champion_WhiteController
+simprof sim:     0.1017       7.821        13.0  champion_GoldController
+simprof sim:     0.0937       0.491       191.0  BalrogSpawner
+simprof sim:     0.0931      15.510         6.0  ConqCube
+simprof sim:     0.0884       0.529       167.0  AmmoCellPack
+simprof sim:     0.0882       1.520        58.0  Painbringer
+simprof sim:     0.0725       0.510       142.0  ShortTorch_Blue
+simprof sim:     0.0721       0.508       142.0  ShortTOrch_BlueFlames
+simprof sim:     0.0574       0.653        88.0  HealthPlus
+simprof sim:     0.0557       0.033      1706.0  RSQTHP_Part
+simprof sim:     0.0540       2.001        27.0  champion_balloon
+simprof sim: spawn  ms/run   us/spawn  event us/spawn  spawns/run  class
+simprof sim: spawn   3.5762      6.366           6.217      561.78  champion_AggroPower
+simprof sim: spawn   3.2190      5.730           5.601      561.78  champion_AggroEffect
+simprof sim: spawn   3.1832      5.666           5.535      561.78  champion_AggroGiver
+simprof sim: spawn   2.2731      6.957           6.824      326.75  PowerBalrogFireBuffGiver
+simprof sim: spawn   2.1416      6.554           6.421      326.75  PowerBalrogFireBuff
+simprof sim: spawn   2.0973      6.419           6.298      326.75  BalrogFireGiver
+simprof sim: spawn   0.3961      6.047           5.924       65.50  BalrogFire
+simprof sim: spawn   0.0497    414.387         414.181        0.12  BurningBarrelTopFIre
+simprof sim: spawn   0.0485      8.965           8.791        5.41  champion_MidasTouch1
+simprof sim: spawn   0.0139     10.434           6.805        1.33  champion_SilverMagnetism
+simprof sim: spawn   0.0107     23.687          23.564        0.45  DistanceCheckerCeiling
+simprof sim: spawn   0.0101      7.695           6.984        1.32  champion_Sparkle
+simprof sim: spawn   0.0046      9.197           8.747        0.50  GreenFlareMedium
+simprof sim: spawn   0.0038      7.651           7.430        0.50  CybersHitBox
+simprof sim: spawn   0.0033     20.976          20.786        0.16  MOBlueSplash
+simprof sim: spawn   0.0029     24.451          24.271        0.12  RealisticFireSparks1
+simprof sim: spawn   0.0029     23.245          23.052        0.12  Brutal_FlyingBlood
+simprof sim: spawn   0.0017     13.643          13.444        0.12  BloodMist22Small
+simprof sim: spawn   0.0017     13.508          13.288        0.12  ArterialBlood22Small
+simprof sim: spawn   0.0016      6.423           6.264        0.25  LDWeaponNameAlternation
+simprof sim: spawn   0.0013      8.605           8.310        0.16  MOBlueSplashBase
+simprof sim: spawn   0.0010      8.085           7.808        0.12  Brutal_Blood
+simprof sim: spawn   0.0010      7.909           7.732        0.12  SuperGoreMistTiny
+simprof sim: spawn   0.0009      7.616           7.334        0.12  WaterBloodCHecker
+simprof sim: spawn   0.0008      6.836           6.698        0.12  Shifter
+simprof sim: spawn   0.0008      7.637           7.335        0.10  Brutal_BloodSpot
+simprof sim: spawn   0.0000      6.552           6.393        0.00  champion_AggroVisual
+simprof sim: spawn   0.0000      0.254           0.000        0.02  DecalStretcher
+simprof sim: spawn   0.0000      0.081           0.000        0.02  DecalSlider
+simprof client: total runs=300  loop mean=4.313 median=4.140 p95=5.366 max=6.149 ms/run  classes=0.208 (4.8%)  outside=4.105  thinkers=0/run  class rows=1
+simprof client: spawn total spawns=0.0/run  post=0.000 ms/run (events=0.000 native=0.000)  loop 4.313 = classes 0.208 + post 0.000 + rest 4.105
+simprof client:     ms/run     us/call   calls/run  class
+simprof client:     0.2077       0.186      1118.0  InternalDynamicLight
