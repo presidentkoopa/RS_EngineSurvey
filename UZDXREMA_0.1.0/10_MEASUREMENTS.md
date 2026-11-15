@@ -364,3 +364,31 @@ call for 191 spawners), each through `DoRadiusGive`. **The one-second tic is 130
 
 **Netplay suite note for this batch:** see the checklist change log, 2026-11-15 GATE-SUITE (`clamp` intermittent).
 
+## 9. First M4 row: `sim_idleinventory` off and on (2026-11-15, bridge requests `sm080`-`sm105`)
+
+`doomxr_sim1115b.exe` (`main` fdb9125, `sm081`, 409 s). Flags as §7 plus `+vr_synclog <file>`; cfg
+`tools/sim_lane/sim_m4_sync1115c.cfg`; load orders `SIM_SUNDER_1115_c.zdl`, `SIM_ABANDON_1115_d.zdl` (47 files, as §8).
+`sim_profile` and `vm_stats` are on in every run, so the times carry their cost equally. Raw:
+`measurements_raw/sm092..sm096_m4_*.txt`, `sm087_m4_sunder15_vmprofile_all.txt`.
+
+| Run | map | switch | loop mean | median | p95 | max | script a tic | entries from native a tic |
+|---|---|---|---|---|---|---|---|---|
+| `sm092` | Sunder MAP15 | off | 122.70 | 80.65 | 209.73 | 940.80 | 106.57 | 169,558 |
+| `sm093` | Sunder MAP15 | off (repeat) | 121.13 | 80.50 | 208.28 | 949.87 | 105.24 | 169,558 |
+| `sm094` | Sunder MAP15 | **on** | 121.57 | 79.92 | 209.87 | 954.57 | 104.65 | **151,981** |
+| `sm095` | Abandon MAP13 | off | 68.64 | 54.70 | 107.43 | 422.37 | 56.35 | 108,931 |
+| `sm096` | Abandon MAP13 | **on** | 64.30 | 49.73 | 95.22 | 330.23 | 52.53 | **99,103** |
+
+**The game is identical with the switch on** (state log equal every tic through maptime 680, `sm097`-`sm099`).
+
+**What it saves.** 17,577 VM calls a tic on Sunder and 9,828 on Abandon. By class on Sunder: `csh_Brain` 1.00 → 0.30,
+`csh_critController` 1.03 → 0.33, `Shifter` 2.75 → 2.54 ms a tic (what is left is mostly the profiler's own cost per
+thinker). **In the loop's mean it is about 1 ms on Sunder, which is inside the run-to-run spread** (the two off runs
+differ by 1.6 ms). Abandon shows −4.3 ms, from one run each, so not all of that is this switch. The idle items were
+cheap calls (≈0.1 µs each); the 10,875 `Inventory.Tick` calls a tic that remain (3.5 ms) are items lying in the world or
+in an animated state, which this switch rightly does not touch.
+
+**`WorldTick` by handler (Sunder, `sm087`, `vm_profile`, switch on):** 121 handlers, 3.02 ms a tic inclusive, 0.37 self.
+`RSQTHP_Handler` 0.63, `RSQA_QoL` 0.47, `RSQGD_Handler` 0.26, `RSQ_Voxels` 0.17, `RSQFF_Shown` 0.14, `RSQLS_Sight` 0.13,
+`SSQ_Handler` 0.08, `RSQWP_Whip` 0.07, `rsqdg_door` 0.06, `RSQ_Counters` 0.06.
+
