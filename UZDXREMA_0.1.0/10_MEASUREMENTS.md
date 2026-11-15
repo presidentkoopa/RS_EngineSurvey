@@ -315,3 +315,52 @@ rest is the recreate-lights walk over every actor (P9.9c's target).
 
 **Not measured here:** the script share s (F-MT-0), anything outside `RunThinkers` (no `ticprofile` on `main`), a fight.
 
+## 8. Sim lane M3 tools, second batch (2026-11-15, bridge requests `sm066`-`sm078`)
+
+`doomxr_sim1115a.exe`, built in `E:\DOOMWork\UZDXREMA_sim` from `main` fce83ec (`sm069`, 667 s). Same flags as §7, cfg
+`tools/sim_lane/sim_m3_dump1115a.cfg` (totals restart and `vm_stats 1` at tic 390, dumps at 690: 300 steady tics). Load
+orders made fresh (`sm070`, `sm071`): 47 files, as §7 except the owner's BD22 pack is now
+`1.2_BD22_VR-Reloaded_2.0.4x.pk3`, so **these runs are not like-for-like with §7** (Abandon's loop is 63 ms here, 81
+there). Raw tool lines: `measurements_raw/sm073..sm075_m3b_*.txt`. All four desk runs GREEN.
+
+| Run | map | loop mean | median | p95 | max | classes | spawn bucket | rest | script inside the loop (`vm_stats`) | script a game tic |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `sm073` | Sunder MAP15 | 113.14 | 74.48 | 195.77 | 826.09 | 93.10 | 18.71 | 1.33 | **95.77 (84.7 %)** | 98.42 |
+| `sm074` | the same, `vm_profile` on (slows script) | 119.56 | 79.57 | 208.16 | 818.67 | 96.49 | — | — | — | — |
+| `sm075` | Abandon MAP13 | 62.97 | 48.29 | 96.77 | 291.54 | 49.62 | 12.04 | 1.31 | **49.96 (79.3 %)** | 52.11 |
+
+**s (U3).** Script entered from native code, with the natives it calls, is 84.7 % of the thinker loop on Sunder and
+79.3 % on Abandon; the gameplan's working range was 0.6-0.8. 169,558 entries from native code a tic on Sunder.
+
+**JIT.** `VM: JIT built=yes vm_jit=1 vm_jit_aot=1 compiled=129200 interpreted=2 not yet compiled=0`. The two interpreted
+functions: `BaseStatusBar.SortScoreboardPlayers`, `wr_Rig.buildSheetRows`. No mods: compiled=2,718, interpreted=1.
+
+**Per script function (Sunder `sm074`, self ms a tic, top of 1,421 functions called, 518,746 script calls a tic):**
+`BalrogFireSpawner.StateFunction.4` 16.71 (47.6 calls a tic, 351 µs each); `champion_PinkController.champion_TickEffect`
+9.74 (1.7 calls a tic, 5.6 ms each); `Actor.A_RadiusThrust` 7.18 (143 a tic, 50 µs); `RSQTHP_Bar.Update` 7.05
+(3,622 a tic); `champion_Icon.Tick` 4.89; `Inventory.Tick` 3.48 (28,394 a tic); `champion_BaseController.Tick` 2.35
+self, 25.61 inclusive; `champion_Leaves.Tick` 2.19; `Actor.DoGiveInventory` 2.11; `PowerupGiver.Use` 2.07;
+`Shifter.Tick` 1.68. `WorldThingSpawned` by handler (2,739 calls a tic each, inclusive): `idleambiance_decoration_EventHandler`
+2.36, `wr_StatEvents` 1.04, `RSLD_Handler` 0.53; `idleambiance_decoration_EventHandler.addItemSounds` is called
+104,078 times a tic (1.17 ms).
+
+**What each class's Tick does a tic (Sunder `sm073`, counters):**
+
+| class | objects created | sight checks (ms) | P_TryMove (ms) | state actions | ThinkerIterator steps | A_RadiusGive candidates |
+|---|---|---|---|---|---|---|
+| `BalrogFireSpawner` | 1,028 | 815 (0.16) | 47 (0.09) | 239 | 0 | **443,780** |
+| `champion_PinkController` | 1.7 | 0 | 0 | 0 | **87,349** (6,496,810 in its one tic of 70) | 0 |
+| `champion_CyanController` | 0 | **7,567 (2.99)** | 0 | 0 | 0 | 0 |
+| `champion_Icon` | 0 | 0 | 1,646 (2.27) | 0 | 0 | 0 |
+| `champion_DarkRedController` | 712 | 237 (0.10) | 0 | 0 | 0 | 439 |
+| whole loop | 2,746 | 9,394 (3.86) | 5,967 (6.25) | 1,560 | 87,349 | 445,237 |
+
+All sight checks together are 3.9 ms a tic and all `P_TryMove` 6.2 ms: neither is where the time goes. No script
+`BlockThingsIterator` steps at all on this map.
+
+**The Balrog burst is `A_RadiusGive` testing candidates:** 443,780 a tic on average, ≈1.77 M on a burst tic (≈9,300 a
+call for 191 spawners), each through `DoRadiusGive`. **The one-second tic is 130 whole-level `ThinkerIterator` walks**
+(mod code in the checklist, F-SIM-13).
+
+**Netplay suite note for this batch:** see the checklist change log, 2026-11-15 GATE-SUITE (`clamp` intermittent).
+

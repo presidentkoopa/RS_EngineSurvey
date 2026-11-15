@@ -1,0 +1,520 @@
+VM: JIT built=yes vm_jit=1 vm_jit_aot=1  compiled=129200 interpreted=2 not yet compiled=0  (native functions=2189)
+simprof sim: SPIKE 1 run=1 maptime=0  loop=2781.135 ms (sim_spike_ms 400.0)  classes=1446.311  post=1332.215 (events=1282.413)  rest=2.608  thinkers=40087  spawns=45428
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick  1354.866  1354866.089        1  ACSThinker
+simprof sim: SPIKE tick    14.248     27.347      521  ShortTorch_Red
+simprof sim: SPIKE tick    13.529    112.742      120  champion_CyanController
+simprof sim: SPIKE tick     6.217      3.805     1634  champion_Icon
+simprof sim: SPIKE tick     5.211     51.086      102  champion_DarkRedController
+simprof sim: SPIKE tick     3.568     25.130      142  ShortTorch_Blue
+simprof sim: SPIKE tick     3.138      3.268      960  champion_Leaves
+simprof sim: SPIKE tick     2.557    121.785       21  champion_SilverController
+simprof sim: SPIKE tick     2.528     22.778      111  champion_OrangeController
+simprof sim: SPIKE tick     2.459     25.614       96  champion_GreyController
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     157.0       0.0    0.000       0.0    0.000       0.0       3.0        0.0        0.0       0.0  ACSThinker
+simprof sim: SPIKE count     521.0       0.0    0.000       0.0    0.000       0.0    1827.0        0.0        0.0       0.0  ShortTorch_Red
+simprof sim: SPIKE count    1203.0    7962.0    3.144       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1634.0    2.677    1634.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count    1065.0     215.0    0.089       0.0    0.000       0.0       0.0        0.0        0.0     670.0  champion_DarkRedController
+simprof sim: SPIKE count     142.0       0.0    0.000       0.0    0.000       0.0     486.0        0.0        0.0       0.0  ShortTorch_Blue
+simprof sim: SPIKE count       0.0       0.0    0.000     960.0    1.169     960.0     960.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count     391.0      81.0    0.150       0.0    0.000       0.0       0.0        0.0        0.0     259.0  champion_SilverController
+simprof sim: SPIKE count     538.0      79.0    0.019       0.0    0.000       0.0       0.0        0.0        0.0     162.0  champion_OrangeController
+simprof sim: SPIKE count     500.0      94.0    0.016       0.0    0.000       0.0       0.0        0.0        0.0     262.0  champion_GreyController
+simprof sim: SPIKE count   37866.0    8826.0    3.909    2674.0    3.912    9673.0    5990.0        0.0        0.0    1712.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn  279.218    180.723     1545  PhantomRevenant
+simprof sim: SPIKE spawn  276.664    160.478     1724  SkeletonImp
+simprof sim: SPIKE spawn  173.515    178.513      972  SlayerKnight
+simprof sim: SPIKE spawn   83.460    170.674      489  CacoLich
+simprof sim: SPIKE spawn   73.792    141.635      521  ShortTorch_Red
+simprof sim: SPIKE 2 run=2 maptime=1  loop=1864.208 ms (sim_spike_ms 400.0)  classes=1096.759  post=762.955 (events=751.816)  rest=4.494  thinkers=123903  spawns=84892
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   883.370  13802.653       64  LDLegendaryMonsterChooserHard
+simprof sim: SPIKE tick   153.533      1.913    80255  LDLegendaryMonsterPickupHard
+simprof sim: SPIKE tick    13.894  13894.387        1  ACSThinker
+simprof sim: SPIKE tick     7.330     60.080      122  champion_CyanController
+simprof sim: SPIKE tick     4.757      2.890     1646  champion_Icon
+simprof sim: SPIKE tick     4.128      2.394     1724  SkeletonImp
+simprof sim: SPIKE tick     2.963     29.052      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.087      2.139      976  champion_Leaves
+simprof sim: SPIKE tick     1.808      0.294     6149  Shifter
+simprof sim: SPIKE tick     1.653     78.700       21  champion_SilverController
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count  562715.0       0.0    0.000       0.0    0.000       0.0      64.0        0.0        0.0  175344.0  LDLegendaryMonsterChooserHard
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  LDLegendaryMonsterPickupHard
+simprof sim: SPIKE count     871.0       0.0    0.000       0.0    0.000       0.0       2.0        0.0        0.0       0.0  ACSThinker
+simprof sim: SPIKE count      20.0    8286.0    3.305       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.162    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0       0.0    0.000    1284.0    2.497    1284.0       0.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count     655.0     217.0    0.082       0.0    0.000       0.0       0.0        0.0        0.0     390.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.857     976.0      16.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count     243.0      81.0    0.132       0.0    0.000       0.0       0.0        0.0        0.0     150.0  champion_SilverController
+simprof sim: SPIKE count  565424.0    9009.0    3.919    5698.0    7.574    6529.0     914.0        0.0        0.0  176393.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn  726.725      9.055    80255  LDLegendaryMonsterPickupHard
+simprof sim: SPIKE spawn    8.661      5.380     1610  RSQTHP_ChampKind
+simprof sim: SPIKE spawn    6.032      7.530      801  Clip1
+simprof sim: SPIKE spawn    3.233      6.088      531  champion_AggroPower
+simprof sim: SPIKE spawn    2.958      5.570      531  champion_AggroGiver
+simprof sim: SPIKE 3 run=5 maptime=4  loop=428.716 ms (sim_spike_ms 400.0)  classes=104.047  post=322.925 (events=321.582)  rest=1.744  thinkers=52963  spawns=9989
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick    36.027    188.622      191  BalrogFireSpawner
+simprof sim: SPIKE tick     7.549     14.489      521  ShortTorch_Red
+simprof sim: SPIKE tick     7.256     59.479      122  champion_CyanController
+simprof sim: SPIKE tick     4.894      2.973     1646  champion_Icon
+simprof sim: SPIKE tick     4.098      2.377     1724  SkeletonImp
+simprof sim: SPIKE tick     3.726      3.802      980  RSQTHP_Bar
+simprof sim: SPIKE tick     2.516      1.925     1307  PowerBalrogFireBuffGiver
+simprof sim: SPIKE tick     2.373      1.816     1307  BalrogFireGiver
+simprof sim: SPIKE tick     2.326      2.384      976  champion_Leaves
+simprof sim: SPIKE tick     2.276     16.026      142  ShortTorch_Blue
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count    4183.0    3208.0    0.612     191.0    0.209     382.0     955.0        0.0        0.0  896091.0  BalrogFireSpawner
+simprof sim: SPIKE count    1563.0       0.0    0.000       0.0    0.000       0.0    1563.0        0.0        0.0       0.0  ShortTorch_Red
+simprof sim: SPIKE count       0.0    8222.0    3.412       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.247    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0       0.0    0.000    1306.0    2.448    1306.0       0.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  PowerBalrogFireBuffGiver
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  BalrogFireGiver
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    1.043     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count     426.0       0.0    0.000       0.0    0.000       0.0     426.0        0.0        0.0       0.0  ShortTorch_Blue
+simprof sim: SPIKE count    9623.0   12348.0    4.663    6067.0    8.183    7765.0    6381.0        0.0        0.0  898048.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn   97.341    186.836      521  ShortTorch_RedFlames
+simprof sim: SPIKE spawn   96.791    185.780      521  ShortTorch_RedCOre
+simprof sim: SPIKE spawn   26.370    185.705      142  ShortTOrch_BlueCore
+simprof sim: SPIKE spawn   26.314    185.310      142  ShortTOrch_BlueFlames
+simprof sim: SPIKE spawn    9.094    189.466       48  TallTOrch_RedCore
+simprof sim: SPIKE 4 run=70 maptime=69  loop=795.592 ms (sim_spike_ms 400.0)  classes=784.333  post=9.970 (events=9.749)  rest=1.289  thinkers=53088  spawns=1701
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   719.621   5535.543      130  champion_PinkController
+simprof sim: SPIKE tick    13.990      3.862     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.986     65.460      122  champion_CyanController
+simprof sim: SPIKE tick     4.846      2.944     1646  champion_Icon
+simprof sim: SPIKE tick     3.840      2.227     1724  SkeletonImp
+simprof sim: SPIKE tick     3.559     34.891      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.459    117.102       21  champion_SilverController
+simprof sim: SPIKE tick     2.267      0.295     7686  Shifter
+simprof sim: SPIKE tick     2.118      2.170      976  champion_Leaves
+simprof sim: SPIKE tick     1.824      1.181     1545  PhantomRevenant
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6507368.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7631.0    3.079       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.229    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     452.0    0.027    1386.0    1.416    1386.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count     711.0     237.0    0.101       0.0    0.000       0.0       0.0        0.0        0.0     438.0  champion_DarkRedController
+simprof sim: SPIKE count     294.0      98.0    0.177       0.0    0.000       0.0       0.0        0.0        0.0     158.0  champion_SilverController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.881     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     137.0    0.075     352.0    0.332     352.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count    1831.0    9167.0    3.905    5889.0    6.490    5889.0    2374.0        0.0  6507368.0    1492.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.557      6.317      563  champion_AggroPower
+simprof sim: SPIKE spawn    3.162      5.617      563  champion_AggroGiver
+simprof sim: SPIKE spawn    3.145      5.587      563  champion_AggroEffect
+simprof sim: SPIKE spawn    0.092      9.237       10  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.007      6.964        1  champion_Sparkle
+simprof sim: SPIKE 5 run=140 maptime=139  loop=796.969 ms (sim_spike_ms 400.0)  classes=784.291  post=11.322 (events=11.083)  rest=1.355  thinkers=53050  spawns=1693
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   718.151   5524.237      130  champion_PinkController
+simprof sim: SPIKE tick    14.955      4.129     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     8.063     66.089      122  champion_CyanController
+simprof sim: SPIKE tick     5.131      3.117     1646  champion_Icon
+simprof sim: SPIKE tick     3.975      2.306     1724  SkeletonImp
+simprof sim: SPIKE tick     2.750     26.964      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.331      0.303     7686  Shifter
+simprof sim: SPIKE tick     2.286      2.342      976  champion_Leaves
+simprof sim: SPIKE tick     2.223      1.439     1545  PhantomRevenant
+simprof sim: SPIKE tick     1.918      1.973      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6502971.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7597.0    3.147       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.376    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     452.0    0.029    1389.0    1.224    1389.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count     711.0     237.0    0.099       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.904     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     137.0    0.088     352.0    0.365     352.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      23.0    0.001     644.0    0.735     644.0     322.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1823.0    9120.0    3.993    5896.0    6.565    5896.0    2325.0        0.0  6502971.0    1439.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.868      6.870      563  champion_AggroEffect
+simprof sim: SPIKE spawn    3.776      6.707      563  champion_AggroGiver
+simprof sim: SPIKE spawn    3.597      6.389      563  champion_AggroPower
+simprof sim: SPIKE spawn    0.060     20.094        3  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.021     20.949        1  CybersHitBox
+simprof sim: SPIKE 6 run=210 maptime=209  loop=794.150 ms (sim_spike_ms 400.0)  classes=783.169  post=9.753 (events=9.528)  rest=1.228  thinkers=53091  spawns=1698
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   721.645   5551.112      130  champion_PinkController
+simprof sim: SPIKE tick    14.258      3.937     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.914     64.866      122  champion_CyanController
+simprof sim: SPIKE tick     5.124      3.113     1646  champion_Icon
+simprof sim: SPIKE tick     3.692      2.142     1724  SkeletonImp
+simprof sim: SPIKE tick     2.387      2.446      976  champion_Leaves
+simprof sim: SPIKE tick     2.319      0.302     7686  Shifter
+simprof sim: SPIKE tick     2.235     21.911      102  champion_DarkRedController
+simprof sim: SPIKE tick     1.894      1.226     1545  PhantomRevenant
+simprof sim: SPIKE tick     1.767      1.818      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6507839.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7597.0    3.048       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.385    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     452.0    0.029    1389.0    1.031    1389.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.886     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count     711.0     237.0    0.097       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0     137.0    0.094     353.0    0.309     353.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      23.0    0.001     644.0    0.736     644.0     322.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1828.0    9133.0    3.835    5898.0    6.235    5898.0    2364.0        0.0  6507839.0    1459.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.405      6.058      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.153      5.610      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.093      5.504      562  champion_AggroGiver
+simprof sim: SPIKE spawn    0.087      8.694       10  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.008      8.383        1  champion_Sparkle
+simprof sim: SPIKE 7 run=280 maptime=279  loop=793.350 ms (sim_spike_ms 400.0)  classes=782.000  post=9.940 (events=9.714)  rest=1.410  thinkers=53078  spawns=1691
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   715.105   5500.805      130  champion_PinkController
+simprof sim: SPIKE tick    14.385      3.972     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     8.700     71.311      122  champion_CyanController
+simprof sim: SPIKE tick     5.127      3.115     1646  champion_Icon
+simprof sim: SPIKE tick     3.691     36.190      102  champion_DarkRedController
+simprof sim: SPIKE tick     3.543      2.055     1724  SkeletonImp
+simprof sim: SPIKE tick     2.462      0.320     7686  Shifter
+simprof sim: SPIKE tick     2.213      2.267      976  champion_Leaves
+simprof sim: SPIKE tick     2.181    103.865       21  champion_SilverController
+simprof sim: SPIKE tick     2.043      2.102      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6506393.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7588.0    3.136       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.381    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count     711.0     237.0    0.107       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0     520.0    0.031    1386.0    1.010    1386.0     692.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.901     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count     294.0      98.0    0.168       0.0    0.000       0.0       0.0        0.0        0.0     158.0  champion_SilverController
+simprof sim: SPIKE count       0.0      33.0    0.001     645.0    0.922     645.0     407.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1821.0    9353.0    4.036    5896.0    6.418    5896.0    2811.0        0.0  6506393.0    1431.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.691      6.567      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.117      5.547      562  champion_AggroGiver
+simprof sim: SPIKE spawn    3.104      5.523      562  champion_AggroEffect
+simprof sim: SPIKE spawn    0.021      5.318        4  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.007      6.937        1  CybersHitBox
+simprof sim: SPIKE 8 run=350 maptime=349  loop=789.518 ms (sim_spike_ms 400.0)  classes=777.883  post=9.756 (events=9.546)  rest=1.879  thinkers=53066  spawns=1696
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   708.140   5447.231      130  champion_PinkController
+simprof sim: SPIKE tick    13.628      3.763     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.981     65.418      122  champion_CyanController
+simprof sim: SPIKE tick     4.974      2.885     1724  SkeletonImp
+simprof sim: SPIKE tick     4.889      2.970     1646  champion_Icon
+simprof sim: SPIKE tick     3.545      0.461     7686  Shifter
+simprof sim: SPIKE tick     2.758      1.785     1545  PhantomRevenant
+simprof sim: SPIKE tick     2.753     26.992      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.649      2.725      972  SlayerKnight
+simprof sim: SPIKE tick     2.135      2.188      976  champion_Leaves
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6504517.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7580.0    3.119       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0     452.0    0.039    1385.0    1.456    1385.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.246    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0     137.0    0.097     354.0    0.510     354.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count     711.0     237.0    0.102       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0      23.0    0.001     645.0    1.138     645.0     322.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.841     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count    1826.0    9108.0    4.080    5893.0    7.460    5893.0    2323.0        0.0  6504517.0    1517.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.436      6.114      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.139      5.585      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.120      5.552      562  champion_AggroGiver
+simprof sim: SPIKE spawn    0.047      5.821        8  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.007      7.197        1  champion_Sparkle
+simprof sim: SPIKE 1 run=31 maptime=419  loop=797.575 ms (sim_spike_ms 400.0)  classes=785.219  post=10.909 (events=10.699)  rest=1.446  thinkers=53054  spawns=1700
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   722.224   5555.566      130  champion_PinkController
+simprof sim: SPIKE tick    13.876      3.831     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.996     65.539      122  champion_CyanController
+simprof sim: SPIKE tick     4.787      2.908     1646  champion_Icon
+simprof sim: SPIKE tick     3.645      2.114     1724  SkeletonImp
+simprof sim: SPIKE tick     2.528      0.329     7686  Shifter
+simprof sim: SPIKE tick     2.224     21.808      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.190      2.244      976  champion_Leaves
+simprof sim: SPIKE tick     2.032      1.315     1545  PhantomRevenant
+simprof sim: SPIKE tick     2.005      2.062      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6501717.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7575.0    3.047       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.201    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     521.0    0.030    1383.0    0.955    1383.0     682.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count     711.0     237.0    0.100       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.882     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     160.0    0.070     354.0    0.309     354.0     568.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      33.0    0.001     646.0    0.789     646.0     383.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1830.0    9218.0    3.896    5909.0    6.115    5909.0    2642.0        0.0  6501717.0    1513.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.740      6.654      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.599      6.403      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.451      6.140      562  champion_AggroGiver
+simprof sim: SPIKE spawn    0.078      9.737        8  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.022      7.355        3  champion_Sparkle
+simprof sim: SPIKE 2 run=101 maptime=489  loop=809.107 ms (sim_spike_ms 400.0)  classes=796.353  post=11.332 (events=11.114)  rest=1.422  thinkers=53013  spawns=1689
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   727.189   5593.759      130  champion_PinkController
+simprof sim: SPIKE tick    15.190      4.194     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     8.065     66.103      122  champion_CyanController
+simprof sim: SPIKE tick     5.042      3.063     1646  champion_Icon
+simprof sim: SPIKE tick     4.323     42.378      102  champion_DarkRedController
+simprof sim: SPIKE tick     3.522      2.043     1724  SkeletonImp
+simprof sim: SPIKE tick     2.554      0.332     7686  Shifter
+simprof sim: SPIKE tick     2.348    111.817       21  champion_SilverController
+simprof sim: SPIKE tick     2.181      2.235      976  champion_Leaves
+simprof sim: SPIKE tick     2.130      1.379     1545  PhantomRevenant
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6496810.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7569.0    3.052       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.368    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count     711.0     237.0    0.116       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0     452.0    0.028    1380.0    0.941    1380.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count     294.0      98.0    0.165       0.0    0.000       0.0       0.0        0.0        0.0     158.0  champion_SilverController
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.852     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     137.0    0.072     354.0    0.313     354.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count    1819.0    9100.0    3.867    5888.0    6.088    5888.0    2368.0        0.0  6496810.0    1419.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.813      6.785      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.778      6.722      562  champion_AggroGiver
+simprof sim: SPIKE spawn    3.721      6.621      562  champion_AggroPower
+simprof sim: SPIKE spawn    0.012      6.246        2  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.008      7.780        1  CybersHitBox
+simprof sim: SPIKE 3 run=171 maptime=559  loop=826.085 ms (sim_spike_ms 400.0)  classes=813.798  post=10.857 (events=10.661)  rest=1.430  thinkers=53007  spawns=1693
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   747.659   5751.221      130  champion_PinkController
+simprof sim: SPIKE tick    14.162      3.910     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     8.609     70.563      122  champion_CyanController
+simprof sim: SPIKE tick     5.115      3.107     1646  champion_Icon
+simprof sim: SPIKE tick     3.999      2.319     1724  SkeletonImp
+simprof sim: SPIKE tick     2.959     29.014      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.441      0.318     7686  Shifter
+simprof sim: SPIKE tick     2.267      2.323      976  champion_Leaves
+simprof sim: SPIKE tick     2.196      1.422     1545  PhantomRevenant
+simprof sim: SPIKE tick     2.191      2.254      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6495714.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7565.0    3.293       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.363    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     526.0    0.032    1379.0    1.041    1379.0     700.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count     711.0     237.0    0.104       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.857     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     177.0    0.104     357.0    0.302     357.0     600.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      32.0    0.001     645.0    0.772     645.0     395.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1823.0    9243.0    4.194    5908.0    6.280    5908.0    2692.0        0.0  6495714.0    1499.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.844      6.840      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.537      6.294      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.426      6.096      562  champion_AggroGiver
+simprof sim: SPIKE spawn    0.025      6.283        4  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.015      7.449        2  champion_Sparkle
+simprof sim: SPIKE 4 run=241 maptime=629  loop=802.702 ms (sim_spike_ms 400.0)  classes=789.778  post=11.337 (events=11.122)  rest=1.587  thinkers=53031  spawns=1707
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   723.170   5562.844      130  champion_PinkController
+simprof sim: SPIKE tick    14.437      3.986     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     7.949     65.158      122  champion_CyanController
+simprof sim: SPIKE tick     5.021      3.050     1646  champion_Icon
+simprof sim: SPIKE tick     4.515      2.619     1724  SkeletonImp
+simprof sim: SPIKE tick     3.181      0.414     7686  Shifter
+simprof sim: SPIKE tick     2.291     22.457      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.271      1.470     1545  PhantomRevenant
+simprof sim: SPIKE tick     2.171      2.233      972  SlayerKnight
+simprof sim: SPIKE tick     2.160      2.213      976  champion_Leaves
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6497571.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7565.0    3.075       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.287    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     775.0    0.054    1377.0    1.198    1377.0    1003.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count     715.0     238.0    0.104       0.0    0.000       0.0       0.0        0.0        0.0     440.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0     228.0    0.107     362.0    0.325     362.0     838.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      39.0    0.001     644.0    0.803     644.0     523.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.838     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count    1852.0    9588.0    4.050    5970.0    6.540    5970.0    3473.0        0.0  6497571.0    1481.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    4.060      7.224      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.496      6.221      562  champion_AggroGiver
+simprof sim: SPIKE spawn    3.492      6.213      562  champion_AggroEffect
+simprof sim: SPIKE spawn    0.174     21.810        8  DistanceCheckerCeiling
+simprof sim: SPIKE spawn    0.085      9.409        9  champion_MidasTouch1
+simprof sim: total runs=300  loop mean=113.136 median=74.484 p95=195.771 max=826.085 ms/run  classes=93.095 (82.3%)  outside=20.041  thinkers=54001/run  class rows=276
+simprof sim: spawn total spawns=2742.4/run  post=18.714 ms/run (events=18.371 native=0.343)  loop 113.136 = classes 93.095 + post 18.714 + rest 1.327
+simprof sim: script inside the loop=95.773 ms/run over 300 runs with vm_stats on (84.7% of the loop's mean; script entered from native code, with the natives it calls)
+simprof sim:     ms/run     us/call   calls/run  class
+simprof sim:    19.7197     103.245       191.0  BalrogFireSpawner
+simprof sim:    13.6594       3.771      3622.0  RSQTHP_Bar
+simprof sim:     9.9682      76.678       130.0  champion_PinkController
+simprof sim:     6.9329      56.827       122.0  champion_CyanController
+simprof sim:     4.9931       3.033      1646.0  champion_Icon
+simprof sim:     3.6552       2.120      1724.0  SkeletonImp
+simprof sim:     2.5738      25.233       102.0  champion_DarkRedController
+simprof sim:     2.5649       0.334      7686.1  Shifter
+simprof sim:     2.2376       2.293       976.0  champion_Leaves
+simprof sim:     1.9227       1.244      1545.0  PhantomRevenant
+simprof sim:     1.8697       1.924       972.0  SlayerKnight
+simprof sim:     1.7044      81.164        21.0  champion_SilverController
+simprof sim:     1.3459       2.752       489.0  CacoLich
+simprof sim:     1.0805       0.960      1125.1  champion_AggroPower
+simprof sim:     1.0588       1.885       561.8  champion_AggroEffect
+simprof sim:     1.0471       1.859       563.4  champion_AggroVisual
+simprof sim:     0.9856       1.754       561.8  champion_AggroGiver
+simprof sim:     0.9589       0.377      2544.0  IA_Sound
+simprof sim:     0.9497       0.168      5666.0  csh_critController
+simprof sim:     0.9422       0.166      5666.0  csh_Brain
+simprof sim:     0.8914       9.190        97.0  champion_GreyController
+simprof sim:     0.8866       7.916       112.0  champion_OrangeController
+simprof sim:     0.7257       1.851       392.0  SkeletonDemon
+simprof sim:     0.6427       1.967       326.8  PowerBalrogFireBuffGiver
+simprof sim:     0.6278       1.921       326.8  BalrogFireGiver
+simprof sim:     0.6003       1.509       397.8  PowerBalrogFireBuff
+simprof sim:     0.5716       4.844       118.0  champion_IndigoController
+simprof sim:     0.5658       0.360      1572.0  BalrogFire
+simprof sim:     0.4827       4.780       101.0  champion_VioletController
+simprof sim:     0.4532       2.373       191.0  Balrog
+simprof sim:     0.4215       0.529       797.0  AmmoRocketBox
+simprof sim:     0.3342       0.206      1622.0  champion_PersistentInfo
+simprof sim:     0.2890       1.927       150.0  Reaper
+simprof sim:     0.2873       0.177      1622.0  RSQTHP_ChampKind
+simprof sim:     0.2786       3.924        71.0  BalrogBuffEffectSpawner
+simprof sim:     0.2548       0.489       521.0  ShortTorch_RedFlames
+simprof sim:     0.2492       0.478       521.0  ShortTorch_Red
+simprof sim:     0.2192     219.200         1.0  ACSThinker
+simprof sim:     0.1923       0.239       806.0  Clip1
+simprof sim:     0.1868       1.900        98.3  champion_SilverMagnetism
+simprof sim: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: count    1028.0     814.9    0.164      47.3    0.092      95.0     238.8        0.0        0.0  443779.8  BalrogFireSpawner
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: count       1.7       0.0    0.000       0.0    0.000       0.0       0.0        0.0    87348.9       0.0  champion_PinkController
+simprof sim: count       0.0    7567.4    2.991       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: count       0.0       0.0    0.000    1646.0    2.272    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: count       0.0     134.3    0.010    1379.6    1.022    1379.6     175.6        0.0        0.0       0.0  SkeletonImp
+simprof sim: count     711.6     237.2    0.095       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: count       0.0       0.0    0.000     976.0    0.860     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: count       0.0      46.3    0.026     357.3    0.310     357.3     157.8        0.0        0.0       0.0  PhantomRevenant
+simprof sim: count       0.0       8.7    0.000     644.7    0.727     644.7     100.2        0.0        0.0       0.0  SlayerKnight
+simprof sim: count     295.3      98.0    0.167       0.0    0.000       0.0       0.0        0.0        0.0     158.0  champion_SilverController
+simprof sim: count       0.0     142.0    0.281     310.8    0.274     310.8     489.0        0.0        0.0       0.0  CacoLich
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_AggroPower
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_AggroEffect
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_AggroVisual
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_AggroGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  IA_Sound
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  csh_critController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  csh_Brain
+simprof sim: count     234.0      95.0    0.016       0.0    0.000       0.0       0.0        0.0        0.0     169.0  champion_GreyController
+simprof sim: count     231.0      79.0    0.017       0.0    0.000       0.0       0.0        0.0        0.0      93.0  champion_OrangeController
+simprof sim: count       0.0      20.3    0.010     286.0    0.202     286.0      40.9        0.0        0.0       0.0  SkeletonDemon
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  PowerBalrogFireBuffGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  BalrogFireGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  PowerBalrogFireBuff
+simprof sim: count     118.7      41.6    0.010       0.0    0.000       0.0       0.0        0.0        0.0     129.8  champion_IndigoController
+simprof sim: count       0.3       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  BalrogFire
+simprof sim: count      96.0      51.2    0.013       0.0    0.000       0.0       0.0        0.0        0.0     372.7  champion_VioletController
+simprof sim: count       0.0      16.4    0.022      62.0    0.171      62.0      48.9        0.0        0.0       0.0  Balrog
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  AmmoRocketBox
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_PersistentInfo
+simprof sim: count       0.0       5.8    0.005      78.0    0.087      78.0      15.1        0.0        0.0       0.0  Reaper
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_ChampKind
+simprof sim: count      17.8       0.0    0.000      17.8    0.036      35.5     124.3        0.0        0.0       0.0  BalrogBuffEffectSpawner
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  ShortTorch_RedFlames
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  ShortTorch_Red
+simprof sim: count       0.5       0.0    0.000       0.5    0.000       0.5       0.3        0.0        0.0       0.0  ACSThinker
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Clip1
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0      98.3        0.0        0.0       0.0  champion_SilverMagnetism
+simprof sim: count    2745.8    9394.4    3.857    5966.8    6.248    6032.3    1560.4        0.0    87348.9  445236.9  (all classes' Tick)
+simprof sim: count    2746.4    9394.4    3.857    5966.8    6.248    6032.5    1560.4        0.0    87348.9  445236.9  (whole loop)
+simprof sim: spawn  ms/run   us/spawn  event us/spawn  spawns/run  class
+simprof sim: spawn   3.8735      6.895           6.759      561.78  champion_AggroPower
+simprof sim: spawn   3.5918      6.394           6.282      561.78  champion_AggroEffect
+simprof sim: spawn   3.5167      6.260           6.150      561.78  champion_AggroGiver
+simprof sim: spawn   2.4957      7.638           7.500      326.75  PowerBalrogFireBuffGiver
+simprof sim: spawn   2.3482      7.187           7.058      326.75  PowerBalrogFireBuff
+simprof sim: spawn   2.2999      7.039           6.914      326.75  BalrogFireGiver
+simprof sim: spawn   0.4277      6.529           6.407       65.50  BalrogFire
+simprof sim: spawn   0.0523      9.665           9.494        5.41  champion_MidasTouch1
+simprof sim: spawn   0.0458    381.873         381.717        0.12  BurningBarrelTopFIre
+simprof sim: spawn   0.0138     10.351           7.448        1.33  champion_SilverMagnetism
+simprof sim: spawn   0.0104      7.929           7.359        1.32  champion_Sparkle
+simprof sim: spawn   0.0101     22.265          22.140        0.45  DistanceCheckerCeiling
+simprof sim: spawn   0.0044      8.849           8.574        0.50  GreenFlareMedium
+simprof sim: spawn   0.0041      8.166           8.014        0.50  CybersHitBox
+simprof sim: spawn   0.0033     20.871          20.769        0.16  MOBlueSplash
+simprof sim: spawn   0.0027     22.387          22.185        0.12  RealisticFireSparks1
+simprof sim: spawn   0.0024     19.382          19.254        0.12  Brutal_FlyingBlood
+simprof sim: spawn   0.0017      6.725           6.594        0.25  LDWeaponNameAlternation
+simprof sim: spawn   0.0017     13.560          13.477        0.12  BloodMist22Small
+simprof sim: spawn   0.0016     10.189          10.061        0.16  MOBlueSplashBase
+simprof sim: spawn   0.0016     12.914          12.788        0.12  ArterialBlood22Small
+simprof sim: spawn   0.0011      8.772           8.565        0.12  Brutal_Blood
+simprof sim: spawn   0.0010      8.225           8.131        0.12  SuperGoreMistTiny
+simprof sim: spawn   0.0010      7.839           7.694        0.12  WaterBloodCHecker
+simprof sim: spawn   0.0008      7.033           6.947        0.12  Shifter
+simprof sim: spawn   0.0008      7.906           7.724        0.10  Brutal_BloodSpot
+simprof sim: spawn   0.0000      7.074           6.941        0.00  champion_AggroVisual
+simprof sim: spawn   0.0000      0.209           0.000        0.02  DecalStretcher
+simprof sim: spawn   0.0000      0.092           0.000        0.02  DecalSlider
+simprof client: total runs=300  loop mean=4.225 median=4.101 p95=5.009 max=7.122 ms/run  classes=0.197 (4.7%)  outside=4.028  thinkers=0/run  class rows=1
+simprof client: spawn total spawns=0.0/run  post=0.000 ms/run (events=0.000 native=0.000)  loop 4.225 = classes 0.197 + post 0.000 + rest 4.028
+simprof client:     ms/run     us/call   calls/run  class
+simprof client:     0.1975       0.177      1118.0  InternalDynamicLight
+simprof client: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  InternalDynamicLight
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  (all classes' Tick)
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  (whole loop)
+vmstats: tics=301  script=98.416 ms/tic (max tic 811.188)  entries from native=169558/tic  (script entered from native code during a game tic, with the natives it calls)
+VM: JIT built=yes vm_jit=1 vm_jit_aot=1  compiled=129200 interpreted=2 not yet compiled=0  (native functions=2189)
+VM: interpreted: BaseStatusBar.SortScoreboardPlayers
+VM: interpreted: wr_Rig.buildSheetRows
+simprof sim: SPIKE 5 run=311 maptime=699  loop=793.910 ms (sim_spike_ms 400.0)  classes=781.770  post=10.847 (events=10.646)  rest=1.294  thinkers=53010  spawns=1694
+simprof sim: SPIKE tick     ms     us/call    calls  class
+simprof sim: SPIKE tick   718.551   5527.313      130  champion_PinkController
+simprof sim: SPIKE tick    13.869      3.829     3622  RSQTHP_Bar
+simprof sim: SPIKE tick     8.028     65.806      122  champion_CyanController
+simprof sim: SPIKE tick     5.050      3.068     1646  champion_Icon
+simprof sim: SPIKE tick     3.912      2.269     1724  SkeletonImp
+simprof sim: SPIKE tick     2.417     23.698      102  champion_DarkRedController
+simprof sim: SPIKE tick     2.408      0.313     7686  Shifter
+simprof sim: SPIKE tick     2.224      2.278      976  champion_Leaves
+simprof sim: SPIKE tick     1.999      1.294     1545  PhantomRevenant
+simprof sim: SPIKE tick     1.893      1.947      972  SlayerKnight
+simprof sim: SPIKE count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives  class
+simprof sim: SPIKE count     129.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0  6495708.0       0.0  champion_PinkController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  RSQTHP_Bar
+simprof sim: SPIKE count       0.0    7558.0    3.038       0.0    0.000       0.0       0.0        0.0        0.0       0.0  champion_CyanController
+simprof sim: SPIKE count       0.0       0.0    0.000    1646.0    2.360    1646.0       0.0        0.0        0.0       0.0  champion_Icon
+simprof sim: SPIKE count       0.0     452.0    0.029    1376.0    0.996    1376.0     591.0        0.0        0.0       0.0  SkeletonImp
+simprof sim: SPIKE count     714.0     238.0    0.101       0.0    0.000       0.0       0.0        0.0        0.0     439.0  champion_DarkRedController
+simprof sim: SPIKE count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0  Shifter
+simprof sim: SPIKE count       0.0       0.0    0.000     976.0    0.858     976.0       0.0        0.0        0.0       0.0  champion_Leaves
+simprof sim: SPIKE count       0.0     137.0    0.070     362.0    0.285     362.0     472.0        0.0        0.0       0.0  PhantomRevenant
+simprof sim: SPIKE count       0.0      23.0    0.001     645.0    0.666     645.0     322.0        0.0        0.0       0.0  SlayerKnight
+simprof sim: SPIKE count    1825.0    9093.0    3.855    5900.0    6.021    5900.0    2366.0        0.0  6495708.0    1468.0  (whole loop)
+simprof sim: SPIKE spawn    ms    us/spawn   spawns  class
+simprof sim: SPIKE spawn    3.769      6.706      562  champion_AggroPower
+simprof sim: SPIKE spawn    3.518      6.260      562  champion_AggroEffect
+simprof sim: SPIKE spawn    3.437      6.115      562  champion_AggroGiver
+simprof sim: SPIKE spawn    0.096     19.218        5  champion_MidasTouch1
+simprof sim: SPIKE spawn    0.012     12.297        1  CybersHitBox
