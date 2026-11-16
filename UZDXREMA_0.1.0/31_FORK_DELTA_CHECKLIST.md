@@ -448,6 +448,8 @@ tic's commands; thread count, timing and work stealing never change it (GATE-MT 
 2026-11-16 Owner's PC: Visual Studio updated (MSVC 14.51.36231 -> 14.52.37025). Every build folder configured before it fails at
             CMake "not a full path to an existing compiler tool". Sim folder fixed with `scripts\sim_reset_cmake_cache.py` +
             `configure_sim.py` + full rebuild (sm172-sm174). The main and renderer build folders will need the same.
+2026-11-16 Owner approved the next order (his yes to the list in SIM_LANE_HANDOFF_2026-11-16.md): F-VM-1..4 (faster script calls for all
+            mods), then F-MT-1, F-MT-2, F-MT-4 (idle cores on safe jobs), then F-MON-1. Not approved: F-MT-5..9 / D3.
 2026-11-13 F-SIM-13 added (owner: "the engine has to be able to handle the mods even if mods are poorly made"): whole-world scan bursts from script, found as `champion_PinkController`; engine fix for any mod, not D10's compat copy alone. The mod's code is not read yet; measure first with P0.5-2 and P0.5-5. Not started.
 2026-11-13 M0-2 residue closed except s: the ≈14.5 ms is F-MON-0's spawn bucket (above); the 976 ms tic is the Pink controllers (above). Per-tic spawn sources on a light tic: `champion_AggroPower`/`Effect`/`Giver` 562 each **every tic** (9.9 ms of spawn events a tic, plus ≈3.2 ms of Tick), which no earlier table showed.
 
