@@ -511,3 +511,50 @@ Flags as §13 plus `+sim_radiusgivecache 0` / `1`. Raw: `measurements_raw/sm166.
   (444,538 a tic) plus a fresh scan after every call that gave a gift that stayed changed.
 - Not done from the row: (a) reordering the cheap rejects (now the 5.4 ms above), (c) the gift spawn-event path; the
   row's Done-when (the every-fourth-tic peak within 15 ms of the light tic) was not evaluated.
+
+## 15. Script-call switches and the spawn-event path, off and on (F-MT-0, F-VM-1..4, F-MON-1; 2026-11-16, `sm180`-`sm255`)
+
+Three builds from `main`, all with MSVC 14.52: `doomxr_sim1116e.exe` (f8ebf3e; `sm181`), `doomxr_sim1116f.exe`
+(678aad2; `sm203`), `doomxr_sim1116g.exe` (5ed9d30; `sm227`). Flags as §14 with `+sim_idleinventory 1 +sim_handlerfind 1
++sim_radiusgivecache 1` in every run (the three earlier switches are the baseline here), cfg
+`tools/sim_lane/sim_m10_vm1116f.cfg`, load orders `SIM_SUNDER_1116_ue_a.zdl` / `SIM_ABANDON_1116_ue_a.zdl` (47 files, the
+Universal Entropy copy). Raw: `measurements_raw/sm182..sm236_m10_*.txt`. All runs GREEN.
+
+**What script calls on Sunder MAP15 a tic (`sm182`, `sm228`; `vmstats natives`, `vmstats frames`):**
+
+- Natives called directly by compiled script: 376,623 a tic in 117 natives (`Actor.GetSpecies` 104,138,
+  `Actor.Distance2D` 73,507, `ThinkerIterator.Next` 73,503, `Actor.InStateSequence` 22,726).
+- Natives through the packed-argument path (`NativeScriptCall`): **121,268 a tic in 57 natives**. Nine are 88 %:
+  `Actor.FindState` 28,890, `Actor.FindInventory` 15,538, `CVar.FindCVar` 15,015, `CVar.GetInt` 12,359,
+  `Actor.GetRenderStyle` 8,980, `CVar.GetFloat` 8,413, `EventHandler.Find` 7,486, `CVar.GetCVar` 5,740,
+  `Actor.SetState` 4,937. Only one virtual native in the list (`Actor.BeginPlay`, 2,670). Abandon MAP13: 72,263.
+- Compiled functions that set up a full VM frame: **68,854 a tic in 286 functions** (Abandon 42,482), every one of the
+  top forty only because of string registers (`S--`): `RSQSM_Clock.cv` 5,506, two `GetInt` services 4,544 each, and
+  nine `WorldThingSpawned` handlers at about 2,751 each (once per spawn).
+- Virtual call sites in the 47 files: 1,987; devirtualised with `vm_devirtualize`: 661 (17 to natives, 1 with a direct
+  entry).
+
+**Off and on, back to back (ms a game tic inside the thinker loop; each "on" run follows its "off" run):**
+
+| build, switches on | level | off, mean (median, p95) | on, mean (median, p95) | spawn events off -> on | slow-path natives | full frames |
+|---|---|---|---|---|---|---|
+| e: tickentry, lightcalls, devirtualize, jit_lightframe (`sm183`-`sm186`) | Sunder | 112.74, 110.36 | 111.39, 108.60 | — | 121,268 both | 68,854 both |
+| f: those four + directnatives + spawnevents (`sm205`-`sm208`) | Sunder | 104.39 (74.3, 160.4), 101.36 (72.4, 156.1) | 99.28 (71.1, 148.7), 94.69 (67.4, 143.3) | 20.3 -> 14.8 | 121,268 -> 13,521 | 68,854 both |
+| f (`sm209`-`sm212`) | Abandon | 61.25 (48.5, 92.2), 59.88 (47.7, 89.6) | 56.82 (45.2, 84.0), 55.65 (44.5, 83.5) | 13.4 -> 9.5 | 72,263 -> 7,481 | 42,482 both |
+| g: those six + jit_stringframe (`sm229`-`sm234`) | Sunder | 94.49 (67.6, 146.7), 104.44 (74.1, 161.0) | 84.94 (61.6, 126.5), 92.98 (66.8, 139.9); six only: 90.47, 95.13 | 20.3 -> 12.8 | 121,268 -> 13,521 | 68,854 -> 148 |
+| g (`sm235`-`sm238`) | Abandon | 60.38 (48.0, 88.1), 60.69 (48.2, 89.8) | 53.30 (42.6, 77.3), 54.05 (43.3, 77.8) | 13.3 -> 8.4 | 72,263 -> 7,481 | 42,482 -> 147 |
+
+- **Same game:** every off/on pair compared with `scripts\sim_synccmp.py` (world hash included): IDENTICAL through
+  maptime 680 on both levels (`sm195`-`sm198`, `sm222`-`sm225`, `sm251`-`sm255`), including off against off.
+- **Saving with all seven on (build g):** Sunder about -10.5 ms a tic (99.5 -> 89.0 over the two pairs, -10.5 %;
+  p95 154 -> 133), Abandon -6.9 ms (60.5 -> 53.7, -11 %; p95 89.0 -> 77.5). By part, from the three builds: the four
+  call-path switches of build e together about -1.5 on Sunder (inside the run-to-run spread); `vm_directnatives` and
+  `sim_spawnevents` together about -6 on Sunder and -4.3 on Abandon, of which the spawn-event dispatch itself is -5.5
+  and -3.9; `vm_jit_stringframe` about -4 on Sunder (it also takes another 1.6 ms off spawn events, whose handlers
+  are string functions) and -2.6 on Abandon.
+- **Trap, again:** Sunder's whole-loop mean moves by up to 10 ms between identical runs minutes apart (94.5 and
+  104.4 for the same "off"). Only neighbouring runs compare; the counters (slow-path calls, full frames, spawn-event
+  ms) are steady to three digits and are the numbers to trust.
+- **What is left of spawn events** (12.8 ms a tic on Sunder) is the 45 handlers' own script: 2,742 spawns a tic, each
+  offered to every handler, most of which test the actor and return. The engine cannot skip a handler without knowing
+  what its script would do (F-MON-1's declared filters need the mod to declare them).
