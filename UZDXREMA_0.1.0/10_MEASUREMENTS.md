@@ -488,3 +488,26 @@ absolute ms.
   gathered candidate list reused by the same actor's consecutive calls, attacks the right 19 ms.
 - A second, small caller (about 14 calls a tic) gives 567 gifts a tic for 6.9 ms: there the cost IS the gifts (12 us
   each: a spawned actor, its spawn events, a script pickup). That is F-MON-1's ground (spawn events), not (b)'s.
+
+## 14. `sim_radiusgivecache` off and on (F-SIM-12 mechanism (b); 2026-11-16, `sm164`-`sm178`)
+
+`doomxr_sim1116d.exe` (`main` 661932e, engine source 45254d0f; `sm174`). **Compiler changed under this build:** Visual
+Studio updated itself on the owner's PC during the session (MSVC 14.51.36231 -> 14.52.37025); the sim folder was
+re-configured (`sm172`, `sm173`) and fully rebuilt, so do not compare these absolute times with earlier sections.
+Flags as §13 plus `+sim_radiusgivecache 0` / `1`. Raw: `measurements_raw/sm166..sm169_m5_*.txt`.
+
+| run, per tic | loop mean | median | p95 | max | Balrog `rg ms` | of it gifts | Balrog class ms | whole-loop `rg ms` |
+|---|---|---|---|---|---|---|---|---|
+| sm166 Sunder MAP15, off | 119.25 | 77.34 | 212.6 | 896.5 | 20.21 | 3.43 | 21.31 | 27.00 |
+| sm167 Sunder MAP15, on | 107.53 | 77.27 | 164.7 | 957.2 | 8.65 | 3.21 | 9.64 | 15.45 |
+| sm168 Abandon MAP13, off | 60.96 | 46.14 | 96.64 | 291.4 | 6.35 | 1.25 | 6.64 | 10.12 |
+| sm169 Abandon MAP13, on | 57.49 | 45.79 | 84.57 | 285.5 | 3.27 | 1.39 | 3.53 | 7.29 |
+
+- Same game: `sm170`, `sm171` (`sim_synccmp2.py`, with the world hash): IDENTICAL through maptime 680 on both levels,
+  off against on, with the same counts in both runs (1,432.5 calls, 444,538.2 candidates tested, 326.8 gifts a tic
+  on Sunder): every candidate is still tested, only the gathering is saved.
+- Saving: -11.6 ms a tic on Sunder, -3.1 on Abandon, and it lands on the heavy tics (Sunder p95 212.6 -> 164.7). What
+  is left of the Balrog's gather + test is 5.4 ms on Sunder = about 12 ns a candidate for the tests themselves
+  (444,538 a tic) plus a fresh scan after every call that gave a gift that stayed changed.
+- Not done from the row: (a) reordering the cheap rejects (now the 5.4 ms above), (c) the gift spawn-event path; the
+  row's Done-when (the every-fourth-tic peak within 15 ms of the light tic) was not evaluated.
