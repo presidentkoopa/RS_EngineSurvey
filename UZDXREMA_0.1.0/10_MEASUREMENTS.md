@@ -467,3 +467,24 @@ and `ti skipped` (thinkers stepped over because they were not of the asked class
 - Top classes this run, ms a tic, Sunder: `BalrogFireSpawner` 19.63 (F-SIM-12, `A_RadiusGive`), `RSQTHP_Bar` 10.60,
   `champion_PinkController` 10.17, `champion_CyanController` 7.30 (7,506 sight checks a tic, 3.1 ms of it),
   `champion_Icon` 5.22; spawn events 18.5. Abandon: `RSQTHP_Bar` 5.45, `BalrogFireSpawner` 5.44, Cyan 4.16.
+
+## 13. What `A_RadiusGive` is made of (F-SIM-12 "measure first"; 2026-11-16, `sm157`-`sm162`)
+
+`doomxr_sim1116c.exe` (`main` source 4-column build, `sm158`). Flags as §12. New `sim_profile` columns: `rg calls`,
+`rg ms` (whole call), `rg gifts`, `gift ms` (`Spawn` + `CallTryPickup`). Raw:
+`measurements_raw/sm159_m5_sunder15_radiusgive_split.txt`, `sm160_m5_abandon13_radiusgive_split.txt`. The PC was
+busier in this batch (Sunder loop mean 131.3 against 108.6 in §12 for the same game), so read the shares, not the
+absolute ms.
+
+| run, per tic | calls | candidates | whole ms | gifts | gift ms | gather + test ms | ns / candidate |
+|---|---|---|---|---|---|---|---|
+| Sunder, `BalrogFireSpawner` | 1,432.5 | 444,538 | 22.98 | 326.8 | 3.82 | 19.16 | 43 |
+| Sunder, whole loop | 1,446.9 | 446,003 | 30.56 | 893.7 | 10.72 | 19.83 | |
+| Abandon, `BalrogFireSpawner` | 300.0 | 104,194 | 6.49 | 172.8 | 1.73 | 4.75 | 46 |
+| Abandon, whole loop | 313.6 | 105,713 | 11.17 | 602.3 | 5.81 | 5.36 | |
+
+- The Balrog's cost is **83 % gathering and testing candidates** (about 310 candidates a call, 43-46 ns each, almost
+  all rejected), 17 % gifts. Sight checks are negligible (§11: 808 a tic, 0.17 ms). So the row's mechanism (b), one
+  gathered candidate list reused by the same actor's consecutive calls, attacks the right 19 ms.
+- A second, small caller (about 14 calls a tic) gives 567 gifts a tic for 6.9 ms: there the cost IS the gifts (12 us
+  each: a spawned actor, its spawn events, a script pickup). That is F-MON-1's ground (spawn events), not (b)'s.
