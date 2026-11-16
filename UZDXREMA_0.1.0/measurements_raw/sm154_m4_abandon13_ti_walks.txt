@@ -1,0 +1,116 @@
+simprof sim: total runs=300  loop mean=58.095 median=44.520 p95=90.975 max=268.372 ms/run  classes=43.831 (75.4%)  outside=14.264  thinkers=34233/run  class rows=272
+simprof sim: spawn total spawns=1778.2/run  post=12.249 ms/run (events=12.031 native=0.218)  loop 58.095 = classes 43.831 + post 12.249 + rest 2.014
+simprof sim: script inside the loop=44.687 ms/run over 300 runs with vm_stats on (76.9% of the loop's mean; script entered from native code, with the natives it calls)
+simprof sim:     ms/run     us/call   calls/run  class
+simprof sim:     5.4530       2.882      1892.0  RSQTHP_Bar
+simprof sim:     5.4399     135.997        40.0  BalrogFireSpawner
+simprof sim:     4.1592      62.077        67.0  champion_CyanController
+simprof sim:     3.1137       3.514       886.0  champion_Icon
+simprof sim:     2.7740      44.032        63.0  champion_PinkController
+simprof sim:     1.6565       2.143       773.0  SkeletonImp
+simprof sim:     1.2841       2.626       489.0  SkeletonDemon
+simprof sim:     1.2554       2.342       536.0  champion_Leaves
+simprof sim:     1.0634       1.125       945.0  PhantomRevenant
+simprof sim:     0.8685       2.467       352.0  SkullZombie
+simprof sim:     0.8217       1.938       424.0  champion_AggroEffect
+simprof sim:     0.7819       0.996       784.9  champion_AggroPower
+simprof sim:     0.7733       3.580       216.0  SlayerKnight
+simprof sim:     0.7121       1.813       392.9  champion_AggroVisual
+simprof sim:     0.6957       0.401      1737.0  IA_Sound
+simprof sim:     0.6839       1.745       392.0  champion_AggroGiver
+simprof sim:     0.5834      11.440        51.0  champion_BlueController
+simprof sim:     0.5258       9.225        57.0  champion_WhiteController
+simprof sim:     0.5216       5.795        90.0  CacoLich
+simprof sim:     0.5099       8.498        60.0  champion_VioletController
+simprof sim:     0.5025      25.124        20.0  champion_BronzeController
+simprof sim:     0.4839       7.680        63.0  champion_OrangeController
+simprof sim:     0.4615       4.313       107.0  BalrogBuffEffectSpawner
+simprof sim:     0.4351       7.632        57.0  champion_BlackController
+simprof sim:     0.4339       6.288        69.0  champion_YellowController
+simprof sim:     0.4065       6.453        63.0  champion_DarkRedController
+simprof sim:     0.4043       0.362      1118.0  ShortTorch_RedFlames
+simprof sim:     0.4001       0.358      1118.0  ShortTorch_Red
+simprof sim:     0.3535       2.046       172.8  PowerBalrogFireBuffGiver
+simprof sim:     0.3513       0.314      1118.0  ShortTorch_RedCOre
+simprof sim:     0.3493       4.537        77.0  champion_GreyController
+simprof sim:     0.3485       2.017       172.8  BalrogFireGiver
+simprof sim:     0.3459      34.590        10.0  champion_SilverController
+simprof sim:     0.3370       0.301      1118.0  ShortTorchBall
+simprof sim:     0.3359       1.201       279.8  PowerBalrogFireBuff
+simprof sim:     0.3163       0.359       882.0  BalrogFire
+simprof sim:     0.2125       0.544       391.0  CandlestickVOX
+simprof sim:     0.2123       1.527       139.0  Abhorrent
+simprof sim:     0.2065       0.063      3253.0  csh_critController
+simprof sim:     0.2045       0.063      3253.0  csh_Brain
+simprof sim: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives hdl finds  find ms    ti ms  ti skipped  class
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0    3970.1    0.028    0.000         0.0  RSQTHP_Bar
+simprof sim: count     528.4     185.9    0.102      10.0    0.029      20.0      50.0        0.0        0.0  104193.6       0.0    0.000    0.000         0.0  BalrogFireSpawner
+simprof sim: count       0.0    3410.3    0.999       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_CyanController
+simprof sim: count       0.0       0.0    0.000     886.0    1.443     886.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_Icon
+simprof sim: count       0.8       0.0    0.000       0.0    0.000       0.0       0.0        0.0    24087.5       0.0       0.0    0.000    0.656      3797.6  champion_PinkController
+simprof sim: count       0.0      43.7    0.002     601.6    0.522     601.6      79.7        0.0        0.0       0.0       0.0    0.000    0.000         0.0  SkeletonImp
+simprof sim: count       0.0      47.1    0.103     424.0    0.421     424.0      51.0        0.0        0.0       0.0       0.0    0.000    0.000       290.8  SkeletonDemon
+simprof sim: count       0.0       0.0    0.000     536.0    0.494     536.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_Leaves
+simprof sim: count       0.0      82.3    0.005      97.0    0.126      97.0      96.6        0.0        0.0       0.0       0.0    0.000    0.000         0.0  PhantomRevenant
+simprof sim: count       0.0      33.6    0.001     316.6    0.308     316.6      35.9        0.0        0.0       0.0       0.0    0.000    0.000         0.0  SkullZombie
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_AggroEffect
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_AggroPower
+simprof sim: count       0.0      19.4    0.001     121.0    0.450     121.0      21.9        0.0        0.0       0.0       0.0    0.000    0.000         0.0  SlayerKnight
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_AggroVisual
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  IA_Sound
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_AggroGiver
+simprof sim: count     174.0      95.0    0.039       0.0    0.000       0.0       0.0        0.0        0.0     148.1       0.0    0.000    0.000         0.0  champion_BlueController
+simprof sim: count     162.0      54.0    0.015       0.0    0.000       0.0       0.0        0.0        0.0      91.0       0.0    0.000    0.000         0.0  champion_WhiteController
+simprof sim: count       0.0      90.0    0.302      74.0    0.046      74.0      90.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  CacoLich
+simprof sim: count     114.0      38.0    0.028       0.0    0.000       0.0       0.0        0.0        0.0     458.8       0.0    0.000    0.000         0.0  champion_VioletController
+simprof sim: count     168.3      57.0    0.020       0.0    0.000       0.0       0.0        0.0        0.0     110.0       0.0    0.000    0.000         0.0  champion_BronzeController
+simprof sim: count     135.0      47.0    0.035       0.0    0.000       0.0       0.0        0.0        0.0     159.8       0.0    0.000    0.000         0.0  champion_OrangeController
+simprof sim: count      26.8       0.0    0.000      26.8    0.065      53.5     187.3        0.0        0.0       0.0       0.0    0.000    0.000         0.0  BalrogBuffEffectSpawner
+simprof sim: count     132.0      44.0    0.011       0.0    0.000       0.0       0.0        0.0        0.0      72.0       0.0    0.000    0.000         0.0  champion_BlackController
+simprof sim: count     126.0      42.0    0.008       0.0    0.000       0.0       0.0        0.0        0.0     122.4       0.0    0.000    0.000         0.0  champion_YellowController
+simprof sim: count     107.0      57.0    0.047       0.0    0.000       0.0       0.0        0.0        0.0     112.8       0.0    0.000    0.000         0.0  champion_DarkRedController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  ShortTorch_RedFlames
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  ShortTorch_Red
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  PowerBalrogFireBuffGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  ShortTorch_RedCOre
+simprof sim: count      87.0      29.0    0.012       0.0    0.000       0.0       0.0        0.0        0.0      62.0       0.0    0.000    0.000         0.0  champion_GreyController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  BalrogFireGiver
+simprof sim: count       0.6       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  champion_SilverController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  ShortTorchBall
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  PowerBalrogFireBuff
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  BalrogFire
+simprof sim: count       6.0      77.0    0.006       0.0    0.000       0.0      82.9        0.0        0.0       0.0       0.0    0.000    0.000         0.0  CandlestickVOX
+simprof sim: count       0.0       9.6    0.001      30.0    0.058      30.0       9.7        0.0        0.0       0.0       0.0    0.000    0.000         0.0  Abhorrent
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  csh_critController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0  csh_Brain
+simprof sim: count    1780.8    4646.2    1.816    3235.8    4.187    3272.5     954.2        0.0    24087.5  105713.0    3975.7    0.028    0.656      4088.4  (all classes' Tick)
+simprof sim: count    1781.0    4646.2    1.816    3235.8    4.187    3272.5     954.2        0.0    24087.5  105713.0    3977.1    0.028    0.656      4088.4  (whole loop)
+simprof sim: spawn  ms/run   us/spawn  event us/spawn  spawns/run  class
+simprof sim: spawn   2.7893      7.116           6.995      392.00  champion_AggroPower
+simprof sim: spawn   2.7690      6.531           6.417      424.00  champion_AggroEffect
+simprof sim: spawn   2.4824      6.333           6.222      392.00  champion_AggroGiver
+simprof sim: spawn   1.3366      7.735           7.593      172.78  PowerBalrogFireBuffGiver
+simprof sim: spawn   1.2624      7.306           7.174      172.78  PowerBalrogFireBuff
+simprof sim: spawn   1.2441      7.200           7.072      172.78  BalrogFireGiver
+simprof sim: spawn   0.2463      6.701           6.575       36.75  BalrogFire
+simprof sim: spawn   0.0361      6.569           6.442        5.50  champion_MidasTouch1
+simprof sim: spawn   0.0293      7.329           7.175        4.00  YellowFlareSmall22Long
+simprof sim: spawn   0.0171      7.441           7.261        2.30  CandleFlame
+simprof sim: spawn   0.0077     12.149           8.210        0.63  champion_SilverMagnetism
+simprof sim: spawn   0.0076     16.849          16.733        0.45  DistanceCheckerCeiling
+simprof sim: spawn   0.0052      8.998           8.179        0.58  champion_Sparkle
+simprof sim: spawn   0.0050      7.968           7.784        0.62  CybersHitBox
+simprof sim: spawn   0.0018      7.307           7.143        0.25  LDWeaponNameAlternation
+simprof sim: spawn   0.0018     18.107          17.937        0.10  Brutal_FlyingBlood
+simprof sim: spawn   0.0013     13.066          12.929        0.10  BloodMist22Small
+simprof sim: spawn   0.0012     11.902          11.767        0.10  ArterialBlood22Small
+simprof sim: spawn   0.0011     10.685           9.902        0.10  Brutal_Blood
+simprof sim: spawn   0.0011     10.550          10.332        0.10  WaterBloodCHecker
+simprof sim: spawn   0.0009      8.686           8.564        0.10  SuperGoreMistTiny
+simprof sim: spawn   0.0007      7.888           7.715        0.09  Brutal_BloodSpot
+simprof sim: spawn   0.0007     30.306          30.038        0.02  SpawnedMaggotDec
+simprof sim: spawn   0.0003     23.400          23.256        0.01  MORedSplash
+simprof sim: spawn   0.0002      7.834           7.653        0.03  MaggotSpawner
+simprof sim: spawn   0.0002      6.927           6.767        0.02  IsOverBlood
+simprof sim: spawn   0.0001      9.132           8.934        0.01  MORedSplashBase
+simprof sim: spawn   0.0000      6.671           6.516        0.00  champion_GoldToken

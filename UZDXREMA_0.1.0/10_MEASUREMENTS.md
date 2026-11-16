@@ -441,3 +441,29 @@ retry built it). Flags as §10 with `+sim_idleinventory 1` and `+sim_handlerfind
   on Sunder: 3,623 bars, about two `Find` a tic each. After the change the class still costs 10.6 / 5.9 ms a tic.
   That is a row of its own for whoever owns RSQ (one handler lookup per bar per tic can be one per bar for life).
 - Done-when of F-MOD-6 (`Find` <= 0.1 ms a tic): met, 0.054 and 0.038.
+
+## 12. What whole-level walks from script cost inside the thinker loop (P10.5 / F-SIM-13; 2026-11-16, `sm150`-`sm156`)
+
+`doomxr_sim1116b.exe` (`main` 64b5098, `sm152`). Flags as §11 with `+sim_idleinventory 1 +sim_handlerfind 1`. New
+columns on `sim_profile`'s counter line: `ti ms` (time inside script `ThinkerIterator.Next`, the engine's walk only)
+and `ti skipped` (thinkers stepped over because they were not of the asked class). Raw:
+`measurements_raw/sm153_m4_sunder15_ti_walks.txt`, `sm154_m4_abandon13_ti_walks.txt`.
+
+| run | loop mean ms | `ti steps` / tic (returned) | `ti ms` / tic | `ti skipped` / tic | who |
+|---|---|---|---|---|---|
+| sm153 Sunder MAP15 | 108.58 | 73,993 | 1.934 | 3,161 | `champion_PinkController` 1.934 ms, 3,030 skipped; `SlayerKnight` 131 skipped |
+| sm154 Abandon MAP13 | 58.10 | (see raw) | 0.656 | 4,088 | `champion_PinkController` 0.656 ms, 3,798 skipped; `SkeletonDemon` 291 skipped |
+
+- sm150: the 47 files hold 55 `ThinkerIterator.Create` sites; about 30 name one narrow class with no statnum, about
+  25 ask for `Actor` / `Inventory` and filter in script.
+- **Result: inside the thinker loop the narrow-class walks cost nothing measurable** (about 3-4 thousand skipped
+  thinkers a tic in total, well under 0.1 ms). A per-class index used invisibly by the existing iterator (P10.5's
+  engine half) would save under 0.1 ms a tic here. Not worth building on this evidence. Walks made from event
+  handlers' `WorldTick` are outside these columns and are bounded by P9-WT's 3.02 ms for all 121 handlers.
+- **Pink (F-SIM-13), what one call is made of:** class total 10.17 ms a tic on Sunder; the engine's walk is 1.93 ms
+  of it (26 ns a returned thinker); the other 8.2 ms is the mod's own script body run once per actor in the level
+  (about 110 ns a step). So an engine list cannot remove it: the script really does look at every actor. What is
+  left for the engine is making each script step cheaper, or an exact spatial answer the script did not ask for.
+- Top classes this run, ms a tic, Sunder: `BalrogFireSpawner` 19.63 (F-SIM-12, `A_RadiusGive`), `RSQTHP_Bar` 10.60,
+  `champion_PinkController` 10.17, `champion_CyanController` 7.30 (7,506 sight checks a tic, 3.1 ms of it),
+  `champion_Icon` 5.22; spawn events 18.5. Abandon: `RSQTHP_Bar` 5.45, `BalrogFireSpawner` 5.44, Cyan 4.16.
