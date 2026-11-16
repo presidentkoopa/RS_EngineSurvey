@@ -416,3 +416,28 @@ One run each, all GREEN, no script errors.
 - sm121/sm122: no other file in the 47 references `Shifter` (`tools/sim_lane/sim_zdl_grep.py`).
 - sm133: the owner's play list (bridge BD22 pack) with the copy, MAP01, 700 tics, GREEN (boot check only, no profile).
 - Not measured: anything in the headset; any netplay run with the copy.
+
+## 11. `sim_handlerfind` off and on (F-MOD-6; 2026-11-16, bridge requests `sm135`-`sm147`)
+
+`doomxr_sim1116a.exe` (`main` b43e831, `sm136`, 1087 s: the first link stopped on LNK1103 and the build script's
+retry built it). Flags as §10 with `+sim_idleinventory 1` and `+sim_handlerfind 0` / `1`; load orders
+`SIM_SUNDER_1116_ue_a.zdl`, `SIM_ABANDON_1116_ue_a.zdl` (47 files with the Universal Entropy copy). Raw:
+`measurements_raw/sm137..sm140_m4_*.txt`. The two new right-hand columns of `sim_profile`'s counter lines are
+`hdl finds` (script `Find` calls a tic) and `find ms`.
+
+| run | `Find` calls / tic | `Find` ms / tic | loop mean ms | median | p95 | `RSQTHP_Bar` ms |
+|---|---|---|---|---|---|---|
+| sm137 Sunder MAP15, off | 7,605.6 | 3.413 | 115.63 | 75.28 | 204.4 | 14.81 |
+| sm138 Sunder MAP15, on | 7,605.6 | 0.054 | 107.54 | 68.72 | 192.9 | 10.62 |
+| sm139 Abandon MAP13, off | 3,977.1 | 1.935 | 71.54 | 55.86 | 112.3 | 8.74 |
+| sm140 Abandon MAP13, on | 3,977.1 | 0.038 | 62.16 | 48.31 | 98.12 | 5.87 |
+
+- Same game: `sm141`, `sm142` (`sim_synccmp2.py`, with the world hash, same build): IDENTICAL through maptime 680 on
+  both levels, off against on.
+- The clean saving is the `find ms` column: -3.36 ms (Sunder) and -1.90 ms (Abandon). The whole-loop means moved by
+  more (-8.1, -9.4), but the Abandon "off" run is 13 ms slower than §10's run of the same game on `doomxr_sim1115c.exe`
+  (58.24), so the PC was not equally quiet across these runs; do not read the loop means as the row's saving.
+- Who calls it: `RSQTHP_Bar` (the owner's RSQ pack, the health bar on each monster) makes 7,597.5 of the 7,605.6 calls
+  on Sunder: 3,623 bars, about two `Find` a tic each. After the change the class still costs 10.6 / 5.9 ms a tic.
+  That is a row of its own for whoever owns RSQ (one handler lookup per bar per tic can be one per bar for life).
+- Done-when of F-MOD-6 (`Find` <= 0.1 ms a tic): met, 0.054 and 0.038.
