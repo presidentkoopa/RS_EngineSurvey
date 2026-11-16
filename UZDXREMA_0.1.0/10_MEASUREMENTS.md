@@ -392,3 +392,27 @@ in an animated state, which this switch rightly does not touch.
 `RSQTHP_Handler` 0.63, `RSQA_QoL` 0.47, `RSQGD_Handler` 0.26, `RSQ_Voxels` 0.17, `RSQFF_Shown` 0.14, `RSQLS_Sight` 0.13,
 `SSQ_Handler` 0.08, `RSQWP_Whip` 0.07, `rsqdg_door` 0.06, `RSQ_Counters` 0.06.
 
+## 10. Universal Entropy with and without its `Shifter` helpers (2026-11-15, bridge requests `sm121`-`sm133`)
+
+Checklist PORT-UE, the mod half of F-MOD-9. `doomxr_sim1115c.exe` (`main` 1eaf50d). Flags as §9 with
+`+sim_idleinventory 1` in all four runs; 700 tics, profile over the last 300; load orders `SIM_SUNDER_1115_c.zdl` /
+`SIM_ABANDON_1115_d.zdl` (original mod) against `SIM_SUNDER_1116_ue_a.zdl` / `SIM_ABANDON_1116_ue_a.zdl` (same 47 files
+with `2.4-Enemies_UniversalEntropy_REMA1116a.pk3`, sha256 5697e767..., in place of the original af6bb724...). Source of
+the copy: UZDXREMA `tools/sim_lane/universal_entropy_rema1116a/`. Raw: `measurements_raw/sm123..sm126_m4_*.txt`.
+One run each, all GREEN, no script errors.
+
+| run | loop mean ms | median | p95 | max | thinkers | script in loop ms | `Shifter` ms / calls |
+|---|---|---|---|---|---|---|---|
+| sm123 Sunder MAP15, original | 116.47 | 76.00 | 203.6 | 915.6 | 54,001 | 100.29 | 2.451 / 7,686 |
+| sm124 Sunder MAP15, copy | 115.84 | 78.97 | 215.0 | 790.5 | 46,299 | 99.39 | none |
+| sm125 Abandon MAP13, original | 62.31 | 48.62 | 95.10 | 332.1 | 41,277 | 50.75 | 2.166 / 7,040 |
+| sm126 Abandon MAP13, copy | 58.24 | 45.57 | 90.84 | 227.3 | 34,233 | 47.55 | none |
+
+- The two games are **not** the same game tic for tic: the engine field scales a monster's first state too, the item
+  did not, so monsters fall out of step with the original run early. Whole-loop numbers therefore carry play-out
+  noise (Sunder's median and p95 went up while its mean and max went down). The clean reading is by class:
+  `Shifter` -2.45 / -2.17 ms, `champion_PinkController` -1.42 / -1.29 ms (its whole-level `ThinkerIterator` walks step
+  over about 7,700 fewer objects), every other class within +-0.5 ms.
+- sm121/sm122: no other file in the 47 references `Shifter` (`tools/sim_lane/sim_zdl_grep.py`).
+- sm133: the owner's play list (bridge BD22 pack) with the copy, MAP01, 700 tics, GREEN (boot check only, no profile).
+- Not measured: anything in the headset; any netplay run with the copy.
