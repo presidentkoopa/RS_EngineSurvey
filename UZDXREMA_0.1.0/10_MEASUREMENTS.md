@@ -470,7 +470,7 @@ and `ti skipped` (thinkers stepped over because they were not of the asked class
 
 ## 13. What `A_RadiusGive` is made of (F-SIM-12 "measure first"; 2026-11-16, `sm157`-`sm162`)
 
-`doomxr_sim1116c.exe` (`main` source 4-column build, `sm158`). Flags as §12. New `sim_profile` columns: `rg calls`,
+`doomxr_sim1116c.exe` (`main` 8a50a17, engine source e7487ca, `sm158`). Flags as §12. New `sim_profile` columns: `rg calls`,
 `rg ms` (whole call), `rg gifts`, `gift ms` (`Spawn` + `CallTryPickup`). Raw:
 `measurements_raw/sm159_m5_sunder15_radiusgive_split.txt`, `sm160_m5_abandon13_radiusgive_split.txt`. The PC was
 busier in this batch (Sunder loop mean 131.3 against 108.6 in §12 for the same game), so read the shares, not the
