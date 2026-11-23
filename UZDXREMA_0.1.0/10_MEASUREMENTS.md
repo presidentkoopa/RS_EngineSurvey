@@ -613,4 +613,32 @@ Exes `doomxr_sim1123b.exe` to `e`. Sunder MAP15: 35,522 actors a tic, 2,154 with
   against 5.6 on one thread. Waking all workers at once changes nothing. Both levels move about 100 MB (Sunder) and
   70 MB (Abandon) of lines in 3.4 and 2.3 ms, the same rate: [I] the pass is bound by memory speed, which is what
   F-DOD-1 (hot prefix) addresses. Not yet proven; a run at `job_threads` 3 and 7 would settle it.
+- **Settled 2026-11-23 (`sm343`, `sm344`, exe `doomxr_sim1123e.exe`, Sunder, dense + used slots):** reset 6.3 ms on one thread,
+  4.09 on 4 threads (copy 3.88), 3.59 on 8 (copy 3.39), 3.6 to 3.7 on 16 (copy 3.3 to 3.5). Four threads give x1.5 and
+  nothing is gained past eight: the pass is bound by memory speed.
 
+## 18. The lights walk and the real-time walk on the dense array (P9.9c, F-SIM-6; 2026-11-23, `sm346`-`sm359`)
+
+Owner's PC, current mod list (`SIM_SUNDER_1123_a.zdl`, `SIM_ABANDON_1123_a.zdl`), the earlier switches on, exe
+`doomxr_sim1123f.exe` (UZDXREMA 5c54790), `sim_denseclock 1`, about 300 runs a line (`sim_densestats`), cfg
+`sim_m14_dense1123a.cfg`. Timing runs; `perf_bench_hash` not set.
+
+| lights pass (`RunClientSideThinkers`' walk), ms a client tic | Sunder MAP15 (35,587 actors, 110 with work) | Abandon MAP13 (24,945, 145 with work) |
+|---|---|---|
+| stock walk (`sim_denselights 0`) | 3.70 | 2.30 |
+| dense array, one thread (`1`) | 0.91 (finding 0.82) | — |
+| dense array, search on 15 threads (`+sim_parallelscan 1`) | 0.69 (finding 0.60) | 0.45 (finding 0.38) |
+| verify mode (`2`): mismatches | 0 | — |
+| whole client-side loop (`simprof client`, mean) | 3.98 -> 0.96 | 2.60 -> 0.74 |
+
+| real-time pass (`P_TickRealTimeActors`), ms a skipped tic | Sunder + `tools/sim_lane/test_fsim6` (38,740 actors, 78 found) |
+|---|---|
+| stock walk (`sim_denserealtime 0`) | 1.96 (finding 1.87) |
+| dense array, search on 15 threads (`1`, `sim_parallelscan 1`) | 0.70 (finding 0.51) |
+| verify mode (`2`): mismatches | 0 |
+
+- Same game: `sim_synccmp` IDENTICAL through 680 tics, off against verify (Sunder, `sm352`) and off against on (Abandon,
+  `sm355`); the slow-motion pair the same for every line both logs have (`sm359`; the world reaches fewer than 680 tics).
+- Here, unlike the reset, the walk was the cost: the stock loop follows one link per actor to do nothing for all but
+  about a hundred of them. What is left is one cache miss an actor (about 20 ns), which threads barely help.
+- The checklist's "about 9 ms" for the real-time walk was an estimate; the stock walk measures about 2 ms at 38.7k actors.

@@ -1,0 +1,5 @@
+﻿a: 1428 lines, last maptime 447   E:\DOOMWork\_buildtemp\claude_bridge\work\simsync1123f_slow_off.txt
+b: 1430 lines, last maptime 448   E:\DOOMWork\_buildtemp\claude_bridge\work\simsync1123f_slow_ver.txt
+INCOMPLETE: same for the 1428 lines both have, but a log is short of maptime 680
+
+EXIT=0
