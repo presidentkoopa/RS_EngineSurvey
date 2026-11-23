@@ -642,3 +642,30 @@ Owner's PC, current mod list (`SIM_SUNDER_1123_a.zdl`, `SIM_ABANDON_1123_a.zdl`)
 - Here, unlike the reset, the walk was the cost: the stock loop follows one link per actor to do nothing for all but
   about a hundred of them. What is left is one cache miss an actor (about 20 ns), which threads barely help.
 - The checklist's "about 9 ms" for the real-time walk was an estimate; the stock walk measures about 2 ms at 38.7k actors.
+
+## 19. The owner's list after its second change of 2026-11-23 (`sm384`-`sm399`)
+
+The list of §16-§18 stopped loading mid-session: BD22 VR Reloaded is now `2.0.5g` (was `2.0.5d`) and
+`2.2-Enemies-mk-champions` is no longer loaded (owner: RSQ_Miniboss has champions built in). Load orders
+`SIM_SUNDER_1123_b.zdl`, `SIM_ABANDON_1123_b.zdl`. 2.0.5g needs the engine of UZDXREMA 2aa7607 or later (QuestZDoom's
+`BT_MAINHANDRELOAD` / `BT_OFFHANDRELOAD` names). Exe `doomxr_sim1123h.exe`, the same switches as §18, 300 tics a line.
+
+| thinkers loop (`simprof sim`), ms a tic | mean | median | p95 | max | thinkers |
+|---|---|---|---|---|---|
+| Sunder MAP15 (`sm387`, exe h) | 85.5 | 57.5 | 140.7 | 829 | 39,170 |
+| Sunder MAP15 (`sm384`, exe f, before P0-F1) | 89.1 | 58.4 | 149.6 | 1,005 | 39,170 |
+| Abandon MAP13 (`sm390`, exe h) | 50.7 | 38.2 | 77.8 | 364 | 30,750 |
+
+- Sunder is heavier than on the morning's list (§16: 66 / 44 / 113 / 552). Script inside the loop 63 ms (74%), spawn events
+  10.7 ms (1,995 spawns a tic).
+- **The champion controllers did not go away with mk-champions:** RSQ_Miniboss carries the same classes. Sunder, ms a tic:
+  `BalrogFireSpawner` 10.7, `champion_PinkController` 10.6 (113 of them, the every-70th-tic scan: the 0.8 to 1.0 s
+  maximum), `champion_CyanController` 9.5, `champion_Icon` 6.4, `SkeletonImp` 4.0, `champion_Leaves` 2.6,
+  `PhantomRevenant` 2.5, `SlayerKnight` 2.3. Abandon: Pink 5.3, Cyan 4.7, Balrog 4.2, Icon 3.9.
+- Lights pass on this list: Sunder 4.08 -> 0.76 ms (`sm387`, `sm398`), Abandon 2.87 -> 0.55 (`sm390`, `sm391`); same game off
+  against on, both levels (`sm399`, `sm392`).
+- P0-F1 (exe f against h, Sunder, switches equal): same game through 680 tics (`sm393`); the difference in the means
+  (89.1 against 85.5) is within what one more or one fewer Pink tic in the window does. Not a measured gain.
+- Bridge: a second bridge (the owner's VRealms one) watches the same request folder since about 07:10; a request is
+  sometimes answered "null-valued expression", EXIT=99, without being run. Re-send it. `scripts\sim_enqueue.py` queues a
+  batch in order.
