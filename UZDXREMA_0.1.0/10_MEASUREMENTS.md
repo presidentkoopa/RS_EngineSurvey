@@ -669,3 +669,24 @@ The list of §16-§18 stopped loading mid-session: BD22 VR Reloaded is now `2.0.
 - Bridge: a second bridge (the owner's VRealms one) watches the same request folder since about 07:10; a request is
   sometimes answered "null-valued expression", EXIT=99, without being run. Re-send it. `scripts\sim_enqueue.py` queues a
   batch in order.
+
+## 20. Script thinker iterators on list snapshots (F-SIM-13, `sim_itersnap`; 2026-11-23, `sm423`-`sm439`)
+
+Owner's PC, `doomxr_sim1123i.exe` (UZDXREMA 24fe300), lists `SIM_*_1123_c.zdl` (VR Reloaded 2.0.5h; otherwise §19's),
+every earlier switch on including `sim_denselights 1`, 300 tics a line.
+
+| | Abandon MAP13, off (`sm428`) | Abandon, on (`sm429`) | Sunder MAP15, off (§19, `sm387`, list `_b`) | Sunder, on (`sm425`) |
+|---|---|---|---|---|
+| iterator steps a tic | 24,493 | 24,493 | 54,657 | 54,657 |
+| read from snapshots | — | 97.5% | — | 98.2% |
+| time inside `ThinkerIterator.Next`, ms a tic | 1.07 | 0.63 | 2.00 | 1.28 |
+| `champion_PinkController`, ms a tic | 5.43 | 4.63 | 10.59 | 9.68 |
+| thinkers loop mean / median / max | 50.6 / 37.5 / 371 | 47.8 / 35.6 / 308 | 85.5 / 57.5 / 829 | 79.9 / 53.2 / 760 |
+
+- Same game off against on, Abandon, full world hash, 680 tics (`sm430`). Sunder in check mode (`sim_itersnap 2`,
+  `sm437`): GREEN, 0 mismatches. A Sunder off-run on the `_c` list was refused twice by the boot test's engine lock
+  (another lane's test running), so the Sunder columns are a morning run against a later one: read the iterator and
+  Pink rows, not the loop mean, as the effect.
+- The snapshot removes about 40% of the time spent inside the iterator, and that is all there was to take there: a
+  Pink walk costs about 175 ns a step, of which the iterator was about 37. The rest is the script (a native
+  `Distance2D` call, a cast and the loop for each of 39,000 actors, 113 times in one tic).

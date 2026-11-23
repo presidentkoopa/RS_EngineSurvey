@@ -1,0 +1,156 @@
+﻿load order from E:\DOOMWork\_buildtemp\claude_bridge\SIM_ABANDON_1123_c.zdl: 57 file(s)
+  D:/SteamLibrary/steamapps/Common/DooM VR/__Levels/_Mapsets_/Abandon_17maps.wad
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/0.99-LegenDoom_3.0.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.00_brutal22test6.pk3
+  E:/DOOMWork/_buildtemp/claude_bridge/work/BD22_VoxelPack_REMA_1109p.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.1a-Brutal_Difficulties.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.2-BD22_VR-Reloaded_2.0.5h.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.3-XMVE_MonsterExpansion1.3.1-BD22.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.4-XMVE_MonsterExpansion_Doom2.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.5-XMVE_MonsterExpansion_TUD.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/1.6-XMVE_MonstersNoDropGuns-BD22.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/2.1-Enemies_LegionOfBones_v1.05-randomizer.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/2.1-Enemies_LegionOfBones_v1.05.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/2.3-Enemies_NoMoreHitscans-main.zip
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/2.5-Enemies_SpawnAdjuster_SliderBar10.5.zip
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.01-Environmental_BloomBoost.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.02-Environmental_Subtlelights.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.03-Environmental_LiveReverb.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.04-Environmental_MTOLiquids.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.05-Environmental_NiceWallBlood.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.06-Environmental_OpenWindows.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.07-Environmental_UA_AmbientDecorations.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.08-Environmental_UA_CosmoAmbienceScript edited.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/3.09-Environmental_UA_UniversalAmbience.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/4.02-Gameplay_RegenShield.zip
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/4.03-Gameplay_ShotgunSpawner.wad
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/4.04-Gameplay_GunBonsai-0.10.6.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Accessibility.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Abyss.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Black.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Blue.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Brown.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Cyan.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_FireBlu.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Gray.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Green.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Purple.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Red.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_White.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_BDXMTiers_Yellow.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_DistanceGrab.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_FnF.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_GlowInTheDark.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Grapple.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Graveyard.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Grenade.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_GunBonsaiVR.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_LaserSight.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Melee.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Miniboss.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Saber.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Score.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_ShieldSaw.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_SlowMo.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_TacticalRig.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_VisualRewards.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Wheel.pk3
+  D:/SteamLibrary/steamapps/Common/DooM VR/__CurrentRotationDONOTDELETE/RSQ_Whip.pk3
+guarding: C:\Users\Command\Documents\My Games\DoomXR\doomxr.ini; E:\DOOMWork\UZDXREMA\build-dxr\RelWithDebInfo\log-debug.txt; E:\DOOMWork\UZDXREMA\build-dxr\RelWithDebInfo\doomxr-log.txt
+guarding the owner's rs_profiles (stashed)
+exec: E:\DOOMWork\_buildtemp\claude_bridge\sim_m14_dense1123a.cfg
+tics: run ends at tic 700 (20 s of play)
+extra args: +vid_vsync 0 +vid_maxfps 0 +cl_capfps 0 +perf_track 1 -rngseed 1113 +sim_profile 1 +sim_profile_interval 0 +sim_idleinventory 1 +sim_handlerfind 1 +sim_radiusgivecache 1 +sim_tickentry 1 +vm_lightcalls 1 +vm_devirtualize 1 +vm_jit_lightframe 1 +vm_directnatives 1 +sim_spawnevents 1 +vm_jit_stringframe 1 +sim_resetclock 1 +sim_parallelreset 1 +sim_usedslots 1 +sim_denseclock 1 +sim_densereset 1 +sim_denselights 1 +sim_denserealtime 1 +sim_parallelscan 1 +sim_itersnap 1 +vr_synclog E:/DOOMWork/_buildtemp/claude_bridge/work/simsync1123i_abandon_1.txt
+lock: held (one engine at a time on this machine)
+exe 11-23 09:20 (E:\DOOMWork\UZDXREMA_sim\build-dxr\RelWithDebInfo\doomxr_sim1123i.exe)  ->  C:\Users\Command\AppData\Local\Temp\doomxr_boottest\run_20261123-094811\boot_20261123-094811.txt
+lock: released
+restored the owner's rs_profiles
+81 s, killed True, boot marker reached, exit n/a
+GREEN: level ran to the BOOT marker.
+--- key lines ---
+  Selecting Vulkan backend...
+  script parsing took 10683.27 ms
+  ParticleDefinitions: 0 textured definitions with 0 flipbook frames (the renderer lays them into its particle atlases and builds them on its next frames; Vulkan only)
+  ParticleDefinitions: 0 definitions name a mesh (drawn as instanced 3D meshes while r_meshparticles is on; Vulkan only)
+  ParticleDefinitions: 0 definitions are debris (restitution: simulated in the debris pool while r_debris is on; Vulkan only)
+  ParticleDefinitions: 0 debris definitions name a landing sound (landsound: one sound per group where it lands, while r_debris_sounds is on; Vulkan only)
+  ParticleDefinitions: 0 definitions throw a light (light: an effect light per particle that carries one, while r_effectlights is on; Vulkan only)
+  EmissiveVolumes: 0 definitions from 0 VOLUMEDEFS lumps -- 0 refused, 0 replaced by a later one (drawn on Vulkan only)
+  I_StartupOpenXR
+  Vulkan diagnostics: driver fault report ON, GPU checkpoints ON, robust buffer access off
+  Vulkan textures: compressed DDS upload ON
+  Vulkan light shadows: ray traced off
+  Vulkan device: NVIDIA GeForce RTX 3080 Ti
+  Vulkan device type: discrete gpu
+  Vulkan version: 1.4.357 (api) 621.4.0 (driver)
+  GpuParticles: buffer created -- ring 65536 records x 80 B = 5242880 bytes, quads 393216 vertices x 8 B = 3145728 bytes
+  GpuParticles: effect shader compiled for 2 passes
+  GpuParticles: scene depth variants compiled -- r_gpuparticles_soft can soften edges
+  BOOT: level running (35 tics)
+  BOOT: barrel blast set off
+  BOOT: ok (700 tics, 20 s of play)
+--- errors / warnings after the script compile ---
+  [BONSAIRC] Registered TFLV_Upgrade_BurningTerror
+  [BONSAIRC] Disabling upgrades: TFLV_Upgrade_RapidFire TFLV_Upgrade_IncendiaryShots TFLV_Upgrade_BurningTerror TFLV_Upgrade_Conflagration TFLV_Upgrade_InfernalKiln TFLV_Upgrade_PoisonShots TFLV_Upgrade_Weakness TFLV_Upgrade_Putrefaction TFLV_Upgrade_Hallucinogens TFLV_Upgrade_CorrosiveShots TFLV_Upgrade_AcidSpray TFLV_Upgrade_ConcentratedAcid TFLV_Upgrade_Embrittlement TFLV_Upgrade_ShockingInscription TFLV_Upgrade_Revivification TFLV_Upgrade_ChainLightning TFLV_Upgrade_Thunderbolt TFLV_Upgrade_ElementalBeam TFLV_Upgrade_ElementalBlast TFLV_Upgrade_ElementalWave
+  [BONSAIRC] Disabling upgrades: TFLV_Upgrade_RapidFire TFLV_Upgrade_IncendiaryShots TFLV_Upgrade_BurningTerror TFLV_Upgrade_Conflagration TFLV_Upgrade_InfernalKiln TFLV_Upgrade_PoisonShots TFLV_Upgrade_Weakness TFLV_Upgrade_Putrefaction TFLV_Upgrade_Hallucinogens TFLV_Upgrade_CorrosiveShots TFLV_Upgrade_AcidSpray TFLV_Upgrade_ConcentratedAcid TFLV_Upgrade_Embrittlement TFLV_Upgrade_ShockingInscription TFLV_Upgrade_Revivification TFLV_Upgrade_ChainLightning TFLV_Upgrade_Thunderbolt TFLV_Upgrade_ElementalBeam TFLV_Upgrade_ElementalBlast TFLV_Upgrade_ElementalWave
+  [BONSAIRC] Disabling upgrades: TFLV_Upgrade_RapidFire TFLV_Upgrade_IncendiaryShots TFLV_Upgrade_BurningTerror TFLV_Upgrade_Conflagration TFLV_Upgrade_InfernalKiln TFLV_Upgrade_PoisonShots TFLV_Upgrade_Weakness TFLV_Upgrade_Putrefaction TFLV_Upgrade_Hallucinogens TFLV_Upgrade_CorrosiveShots TFLV_Upgrade_AcidSpray TFLV_Upgrade_ConcentratedAcid TFLV_Upgrade_Embrittlement TFLV_Upgrade_ShockingInscription TFLV_Upgrade_Revivification TFLV_Upgrade_ChainLightning TFLV_Upgrade_Thunderbolt TFLV_Upgrade_ElementalBeam TFLV_Upgrade_ElementalBlast TFLV_Upgrade_ElementalWave
+  [BONSAIRC] Disabling upgrades: TFLV_Upgrade_RapidFire TFLV_Upgrade_IncendiaryShots TFLV_Upgrade_BurningTerror TFLV_Upgrade_Conflagration TFLV_Upgrade_InfernalKiln TFLV_Upgrade_PoisonShots TFLV_Upgrade_Weakness TFLV_Upgrade_Putrefaction TFLV_Upgrade_Hallucinogens TFLV_Upgrade_CorrosiveShots TFLV_Upgrade_AcidSpray TFLV_Upgrade_ConcentratedAcid TFLV_Upgrade_Embrittlement TFLV_Upgrade_ShockingInscription TFLV_Upgrade_Revivification TFLV_Upgrade_ChainLightning TFLV_Upgrade_Thunderbolt TFLV_Upgrade_ElementalBeam TFLV_Upgrade_ElementalBlast TFLV_Upgrade_ElementalWave
+  Brightmap 'Sprites/Brightmaps/RocketGuy/BMMPOSF1.png' not found in texture 'MPOSF1'
+  Brightmap 'Sprites/Brightmaps/RocketGuy/BMMPOSF2.png' not found in texture 'MPOSF2'
+  Brightmap 'Sprites/Brightmaps/RocketGuy/BMMPOSF3.png' not found in texture 'MPOSF3'
+  Brightmap 'Sprites/Brightmaps/RocketGuy/BMMPOSF4.png' not found in texture 'MPOSF4'
+  Brightmap 'Sprites/Brightmaps/RocketGuy/BMMPOSF5.png' not found in texture 'MPOSF5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1A1.png' not found in texture 'BRUSA1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1A2.png' not found in texture 'BRUSA2A8'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1A3.png' not found in texture 'BRUSA3A7'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1A4.png' not found in texture 'BRUSA4A6'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1A5.png' not found in texture 'BRUSA5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1B1.png' not found in texture 'BRUSB1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1B2.png' not found in texture 'BRUSB2B8'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1B3.png' not found in texture 'BRUSB3B7'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1B4.png' not found in texture 'BRUSB4B6'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1B5.png' not found in texture 'BRUSB5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1C1.png' not found in texture 'BRUSC1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1C2.png' not found in texture 'BRUSC2C8'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1C3.png' not found in texture 'BRUSC3C7'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1C4.png' not found in texture 'BRUSC4C6'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1C5.png' not found in texture 'BRUSC5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1D1.png' not found in texture 'BRUSD1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1D2.png' not found in texture 'BRUSD2D8'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1D3.png' not found in texture 'BRUSD3D7'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1D4.png' not found in texture 'BRUSD4D6'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1D5.png' not found in texture 'BRUSD5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E1.png' not found in texture 'BRUSE1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E2.png' not found in texture 'BRUSE2'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E3.png' not found in texture 'BRUSE3'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E4.png' not found in texture 'BRUSE4'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E5.png' not found in texture 'BRUSE5'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E6.png' not found in texture 'BRUSE6'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E7.png' not found in texture 'BRUSE7'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1E8.png' not found in texture 'BRUSE8'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1F1.png' not found in texture 'BRUSF1'
+  Brightmap 'Sprites/Brightmaps/BruiserDemon/BMBRS1F2.png' not found in texture 'BRUSF2'
+--- tail 20 ---
+  simprof sim: spawn   0.0005      6.629           6.510        0.07  Brutal_BloodSpot
+  simprof sim: spawn   0.0004      6.067           5.983        0.07  SuperGoreMistTiny
+  simprof sim: spawn   0.0004      5.791           5.747        0.07  MaggotSpawner
+  simprof sim: spawn   0.0003      8.500           8.307        0.04  RS_ScoreCritShot
+  simprof client: total runs=300  loop mean=0.886 median=0.857 p95=1.365 max=2.150 ms/run  classes=0.362 (40.9%)  outside=0.524  thinkers=0/run  class rows=1
+  simprof client: spawn total spawns=0.0/run  post=0.000 ms/run (events=0.000 native=0.000)  loop 0.886 = classes 0.362 + post 0.000 + rest 0.524
+  simprof client:     ms/run     us/call   calls/run  class
+  simprof client:     0.3624       0.214      1697.0  InternalDynamicLight
+  simprof client: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives hdl finds  find ms    ti ms  ti skipped rg calls    rg ms rg gifts  gift ms  class
+  simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  InternalDynamicLight
+  simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  (all classes' Tick)
+  simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  (whole loop)
+  sim_resetstats: reset 2.913 ms/tic over 300 tics  parallel=1 dense=1  job threads=15  dense mismatches=0  usedslots mismatches=0
+  sim_resetstats: parts  list 0.001  copy 2.339  models 0.573 ms/tic   actors 24914/tic  with model data 2258/tic  copied by the calling thread 1597/tic  usedslots=1
+  sim_densestats: lights pass 0.522 ms/run over 302 runs (finding 0.436)  actors with work 145.1/run of 24948  denselights=1 parallelscan=1
+  sim_densestats: real-time pass 0.000 ms/run over 0 runs (finding 0.000)  actors found 0.0/run
+  sim_densestats: select mismatches=0
+  sim_densestats: script iterator steps 8667100, read from list snapshots 8446488 (97.5%)  itersnap mismatches=0
+  vmstats: tics=302  script=36.062 ms/tic (max tic 297.050)  entries from native=71537/tic  full frames=151/tic  (script entered from native code during a game tic, with the natives it calls)
+  BOOT: ok (700 tics, 20 s of play)
+full output: C:\Users\Command\AppData\Local\Temp\doomxr_boottest\run_20261123-094811\boot_20261123-094811.txt
+
+EXIT=1

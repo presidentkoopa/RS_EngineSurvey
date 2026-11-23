@@ -1,0 +1,5 @@
+﻿a: 1360 lines, last maptime 680   E:\DOOMWork\_buildtemp\claude_bridge\work\simsync1123i_abandon_0.txt
+b: 1360 lines, last maptime 680   E:\DOOMWork\_buildtemp\claude_bridge\work\simsync1123i_abandon_1.txt
+IDENTICAL through maptime 680 (1360 lines, 680 tics)
+
+EXIT=0
