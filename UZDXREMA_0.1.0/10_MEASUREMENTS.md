@@ -558,3 +558,37 @@ Universal Entropy copy). Raw: `measurements_raw/sm182..sm236_m10_*.txt`. All run
 - **What is left of spawn events** (12.8 ms a tic on Sunder) is the 45 handlers' own script: 2,742 spawns a tic, each
   offered to every handler, most of which test the actor and return. The engine cannot skip a handler without knowing
   what its script would do (F-MON-1's declared filters need the mod to declare them).
+
+## 16. The owner's CURRENT mod list, re-measured (2026-11-23, `sm277`-`sm288`); the scratch change; the job system
+
+**The mod list changed between 11-16 and 11-22** (risk R18 of the gameplan: re-measure before trusting a number).
+Against the list of §14/§15: `1.2_BD22_VR-Reloaded_2.0.4x` became `1.2-BD22_VR-Reloaded_2.0.5d`; in: the Legion of
+Bones randomizer and the twelve `RSQ_BDXMTiers_*` files; out: `4.01-Gameplay_CriticalHitsAmdHeadshots_mk-crits` and
+Universal Entropy. The old load orders no longer load (the 2.0.4x file is gone). New ones: `SIM_SUNDER_1123_a.zdl`,
+`SIM_ABANDON_1123_a.zdl` (58 files, copied from the render lane's `RENDER_ABANDON_1122_ownera.zdl`, which
+`make_owner_zdl.py` read from his rotation folder). **Every mod-list number before this section is on the old list.**
+
+Flags as §15; cfg `sim_m10_vm1116f.cfg`; builds `doomxr_sim1116g.exe` (before the job system and the scratch change)
+and `doomxr_sim1122b.exe` (main dc50637). Raw: `measurements_raw/sm27*_m12_*`, `sm28*_m12_*`.
+
+| run | level | switches | loop mean (median, p95) | script | spawn events | slow-path natives | full frames |
+|---|---|---|---|---|---|---|---|
+| g, `sm277`, `sm279` | Sunder MAP15 | ten on | 66.64 (44.6, 112.9), 69.53 (44.7, 120.4) | 52.2, 54.6 | 9.1, 8.9 | 11,680 | 151 |
+| b, `sm278`, `sm280` | Sunder MAP15 | ten on | 66.34 (44.1, 113.2), 65.61 (44.4, 110.5) | 51.9, 51.3 | 8.7, 8.7 | 11,680 | 151 |
+| b, `sm283` | Sunder MAP15 | seven of 11-16 off | 70.79 (46.8, 126.0) | 55.3 | 13.5 | 50,814 | 38,552 |
+| g, `sm281` | Abandon MAP13 | ten on | 38.78 (29.3, 62.0) | 29.2 | 5.8 | 6,574 | 150 |
+| b, `sm282` | Abandon MAP13 | ten on | 39.00 (29.9, 61.5) | 29.2 | 5.9 | 6,574 | 150 |
+| b, `sm284` | Abandon MAP13 | seven of 11-16 off | 47.83 (34.8, 78.6) | 36.1 | 10.1 | 32,842 | 25,479 |
+
+- **F-MT-1 scratch change (g against b): no cost, same game.** Sunder 68.1 against 66.0 as the mean of two runs
+  each (inside the spread), Abandon 38.8 against 39.0; `sim_synccmp2.py ... nohash` IDENTICAL through 680 on both
+  levels (`sm285`, `sm286`), and on against off within build b (`sm287`, `sm288`).
+- **The seven switches of 11-16 on the current list:** Sunder 70.8 -> 66.0 (-4.8), Abandon 47.8 -> 39.0 (-8.8, 18 %).
+- **Where the current list's 66 ms on Sunder goes** (`sm278`, 39,168 thinkers a tic, 274 classes):
+  mk-champions about 28 (`champion_CyanController` 7.6, `champion_PinkController` 7.1 as a mean, `champion_Icon`
+  4.8, `champion_Leaves` 2.1, the `champion_Aggro*` four 2.1, the other controllers about 4); the Balrog aura 8.9
+  plus its gifts about 2.8; Legion of Bones monsters about 10; spawn events 8.7 (1,995 spawns a tic); everything
+  else about 6. Script is 74 % of the loop. The loop's maximum is 552 ms (the Pink controllers' scan, every 70th
+  tic). `RSQTHP_*` and `Shifter` are not in this list at all.
+- **Job system on the owner's PC** (`sm260`-`sm266`): `job_selftest 1000 20000` identical hash at 8, 12, 15 and 16
+  threads (and equal to the Linux rig's); the map alone x5.5 at 20,000 elements and x8.3 at 400,000 on 16 threads.

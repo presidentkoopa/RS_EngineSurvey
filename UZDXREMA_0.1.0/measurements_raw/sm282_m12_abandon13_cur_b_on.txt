@@ -1,0 +1,166 @@
+VM: JIT built=yes vm_jit=1 vm_jit_aot=1  compiled=129705 interpreted=2 not yet compiled=0  (native functions=2189)
+VM: vm_devirtualize=1  virtual call sites=2100  devirtualised=673 (to natives with a direct entry=1, to other natives=16)
+simprof sim: total runs=300  loop mean=38.996 median=29.946 p95=61.479 max=215.125 ms/run  classes=30.944 (79.4%)  outside=8.052  thinkers=30748/run  class rows=269
+simprof sim: spawn total spawns=1318.5/run  post=6.048 ms/run (events=5.887 native=0.161)  loop 38.996 = classes 30.944 + post 6.048 + rest 2.004
+simprof sim: script inside the loop=27.233 ms/run over 300 runs with vm_stats on (69.8% of the loop's mean; script entered from native code, with the natives it calls)
+simprof sim:     ms/run     us/call   calls/run  class
+simprof sim:     3.6199      52.462        69.0  champion_CyanController
+simprof sim:     3.3989      84.973        40.0  BalrogFireSpawner
+simprof sim:     3.0832      42.823        72.0  champion_PinkController
+simprof sim:     2.9549       3.346       883.0  champion_Icon
+simprof sim:     1.3270       1.717       773.0  SkeletonImp
+simprof sim:     1.2901       2.337       552.0  champion_Leaves
+simprof sim:     0.9790       2.002       489.0  SkeletonDemon
+simprof sim:     0.8811       0.932       945.0  PhantomRevenant
+simprof sim:     0.8798      12.751        69.0  champion_IndigoController
+simprof sim:     0.6777       1.925       352.0  SkullZombie
+simprof sim:     0.6450       9.923        65.0  champion_DarkGreenController
+simprof sim:     0.6299       0.363      1737.0  IA_Sound
+simprof sim:     0.5921       2.741       216.0  SlayerKnight
+simprof sim:     0.5297       5.885        90.0  CacoLich
+simprof sim:     0.4702       1.903       247.0  champion_AggroVisual
+simprof sim:     0.4615       4.234       109.0  BalrogBuffEffectSpawner
+simprof sim:     0.4590       0.929       494.0  champion_AggroPower
+simprof sim:     0.4399       1.781       247.0  champion_AggroEffect
+simprof sim:     0.4120       1.668       247.0  champion_AggroGiver
+simprof sim:     0.3872       0.346      1118.0  ShortTorch_RedFlames
+simprof sim:     0.3863       0.346      1118.0  ShortTorch_Red
+simprof sim:     0.3424       0.306      1118.0  ShortTorch_RedCOre
+simprof sim:     0.3365       1.930       174.4  PowerBalrogFireBuffGiver
+simprof sim:     0.3360      30.547        11.0  champion_SilverController
+simprof sim:     0.3335       1.913       174.4  BalrogFireGiver
+simprof sim:     0.3257       1.149       283.4  PowerBalrogFireBuff
+simprof sim:     0.3253       0.291      1118.0  ShortTorchBall
+simprof sim:     0.2958       0.331       894.0  BalrogFire
+simprof sim:     0.2596       4.056        64.0  champion_WhiteController
+simprof sim:     0.2152       0.066      3252.0  RS_ScoreCritController
+simprof sim:     0.2101       0.065      3252.0  RS_ScoreCritBrain
+simprof sim:     0.2049       1.474       139.0  Abhorrent
+simprof sim:     0.2027       0.519       391.0  CandlestickVOX
+simprof sim:     0.1714       4.285        40.0  Balrog
+simprof sim:     0.1639     163.879         1.0  ACSThinker
+simprof sim:     0.1356       0.506       268.0  AmmoRocketBox
+simprof sim:     0.1349       0.040      3392.0  Scroller
+simprof sim:     0.1223       0.476       257.0  AmmoCellPack
+simprof sim:     0.1116       0.307       364.0  TorchTree2
+simprof sim:     0.0996       1.660        60.0  BootSmearerRed
+simprof sim: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives hdl finds  find ms    ti ms  ti skipped rg calls    rg ms rg gifts  gift ms  class
+simprof sim: count       0.0    2498.2    0.939       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_CyanController
+simprof sim: count     533.2     188.1    0.103      10.0    0.029      20.0      50.0        0.0        0.0  104729.6       0.0    0.000    0.000         0.0    300.0    3.173    174.4    1.362  BalrogFireSpawner
+simprof sim: count     262.0      87.0    0.081       0.0    0.000       0.0       0.0        0.0    24489.9     129.0       0.0    0.000    0.583      4398.5      1.0    0.828     87.0    0.724  champion_PinkController
+simprof sim: count       0.0       0.0    0.000     883.0    1.420     883.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_Icon
+simprof sim: count       0.0      42.9    0.002     501.9    0.416     501.9      77.8        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  SkeletonImp
+simprof sim: count       0.0       0.0    0.000     552.0    0.513     552.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_Leaves
+simprof sim: count       0.0      45.0    0.094     331.5    0.326     331.5      49.4        0.0        0.0       0.0       0.0    0.000    0.000       479.9      0.0    0.000      0.0    0.000  SkeletonDemon
+simprof sim: count       0.0      81.3    0.004      93.0    0.109      93.0      95.6        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  PhantomRevenant
+simprof sim: count     270.0      90.0    0.053       0.0    0.000       0.0       0.0        0.0        0.0     145.0       0.0    0.000    0.000         0.0      1.0    0.814     90.0    0.736  champion_IndigoController
+simprof sim: count       0.0      33.7    0.001     238.0    0.242     238.0      35.5        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  SkullZombie
+simprof sim: count     150.0      50.0    0.057       0.0    0.000       0.0       0.0        0.0        0.0     143.0       0.0    0.000    0.000         0.0      1.0    0.572     50.0    0.480  champion_DarkGreenController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  IA_Sound
+simprof sim: count       0.0      19.0    0.001     128.0    0.339     128.0      21.6        0.0        0.0       0.0       0.0    0.000    0.000        95.2      0.0    0.000      0.0    0.000  SlayerKnight
+simprof sim: count       0.0      90.0    0.363      58.0    0.039      58.0      90.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  CacoLich
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_AggroVisual
+simprof sim: count      27.3       0.0    0.000      27.3    0.081      54.5     190.8        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  BalrogBuffEffectSpawner
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_AggroPower
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_AggroEffect
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_AggroGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  ShortTorch_RedFlames
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  ShortTorch_Red
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  ShortTorch_RedCOre
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  PowerBalrogFireBuffGiver
+simprof sim: count       0.7       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  champion_SilverController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  BalrogFireGiver
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  PowerBalrogFireBuff
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  ShortTorchBall
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  BalrogFire
+simprof sim: count      60.0      20.0    0.016       0.0    0.000       0.0       0.0        0.0        0.0      44.0       0.0    0.000    0.000         0.0      1.0    0.197     20.0    0.170  champion_WhiteController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  RS_ScoreCritController
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  RS_ScoreCritBrain
+simprof sim: count       0.0       9.1    0.001      39.1    0.075      39.1       9.3        0.0        0.0       0.0       0.0    0.000    0.000       145.5      0.0    0.000      0.0    0.000  Abhorrent
+simprof sim: count       6.0      77.0    0.006       0.0    0.000       0.0      82.9        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  CandlestickVOX
+simprof sim: count       0.0       8.5    0.001      16.0    0.066      16.0      10.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  Balrog
+simprof sim: count       0.6       0.0    0.000       0.5    0.000       0.5       0.4        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  ACSThinker
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  AmmoRocketBox
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  Scroller
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  AmmoCellPack
+simprof sim: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  TorchTree2
+simprof sim: count       0.0     120.0    0.046       0.0    0.000       0.0     120.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  BootSmearerRed
+simprof sim: count    1321.0    3491.4    1.778    2967.6    3.782    3004.8     953.9        0.0    24489.9  105345.6       6.7    0.001    0.583      5119.0    307.5    5.655    428.9    3.513  (all classes' Tick)
+simprof sim: count    1321.4    3491.4    1.778    2967.6    3.782    3004.8     953.9        0.0    24489.9  105345.6       8.0    0.001    0.583      5119.0    307.5    5.655    428.9    3.513  (whole loop)
+simprof sim: spawn  ms/run   us/spawn  event us/spawn  spawns/run  class
+simprof sim: spawn   1.1416      4.622           4.495      247.00  champion_AggroPower
+simprof sim: spawn   1.0210      4.134           4.029      247.00  champion_AggroEffect
+simprof sim: spawn   1.0068      4.076           3.976      247.00  champion_AggroGiver
+simprof sim: spawn   0.9133      5.237           5.101      174.39  PowerBalrogFireBuffGiver
+simprof sim: spawn   0.8542      4.898           4.766      174.39  PowerBalrogFireBuff
+simprof sim: spawn   0.8351      4.789           4.663      174.39  BalrogFireGiver
+simprof sim: spawn   0.1590      4.269           4.154       37.25  BalrogFire
+simprof sim: spawn   0.0613      8.150           7.930        7.52  champion_MidasTouch1
+simprof sim: spawn   0.0191      4.787           4.631        4.00  YellowFlareSmall22Long
+simprof sim: spawn   0.0114      4.963           4.801        2.30  CandleFlame
+simprof sim: spawn   0.0069     15.148          15.022        0.45  DistanceCheckerCeiling
+simprof sim: spawn   0.0056      7.983           5.100        0.70  champion_SilverMagnetism
+simprof sim: spawn   0.0043      6.132           5.336        0.69  champion_Sparkle
+simprof sim: spawn   0.0024      4.813           4.710        0.50  CybersHitBox
+simprof sim: spawn   0.0011      4.288           4.182        0.25  LDWeaponNameAlternation
+simprof sim: spawn   0.0010     17.466          17.372        0.06  SpawnedMaggotDec
+simprof sim: spawn   0.0007      9.494           9.369        0.07  Brutal_FlyingBlood
+simprof sim: spawn   0.0006      8.135           8.009        0.07  BloodMist22Small
+simprof sim: spawn   0.0005      7.495           7.320        0.07  ArterialBlood22Small
+simprof sim: spawn   0.0005      6.864           6.633        0.07  Brutal_Blood
+simprof sim: spawn   0.0004      6.047           5.918        0.07  WaterBloodCHecker
+simprof sim: spawn   0.0004      5.083           4.992        0.07  SuperGoreMistTiny
+simprof sim: spawn   0.0003      4.741           4.619        0.07  Brutal_BloodSpot
+simprof sim: spawn   0.0003      4.858           4.668        0.07  MaggotSpawner
+simprof sim: spawn   0.0003      6.863           6.708        0.04  RS_ScoreCritShot
+simprof client: total runs=300  loop mean=2.409 median=2.307 p95=3.587 max=6.688 ms/run  classes=0.280 (11.6%)  outside=2.130  thinkers=0/run  class rows=1
+simprof client: spawn total spawns=0.0/run  post=0.000 ms/run (events=0.000 native=0.000)  loop 2.409 = classes 0.280 + post 0.000 + rest 2.130
+simprof client:     ms/run     us/call   calls/run  class
+simprof client:     0.2795       0.165      1697.0  InternalDynamicLight
+simprof client: count    allocs    sights sight ms  trymoves  move ms  checkpos   actions  bti steps   ti steps  radgives hdl finds  find ms    ti ms  ti skipped rg calls    rg ms rg gifts  gift ms  class
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  InternalDynamicLight
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000         0.0      0.0    0.000      0.0    0.000  (all classes' Tick)
+simprof client: count       0.0       0.0    0.000       0.0    0.000       0.0       0.0        0.0        0.0       0.0       0.0    0.000    0.000      4519.0      0.0    0.000      0.0    0.000  (whole loop)
+vmstats: tics=301  script=29.201 ms/tic (max tic 203.632)  entries from native=70299/tic  full frames=150/tic  (script entered from native code during a game tic, with the natives it calls)
+vmstats natives: tics=302  natives=2189 (1394 have a direct entry)  slow path=6574 calls/tic in 44 natives  direct=0 calls/tic in 0 natives  (direct calls not counted: start with +vm_stats_direct 1)
+vmstats slow       1513.9 /tic   23.0%  direct entry=no  virtual=no   Actor.A_Warp [Native]
+vmstats slow       1271.0 /tic   19.3%  direct entry=no  virtual=yes  Actor.BeginPlay [Native]
+vmstats slow        887.9 /tic   13.5%  direct entry=no  virtual=no   Actor.Spawn [Native]
+vmstats slow        850.8 /tic   12.9%  direct entry=no  virtual=no   Actor.A_SpawnParticle [Native]
+vmstats slow        553.8 /tic    8.4%  direct entry=no  virtual=no   Actor.A_SetAngle [Native]
+vmstats slow        469.9 /tic    7.1%  direct entry=no  virtual=no   Actor.A_Look [Native]
+vmstats slow        305.5 /tic    4.6%  direct entry=no  virtual=no   Actor.A_RadiusGive [Native]
+vmstats slow        279.0 /tic    4.2%  direct entry=no  virtual=no   Actor.ResolveState [Native]
+vmstats slow         79.3 /tic    1.2%  direct entry=no  virtual=no   Actor.CheckIfSeen [Native]
+vmstats slow         75.2 /tic    1.1%  direct entry=no  virtual=no   Actor.HitWater [Native]
+vmstats slow         63.2 /tic    1.0%  direct entry=no  virtual=no   StringStruct.Format [Native]
+vmstats slow         37.0 /tic    0.6%  direct entry=no  virtual=no   Actor.GetCVar [Native]
+vmstats slow         34.4 /tic    0.5%  direct entry=no  virtual=no   Actor.A_FadeOut [Native]
+vmstats slow         34.1 /tic    0.5%  direct entry=no  virtual=no   PlayerInfo.FindPSprite [Native]
+vmstats slow         27.1 /tic    0.4%  direct entry=no  virtual=no   Actor.CheckFlag [Native]
+vmstats slow         20.0 /tic    0.3%  direct entry=no  virtual=no   Actor.A_FadeIn [Native]
+vmstats slow         15.1 /tic    0.2%  direct entry=no  virtual=no   Actor.A_SetRoll [Native]
+vmstats slow         12.0 /tic    0.2%  direct entry=no  virtual=no   Actor.A_SetUserVar [Native]
+vmstats slow         10.4 /tic    0.2%  direct entry=no  virtual=no   Actor.A_SetTics [Native]
+vmstats slow          6.8 /tic    0.1%  direct entry=no  virtual=no   Actor.A_Jump [Native]
+vmstats slow          5.0 /tic    0.1%  direct entry=no  virtual=no   PlayerInfo.GetPSprite [Native]
+vmstats slow          3.0 /tic    0.0%  direct entry=no  virtual=no   PlayerInfo.GetWBobSpeed [Native]
+vmstats slow          2.0 /tic    0.0%  direct entry=no  virtual=no   PlayerPawn.CheckWeaponButtons [Native]
+vmstats slow          1.5 /tic    0.0%  direct entry=no  virtual=no   Actor.CheckPortalTransition [Native]
+vmstats slow          1.5 /tic    0.0%  direct entry=no  virtual=no   Actor.UpdateWaterLevel [Native]
+vmstats slow          1.4 /tic    0.0%  direct entry=no  virtual=no   CVar.GetString [Native]
+vmstats slow          1.4 /tic    0.0%  direct entry=no  virtual=no   Actor.CheckNoDelay [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   Actor.A_SetRenderStyle [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   Actor.A_StopSound [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   Actor.OverlayID [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   CVar.GetRealType [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   CVar.SetInt [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   PSprite.SetState [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   PlayerInfo.GetStillBob [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   PlayerPawn.CheckEnvironment [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   PlayerPawn.CheckMusicChange [Native]
+vmstats slow          1.0 /tic    0.0%  direct entry=no  virtual=no   PlayerPawn.CheckUse [Native]
+vmstats slow          0.4 /tic    0.0%  direct entry=no  virtual=no   Actor.A_SpawnProjectile [Native]
+vmstats slow          0.3 /tic    0.0%  direct entry=no  virtual=no   Actor.ExplodeMissile [Native]
+vmstats slow          0.2 /tic    0.0%  direct entry=no  virtual=no   Actor.A_PlaySound [Native]
+vmstats frames: tics=303  full frames=0/tic in 0 functions  (not counted per function: set vm_stats_frames 1 before vm_stats 1)
