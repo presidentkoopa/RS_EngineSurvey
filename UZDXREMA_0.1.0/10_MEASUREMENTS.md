@@ -592,3 +592,25 @@ and `doomxr_sim1122b.exe` (main dc50637). Raw: `measurements_raw/sm27*_m12_*`, `
   tic). `RSQTHP_*` and `Shifter` are not in this list at all.
 - **Job system on the owner's PC** (`sm260`-`sm266`): `job_selftest 1000 20000` identical hash at 8, 12, 15 and 16
   threads (and equal to the Linux rig's); the map alone x5.5 at 20,000 elements and x8.3 at 400,000 on 16 threads.
+
+## 17. The per-tic reset: dense actor array, job system, used model slots (P9.9a, F-MT-3, F-SIM-5; 2026-11-23, `sm299`-`sm340`)
+
+Owner's PC, current mod list, the ten earlier switches on, `sim_resetclock 1`, 300 tics a line (`sim_resetstats`).
+Exes `doomxr_sim1123b.exe` to `e`. Sunder MAP15: 35,522 actors a tic, 2,154 with model data. Abandon MAP13: 24,911 / 2,258.
+
+| reset, ms a tic | Sunder | Abandon |
+|---|---|---|
+| stock walk | 6.39, 6.79 | 5.01 |
+| dense array, one thread (`sim_densereset 1`) | 6.30, 6.43 (copy 5.60, models 0.83) | — |
+| dense + 15 threads (`+sim_parallelreset 1`) | 4.21, 4.18, 4.21 (copy 3.20, models 1.00) | 3.24 |
+| dense + 15 threads + `sim_usedslots 1` | 3.58 (copy 3.35, models 0.23) | 2.39 (copy 2.23, models 0.16) |
+| the same after the job system wakes all workers at once | 3.72 (copy 3.48) | 2.42 (copy 2.26) |
+| verify mode (`sim_densereset 2`): mismatches | 0 | 0 |
+
+- Same game: `sim_synccmp` IDENTICAL through 680 tics, off against on, both levels (`sm320`-`sm322`, `sm333`, `sm334`, `sm339`, `sm340`).
+- The walk is not the cost: the dense array on one thread gains 0.1 to 0.4 ms.
+- The calling thread copies 1,600 to 2,300 actors a tic, the 15 workers the rest, and the copy still takes 3.3 ms
+  against 5.6 on one thread. Waking all workers at once changes nothing. Both levels move about 100 MB (Sunder) and
+  70 MB (Abandon) of lines in 3.4 and 2.3 ms, the same rate: [I] the pass is bound by memory speed, which is what
+  F-DOD-1 (hot prefix) addresses. Not yet proven; a run at `job_threads` 3 and 7 would settle it.
+
