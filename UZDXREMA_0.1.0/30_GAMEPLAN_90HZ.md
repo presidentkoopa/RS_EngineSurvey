@@ -6,6 +6,36 @@ Inputs: the seven fork-delta reports `work/fork/A_sim.md` [A], `B_modlist.md` [B
 measurements `10_MEASUREMENTS.md` [M]; `OWNER_DECISIONS.md` (binding); `CLAUDE.md`, `ROADMAP.md`. Row IDs in brackets
 (e.g. [A P9.9]) point at the report row; the implementer's checklist is `31_FORK_DELTA_CHECKLIST.md`.
 
+## OWNER CORRECTION 2026-11-24: NO MOD WORK. READ THIS BEFORE ANY OTHER SECTION.
+
+**The engine carries the mods as they are.** The load order is community work made over decades (LegenDoom,
+mk-champions, Universal Ambience, Gun Bonsai, Legion of Bones and the rest) plus the owner's RSQ mods. Nobody
+rewrites it, and an engine that needs it rewritten helps no one. The owner asked for engine work; this plan as first
+written booked its largest step on changing mods, and five sessions kept bringing mod changes back to him.
+
+What this cancels, wherever it appears below:
+- **M2** (mod settings turned down) and **M4's ports and "owner (mods)" rows** (§6.3, §6.4; W1's "ports onto them",
+  compat copies, the RSQ uplift rules, the RSQ_Monsters rewrite D17): **DROPPED.** Never propose, cost or count on a
+  change to any mod or to a mod's settings.
+- **M4's engine APIs that only help a mod edited to use them** (overlays P10.1/P10.1i, attachments P10.2, throttled
+  statnums P10.4, declared spawn filters F-MON-1's declared half, `DebrisGroup` F-MON-3's lump half, client-side
+  lists F-MON-2): **HELD.** Build one only in a form that needs no mod edit (the engine recognising the case itself).
+- §3.3's W1 (−43 ms on a typical tic) and §3.5's closer L1 are **not available**. L5 (content density) is not ours.
+
+What stands, in this order, for the sim lane: **M5 (dormancy first, then the rest), M10, M13.** All engine, for any mod.
+
+Targets at the real load (Inference; one run, [M] 2026-11-23: Sunder MAP15 single player, 39,171 thinkers, loop
+mean 66 / median 43 ms with the rows built so far on):
+- M5's "reset ≤ 1.3 ms/tic at the M4 population" was sized at ≈25k thinkers. At 39k it is **≤ 2.0 ms** (the cost is
+  per actor); today 3.6.
+- From median 43 / mean 66 with §3.3's middle assumptions for what is left: M10 parallel passes ≈ −3; M13 compiled
+  script (s 0.5, k 1.8) × 0.78 on the thinkers; M13 parallel thinkers (p 0.5) × 0.64 + 0.8 → **typical tic ≈ 24 ms,
+  mean ≈ 35**, single player; a 4-player game adds the client logic and the hash left after M5/M10 (≈ 1.5).
+- **So the engine-only road does not reach a 20 ms median at the middle assumptions.** It reaches it if the
+  parallel fraction is 0.7 or better (≈ 19-20), or with what dormancy takes off (not measured, not counted above).
+  The p95 (heavy tics, 528 ms worst tic on 2026-11-23) is not closed by any of this arithmetic and has to be
+  measured as M10 and M13 land. Say this plainly to the owner when asked; do not answer it with a mod change.
+
 Conventions. Every number not taken from [M] is **Inference** and shows its derivation. Projections have three columns:
 **pess** (every unknown lands badly), **med** (the reports' middle values), **opt** (every unknown lands well). "Tic"
 means one 35 Hz playsim tic (28.57 ms budget); "frame" means one 11.11 ms headset frame at 90 Hz. Code citations were
