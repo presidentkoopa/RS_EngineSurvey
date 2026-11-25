@@ -532,4 +532,10 @@ tic's commands; thread count, timing and work stealing never change it (GATE-MT 
             the saving is between 3.9 and 7.4 ms an update), 9.0 -> 3.1 on Abandon; the collector's pauses p95 28-32 -> 1.8 ms, max 29-39 -> 8-18.
             The first four Sunder runs of the day (sm512-sm515, loop mean 78-101 ms) were taken while the render lane's boot tests ran on the
             same PC and are not used for timing. M5 IS COMPLETE except P9.9b, which the plan ties to F-DOD-1 (M10). Next: M10.
+2026-11-25 DEFAULTS: the owner said the lane may turn its switches on. 23 are ON by default (UZDXREMA f30f20b; exe `doomxr_sim1125c.exe`): the set
+            every timing has run with since 11-23 plus `sim_blocklines`, `sim_sndindex`, `sim_gcpacing`. Left off: `sim_dormancy`,
+            `sim_renderlistkey`, `sim_portallinks`, `sim_itersnap`, `sim_wordhash`. Defaults against all 23 at 0: same game on the rig (MAP01,
+            MAP15, portal map) and on the owner's PC through tic 680 on Sunder MAP15 and Abandon MAP13 (sm566-sm569); suite 11/11 on the
+            defaults. Loop mean in those runs (render lane's tests running at the same time, so high): Sunder 103.3 off -> 80.5,
+            Abandon 54.9 -> 44.1. Rows that read "off by default" above are on where they are in that list. sm577-sm579 queued, unread.
 ```
