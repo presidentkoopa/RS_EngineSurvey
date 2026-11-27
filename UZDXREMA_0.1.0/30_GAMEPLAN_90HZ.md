@@ -153,6 +153,18 @@ So item 1's "up to 8 ties" was wrong: a few writers hold dozens (one Balrog's fi
 (64 measured; about 180 ties a run are still refused, costing 4.5 Ticks a run). Tie churn: 0.23 new pairs a run on
 Sunder, 0.08 on Abandon. Predicted groups run larger than true ones (2.7 ms against 1.0) because ties outlive use.
 
+**Built 2026-11-27: the per-thing dice, `sim_txdice` ([F] `main` @ c20f3ac9; off by default).** Rule D's RNG half.
+While a playsim thinker's Tick runs, `FRandom::TxState` points at a stream on that Tick's stack and every play RNG
+(`GenRand32`, so every `pr_` stream and every script `random[]`) draws from it; client-side RNGs never do. The seed
+is splitmix64 of (the thinker's number `DThinker::TxSerial`, `level.maptime`, `rngseed`). The number is given at the
+thinker's first Tick with the switch on, from `FLevelLocals::TxSerialCounter`, in Tick order, and both are saved; it
+is an identity, so sleeping, dormancy or a spawn earlier in the list do not change another thinker's dice. Draws
+outside a thinker's Tick (event handlers' WorldTick, prediction) keep the named streams. Checked: off is the same
+game; on is repeatable and differs; the netplay suite is green on and off, with a new scenario `dice` (three
+players, monsters) because the older scenarios run `-nomonsters` and log the same with the switch on or off; his
+list boots on both maps, off and on (exe 1127f). Open: demos; a guard against peers that disagree on the switch;
+numbers of thinkers that travel between levels can collide with the new level's (harmless, same on every machine).
+
 **Not known, in the order to settle them:**
 - **Tie churn.** How often a writer meets an actor it has not written before (each costs a serial re-run). Count it
   with `sim_mttrace`: per run, pairs not seen in the last 35 runs, and the time of the Ticks that made them.
