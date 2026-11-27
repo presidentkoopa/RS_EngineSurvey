@@ -137,6 +137,22 @@ Sunder mean 58.8·1.25/6 + 63.9·0.08 + 3.7 + 0.8 + 13.3 = **35 ms** (from 77.3)
 "outside" is then the largest single piece, and it is not yet known how much of it is the profiler's own clock reads
 (see the next entry). Compiled script (M13's other half) multiplies Tg again.
 
+**The design simulated (same day; [F] `main` @ 589ae0e and after, exes 1127d / 1127e; records `mttrace_*_1127d/e.txt`).**
+Inside `sim_mttrace`: ties made at the first write, groups predicted from the ties at the start of each run, every
+write (reading B) checked, a write that leaves its group sends its thinker and the later members of its group to the
+serial part, a tie unused for 35 runs dropped, a group capped at 256 nodes.
+
+| Tick time on 6 cores | Sunder (60.6 ms) | Abandon (34.5 ms) |
+|---|---|---|
+| ideal, perfect knowledge of each run's writes | 10.1 | 5.8 |
+| the design, 64 ties a writer | **10.6** (serial 0.58) | **6.0** (serial 0.30) |
+| the design, 8 ties a writer | 13.1 (serial 3.6) | 8.0 (serial 2.7) |
+| writers serial, no groups | 30.7 | 16.9 |
+
+So item 1's "up to 8 ties" was wrong: a few writers hold dozens (one Balrog's fire). Make the tie list generous
+(64 measured; about 180 ties a run are still refused, costing 4.5 Ticks a run). Tie churn: 0.23 new pairs a run on
+Sunder, 0.08 on Abandon. Predicted groups run larger than true ones (2.7 ms against 1.0) because ties outlive use.
+
 **Not known, in the order to settle them:**
 - **Tie churn.** How often a writer meets an actor it has not written before (each costs a serial re-run). Count it
   with `sim_mttrace`: per run, pairs not seen in the last 35 runs, and the time of the Ticks that made them.
