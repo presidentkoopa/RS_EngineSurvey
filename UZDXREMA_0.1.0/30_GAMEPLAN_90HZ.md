@@ -148,8 +148,10 @@ Sunder mean 58.8·1.25/6 + 63.9·0.08 + 3.7 + 0.8 + 13.3 = **35 ms** (from 77.3)
   the tasks and spreads with them; it is not a serial floor. The arithmetic above should carry about 9, not 13.3,
   and treat it as parallel work: Sunder mean about 26 ms, not 35. Not measured.
 - **Raw-address stores**: what share of Tick time is in classes with a store the analyzer cannot place.
-- **D3 is still the owner's.** Rule D changes how the dice fall against stock. Ties make it sim state in saves and
-  for late joiners (netcode revision). Put it to him in plain words before any of this is built.
+- **D3 is decided: the owner approved rule D on 2026-11-27** ("forget the dice, we want the cores"), after it was put
+  to him as: each thing gets its own dice, same odds and rules, different individual rolls from today's engine, all
+  co-op machines agree, old stock demos do not play back in that mode, the one-core mode stays as a switch. Ties
+  make groups sim state in saves and for late joiners (a netcode revision).
 
 ---
 
