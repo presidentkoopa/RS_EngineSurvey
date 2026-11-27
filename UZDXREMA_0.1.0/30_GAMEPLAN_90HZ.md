@@ -53,6 +53,98 @@ per frame ([F] src/common/rendering/vulkan/system/vk_renderdevice.cpp:731-750, r
 ([FR] src/d_net.cpp:207, 2413-2416, re-read), champion colour weights ([MOD] 2.2-Enemies-mk-champions/cvarinfo.txt,
 re-read: 14 colours at 10, Bronze 3, Silver 2, Gold 1 = 146).
 
+## MEASURED 2026-11-27: the parallel share, and GROUPS (an addition to rule D). Read after the correction above.
+
+**This is one plan.** The Helion playbook (`Helion_1.2.0/20_REBUILD_PLAYBOOK.md`) is where this document came from:
+everything in it is in here, and this document adds the many-cores work. The owner asked for one plan. Do not present
+two to him.
+
+### What was measured ([F] `main` @ 2a64484a, exe `doomxr_sim1127b.exe`, the owner's list as it stood: 58 files)
+
+Tool: `sim_mttrace` ([F] src/playsim/sim_mttrace.cpp; report tools/sim_lane/mttrace_report.py; records in
+tools/sim_lane/mttrace_1127/). It is F-MT-9's dry run done by watching, not proving: per Tick it records the script
+interpreter's stores, the natives called, and the engine's move / damage / spawn / destroy / relink / sound / special
+entry points. It needs `vm_jit 0`; times are then re-weighed by a normal-speed `sim_profile_dump` of the same run.
+
+| | Sunder MAP15 | Abandon MAP13 |
+|---|---|---|
+| thinkers a run | 39,188 | 30,760 |
+| thinker loop, mean / median (JIT on, profiled) | 77.3 / 51.6 ms | 45.5 / 34.1 ms |
+| time inside Ticks | 63.9 ms | 36.7 ms |
+| ... in Ticks that write only their own object (L+M) | 60% | 61% |
+| ... serial under rule D as written (S) | 32% | 27% |
+| ... of S, serial ONLY because the Tick writes another actor | 20.7 of 20.8 ms | 9.6 of 9.7 ms |
+| ... inside deferred scopes (commit work) | 5.8% | 6.8% |
+| loop time outside any Tick ("outside") | 13.3 ms | 8.9 ms |
+
+So **U5 is answered: p = 0.60 of Tick time, 0.50 of the whole loop, under rule D as written.** That is the plan's
+middle. And the serial third has one cause: a helper writes its monster (a champion's controller), or a spawner
+writes the monsters around it (`BalrogFireSpawner`). Nothing else of size is serial: no ACS, no level changes, no
+console writes worth a row.
+
+### Groups: measured before designed
+
+A *group* is a set of thinkers tied together because one writes another in place. Counted per run with union-find,
+three ways (A: script stores and in-place engine effects on another object; B: A plus natives on another object unless
+the name reads as a query; C: A plus every native on another object), times weighed by normal-speed time a class:
+
+| | Sunder | Abandon |
+|---|---|---|
+| Tick time counted | 60.8 ms | 34.6 ms |
+| largest group, mean of 390 runs (A / B) | 0.88 / 1.09 ms | 0.66 / 0.91 ms |
+| largest group, worst run (A, B) | 4.3% of the run, 85-88 thinkers | 4.9-5.5%, 86-94 thinkers |
+| time in groups of 1 / 2-4 / 5-256 thinkers (B) | 32.4 / 25.1 / 3.2 ms | 19.2 / 12.9 / 2.6 ms |
+| ideal wall on 6 cores, groups (B) | 10.1 ms | 5.8 ms |
+| ideal wall on 6 cores, writers serial (B) | 30.7 ms | 16.9 ms |
+
+Under C one run in 390 on each map merged nearly everything into one group (a query native called on every actor);
+the mean under C is still 11.5 / 6.6 ms. So the design must not tie on reads, and B's notion of "query" has to come
+from the native effect table, not from a name pattern.
+
+**Groups do not chain on his maps.** They are a monster and its helper; the widest is one Balrog's fire.
+
+### The design (Inference; nothing below is built)
+
+Rule D as written makes any Tick that writes a foreign object S. The addition:
+
+1. **A tie is sim state.** Each thinker carries up to 8 ties (object pointer + a tics-since-used counter), saved,
+   sent to a late joiner, hashed. A tie is made at one moment only: when a thinker, running at the serial commit,
+   writes another actor in place. It is dropped when the other object dies or the counter passes 35 tics unused.
+   Because ties change only at commit, in list order, every machine holds the same ties.
+2. **P1 builds the groups**: union-find over the live ties (a few thousand a tic; under 0.3 ms by count), then a
+   group id stamped on each member. A group over 256 thinkers refuses its newest tie: that writer stays S.
+3. **A group is one task in phase A.** Its members tick in list order, on one worker, in place. Inside the group
+   that is exactly stock: a helper sees the monster it follows as that monster is now, which also removes the
+   one-tic lag §1.5 of [G] had to work around with a second wave. Members read non-members from the snapshot and
+   write them only through deferred effects, as any tx does.
+4. **The barrier makes it certain.** Before any in-place write to an object, the writer's group id is compared with
+   the object's stamp: script stores (interpreter, JIT, AOT), natives the effect table marks self-writing (the
+   receiver is checked), and the engine entry points `sim_mttrace` already hooks (move, relink, set state). The
+   tracer's hook sites are the barrier's sites. On a mismatch nothing is written; the member is undone from its own
+   undo log, and it and every later member of its group leave phase A and run at the commit, serially, in list
+   order; there the write happens and makes the tie. The cost of a new tie is one tic of serial time for that part
+   of one group.
+5. **Commit is unchanged**: each member keeps its own effect queue; P3 applies them in canonical list order.
+6. **What still needs the static analyzer (F-MT-9 proper):** stores through a raw address (struct members reached by
+   `ADDA`, array data) carry no object to compare. A class is allowed in phase A only if every such store is proven
+   to land in self, a fresh object or a local; otherwise it is S. And unclassified natives stay S.
+7. **Scheduling**: tasks longest first. Wall = max(largest group, total / E) + commit + overhead.
+
+**What this is worth (Inference).** wall = Tg·o/E + T·c + B + outside, with Tg = Tick time in phase A (0.92 of 63.9 on
+Sunder once groups hold: the 5.8% in deferred scopes and the player stay serial), o 1.25, E 6, c 0.08:
+Sunder mean 58.8·1.25/6 + 63.9·0.08 + 3.7 + 0.8 + 13.3 = **35 ms** (from 77.3); the median scales to about **23 ms**
+(from 51.6) if the outside part scales with it. The same arithmetic with writers serial gives 51 / 34. The 13.3 ms
+"outside" is then the largest single piece, and it is not yet known how much of it is the profiler's own clock reads
+(see the next entry). Compiled script (M13's other half) multiplies Tg again.
+
+**Not known, in the order to settle them:**
+- **Tie churn.** How often a writer meets an actor it has not written before (each costs a serial re-run). Count it
+  with `sim_mttrace`: per run, pairs not seen in the last 35 runs, and the time of the Ticks that made them.
+- **The outside 13 ms**: profiler overhead against real loop cost (two runs, `perf_track`, `sim_profile` off and on).
+- **Raw-address stores**: what share of Tick time is in classes with a store the analyzer cannot place.
+- **D3 is still the owner's.** Rule D changes how the dice fall against stock. Ties make it sim state in saves and
+  for late joiners (netcode revision). Put it to him in plain words before any of this is built.
+
 ---
 
 ## 1. Lead: the verdict
