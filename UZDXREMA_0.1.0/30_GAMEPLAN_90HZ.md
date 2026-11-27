@@ -140,7 +140,13 @@ Sunder mean 58.8·1.25/6 + 63.9·0.08 + 3.7 + 0.8 + 13.3 = **35 ms** (from 77.3)
 **Not known, in the order to settle them:**
 - **Tie churn.** How often a writer meets an actor it has not written before (each costs a serial re-run). Count it
   with `sim_mttrace`: per run, pairs not seen in the last 35 runs, and the time of the Ticks that made them.
-- **The outside 13 ms**: profiler overhead against real loop cost (two runs, `perf_track`, `sim_profile` off and on).
+- **The outside 13 ms: about 4 is the profiler, about 9 is real** (settled the same day; `perf_track`, Sunder,
+  his list, exe 1127b, the last 190 tic-frames of each run: think a tic mean 63.6 and 63.5 with `sim_profile` off,
+  67.9 with it on; CSVs in `E:\DOOMWork\_buildtemp\claude_bridge\work\perf1127`). The real 9 ms is the walk
+  itself: reaching 39 to 42 thousand thinkers one after another, about 0.2 us each, which is the price of a cache
+  miss a thinker. **Inference:** that cost belongs to whoever touches the thinker first, so in phase A it moves into
+  the tasks and spreads with them; it is not a serial floor. The arithmetic above should carry about 9, not 13.3,
+  and treat it as parallel work: Sunder mean about 26 ms, not 35. Not measured.
 - **Raw-address stores**: what share of Tick time is in classes with a store the analyzer cannot place.
 - **D3 is still the owner's.** Rule D changes how the dice fall against stock. Ties make it sim state in saves and
   for late joiners (netcode revision). Put it to him in plain words before any of this is built.
